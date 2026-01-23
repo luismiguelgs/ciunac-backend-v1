@@ -1,0 +1,23 @@
+# Etapa de desarrollo
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copiar configuración de paquetes
+COPY package*.json ./
+
+# Instalar todas las dependencias (incluyendo devDependencies)
+RUN npm install
+
+# Copiar el resto del código
+COPY . .
+
+# Configurar puerto y entorno
+ENV NODE_ENV=development
+ENV PORT=3000
+
+# Exponer el puerto 8000
+EXPOSE 3000
+
+# Iniciar en modo desarrollo con hot-reload
+CMD ["npm", "run", "start:dev"]
