@@ -26,9 +26,14 @@ export class Grupo {
     @Column({ name: 'docente_id' })
     docenteId: string;
 
-
     @Column({ name: 'aula_id' })
     aulaId: number;
+
+    @Column({ name: 'frecuencia' })
+    frecuencia: string;
+
+    @Column({ name: 'modalidad' })
+    modalidad: string;
 
     //Seguimiento
     @CreateDateColumn({ name: 'creado_en' })

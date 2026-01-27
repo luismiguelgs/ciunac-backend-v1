@@ -40,7 +40,7 @@ export class Q10Service {
     // Listar horarios - cursos en Q10
     async listarHorariosCursos(periodo: string) {
         try {
-            const res = await fetch(`${Q10_API_URL}/cursos?Limit=110&Estado=Abierto`, {
+            const res = await fetch(`${Q10_API_URL}/cursos?Limit=150&Estado=Abierto`, {
                 method: 'GET',
                 headers: this.headers
             });
@@ -80,6 +80,8 @@ export class Q10Service {
                     docenteId: docente.id,
                     cicloId: ciclo ? ciclo.id : 1, // Si no lo encuentra, usa 1 por ahora
                     aulaId: 1,
+                    frecuencia: item.Codigo.split("-")[2],
+                    modalidad: item.Codigo.split("-")[1].slice(-1),
                 };
 
                 // 4️⃣ Guardar en la tabla grupos

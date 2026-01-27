@@ -15,4 +15,10 @@ export class CreateGrupoDto {
 
     @IsInt()
     aulaId: number;
+
+    @IsString()
+    frecuencia: string;
+
+    @IsString()
+    modalidad: string;
 }
