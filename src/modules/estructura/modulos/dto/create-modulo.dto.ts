@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsDate } from 'class-validator';
+import { IsString, IsNumber, IsDate, IsBoolean, IsOptional } from 'class-validator';
 
 export class CreateModuloDto {
     @IsString()
@@ -12,4 +12,8 @@ export class CreateModuloDto {
 
     @IsNumber()
     orden: number;
+
+    @IsBoolean()
+    @IsOptional()
+    activo: boolean;
 }

@@ -25,6 +25,17 @@ export class ModulosService {
 		});
 	}
 
+	findAllActive() {
+		return this.repo.find({
+			where: {
+				activo: true,
+			},
+			order: {
+				orden: 'ASC',
+			},
+		});
+	}
+
 	findOne(id: number) {
 		return this.repo.findOne({
 			where: {

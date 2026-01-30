@@ -23,6 +23,11 @@ export class ModulosController {
 		return this.modulosService.findAll();
 	}
 
+	@Get('activos')
+	findAllActive(): Promise<Modulo[]> {
+		return this.modulosService.findAllActive();
+	}
+
 	@Get(':id')
 	findOne(@Param('id') id: string): Promise<Modulo | null> {
 		return this.modulosService.findOne(+id);
