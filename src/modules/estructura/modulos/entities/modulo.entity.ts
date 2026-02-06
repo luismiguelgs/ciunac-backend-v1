@@ -18,8 +18,11 @@ export class Modulo {
     @Column({ type: 'int', default: 0 })
     orden: number;
 
-    @Column({ type: 'boolean', default: true })
+    @Column({ type: 'boolean', default: false })
     activo: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    visible: boolean;
 
     //Relaciones
     @OneToMany(() => Grupo, (grupo) => grupo.modulo)

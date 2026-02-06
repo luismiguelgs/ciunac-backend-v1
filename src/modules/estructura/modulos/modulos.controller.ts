@@ -23,9 +23,9 @@ export class ModulosController {
 		return this.modulosService.findAll();
 	}
 
-	@Get('activos')
-	findAllActive(): Promise<Modulo[]> {
-		return this.modulosService.findAllActive();
+	@Get('visibles')
+	findAllVisibles(): Promise<Modulo[]> {
+		return this.modulosService.findAllVisibles();
 	}
 
 	@Get(':id')

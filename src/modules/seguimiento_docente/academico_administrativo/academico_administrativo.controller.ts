@@ -7,30 +7,30 @@ import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
 @UseGuards(ApiKeyGuard)
 @Controller('academico-administrativo')
 export class AcademicoAdministrativoController {
-  constructor(private readonly academicoService: AcademicoAdministrativoService) { }
+	constructor(private readonly academicoService: AcademicoAdministrativoService) { }
 
-  @Post()
-  create(@Body() createDto: CreateAcademicoAdministrativoDto) {
-    return this.academicoService.create(createDto);
-  }
+	@Post()
+	create(@Body() createDto: CreateAcademicoAdministrativoDto) {
+		return this.academicoService.create(createDto);
+	}
 
-  @Get()
-  findAll() {
-    return this.academicoService.findAll();
-  }
+	@Get()
+	findAll() {
+		return this.academicoService.findAll();
+	}
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.academicoService.findOne(+id);
-  }
+	@Get(':id')
+	findOne(@Param('id') id: string) {
+		return this.academicoService.findOne(+id);
+	}
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDto: UpdateAcademicoAdministrativoDto) {
-    return this.academicoService.update(+id, updateDto);
-  }
+	@Patch(':id')
+	update(@Param('id') id: string, @Body() updateDto: UpdateAcademicoAdministrativoDto) {
+		return this.academicoService.update(+id, updateDto);
+	}
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.academicoService.remove(+id);
-  }
+	@Delete(':id')
+	remove(@Param('id') id: string) {
+		return this.academicoService.remove(+id);
+	}
 }

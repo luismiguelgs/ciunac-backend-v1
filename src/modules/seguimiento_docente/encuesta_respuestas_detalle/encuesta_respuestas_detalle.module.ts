@@ -8,7 +8,7 @@ import { EncuestaRespuestasDetalle } from './entities/encuesta_respuestas_detall
   imports: [TypeOrmModule.forFeature([EncuestaRespuestasDetalle])],
   controllers: [EncuestaRespuestasDetalleController],
   providers: [EncuestaRespuestasDetalleService],
-  exports: [EncuestaRespuestasDetalleService]
+  exports: [EncuestaRespuestasDetalleService, TypeOrmModule.forFeature([EncuestaRespuestasDetalle])]
 })
 export class EncuestaRespuestasDetalleModule { }
 

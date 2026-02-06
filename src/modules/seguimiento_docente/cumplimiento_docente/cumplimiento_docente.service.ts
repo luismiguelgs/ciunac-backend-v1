@@ -7,50 +7,50 @@ import { CumplimientoDocente } from './entities/cumplimiento_docente.entity';
 
 @Injectable()
 export class CumplimientoDocenteService {
-  constructor(
-    @InjectRepository(CumplimientoDocente)
-    private readonly cumplimientoRepository: Repository<CumplimientoDocente>,
-  ) { }
+	constructor(
+		@InjectRepository(CumplimientoDocente)
+		private readonly cumplimientoRepository: Repository<CumplimientoDocente>,
+	) { }
 
-  async create(createCumplimientoDocenteDto: CreateCumplimientoDocenteDto) {
-    const cumplimiento = this.cumplimientoRepository.create({
-      ...createCumplimientoDocenteDto,
-    });
-    return await this.cumplimientoRepository.save(cumplimiento);
-  }
+	async create(createCumplimientoDocenteDto: CreateCumplimientoDocenteDto) {
+		const cumplimiento = this.cumplimientoRepository.create({
+			...createCumplimientoDocenteDto,
+		});
+		return await this.cumplimientoRepository.save(cumplimiento);
+	}
 
-  async findAll() {
-    return await this.cumplimientoRepository.find({
-      relations: ['modulo', 'docente', 'academicoAdministrativo'],
-    });
-  }
+	async findAll(moduloId?: number, academicoAdministrativoId?: number) {
+		const where: any = {};
+		if (moduloId) where.moduloId = moduloId;
+		if (academicoAdministrativoId) where.academicoAdministrativoId = academicoAdministrativoId;
 
-  async findOne(id: number) {
-    const cumplimiento = await this.cumplimientoRepository.findOne({
-      where: { id },
-      relations: ['modulo', 'docente', 'academicoAdministrativo'],
-    });
-    if (!cumplimiento) {
-      throw new NotFoundException(`Cumplimiento Docente with ID ${id} not found`);
-    }
-    return cumplimiento;
-  }
+		return await this.cumplimientoRepository.find({
+			where,
+			relations: ['modulo', 'docente', 'academicoAdministrativo'],
+		});
+	}
 
-  async update(id: number, updateCumplimientoDocenteDto: UpdateCumplimientoDocenteDto) {
-    const cumplimiento = await this.findOne(id);
-    const { moduloId, docenteId, academicoAdministrativoId, ...rest } = updateCumplimientoDocenteDto;
+	async findOne(id: number) {
+		const cumplimiento = await this.cumplimientoRepository.findOne({
+			where: { id },
+			relations: ['modulo', 'docente', 'academicoAdministrativo'],
+		});
+		if (!cumplimiento) {
+			throw new NotFoundException(`Cumplimiento Docente with ID ${id} not found`);
+		}
+		return cumplimiento;
+	}
 
-    const updateData: any = { ...rest };
-    if (moduloId) updateData.moduloId = moduloId;
-    if (docenteId) updateData.docenteId = docenteId;
-    if (academicoAdministrativoId) updateData.academicoAdministrativoId = academicoAdministrativoId;
+	async update(id: number, updateCumplimientoDocenteDto: UpdateCumplimientoDocenteDto) {
+		const cumplimiento = await this.findOne(id);
+		const { moduloId, docenteId, academicoAdministrativoId, ...rest } = updateCumplimientoDocenteDto;
 
-    Object.assign(cumplimiento, updateData);
-    return await this.cumplimientoRepository.save(cumplimiento);
-  }
+		const updateData: any = { ...rest };
+		if (moduloId) updateData.moduloId = moduloId;
+		if (docenteId) updateData.docenteId = docenteId;
+		if (academicoAdministrativoId) updateData.academicoAdministrativoId = academicoAdministrativoId;
 
-  async remove(id: number) {
-    const cumplimiento = await this.findOne(id);
-    return await this.cumplimientoRepository.remove(cumplimiento);
-  }
+		Object.assign(cumplimiento, updateData);
+		return await this.cumplimientoRepository.save(cumplimiento);
+	}
 }

@@ -1,34 +1,33 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFile, BadRequestException, UseGuards, Get, Query } from '@nestjs/common';
 import { EncuestaRespuestasService } from './encuesta_respuestas.service';
-import { CreateEncuestaRespuestaDto } from './dto/create-encuesta_respuesta.dto';
-import { UpdateEncuestaRespuestaDto } from './dto/update-encuesta_respuesta.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
 
+@UseGuards(ApiKeyGuard)
 @Controller('encuesta-respuestas')
 export class EncuestaRespuestasController {
-  constructor(private readonly encuestaRespuestasService: EncuestaRespuestasService) {}
+	constructor(private readonly encuestaRespuestasService: EncuestaRespuestasService) { }
 
-  @Post()
-  create(@Body() createEncuestaRespuestaDto: CreateEncuestaRespuestaDto) {
-    return this.encuestaRespuestasService.create(createEncuestaRespuestaDto);
-  }
+	@Post('upload')
+	@UseInterceptors(FileInterceptor('file'))
+	async uploadFile(@UploadedFile() file: Express.Multer.File) {
+		if (!file) {
+			throw new BadRequestException('No se ha subido ningún archivo');
+		}
 
-  @Get()
-  findAll() {
-    return this.encuestaRespuestasService.findAll();
-  }
+		// Validar tipo de archivo si es necesario (CSV)
+		if (file.mimetype !== 'text/csv' && !file.originalname.match(/\.(csv)$/)) {
+			throw new BadRequestException('Solo se permiten archivos CSV');
+		}
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.encuestaRespuestasService.findOne(+id);
-  }
+		return this.encuestaRespuestasService.uploadAndProcess(file.buffer);
+	}
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEncuestaRespuestaDto: UpdateEncuestaRespuestaDto) {
-    return this.encuestaRespuestasService.update(+id, updateEncuestaRespuestaDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.encuestaRespuestasService.remove(+id);
-  }
+	@Get('buscar')
+	async findByDocenteAndModulo(
+		@Query('docenteId') docenteId: string,
+		@Query('moduloId') moduloId: string
+	) {
+		return this.encuestaRespuestasService.findByDocenteAndModulo(docenteId, Number(moduloId));
+	}
 }

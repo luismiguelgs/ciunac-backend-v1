@@ -7,11 +7,12 @@ export class EncuestaRespuestasDetalle {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ name: 'encuesta_id', type: 'int', nullable: false })
-    encuestaId: number;
+    @Column({ name: 'respuesta_id', type: 'int', nullable: false })
+    respuestaId: number;
 
     @Column({ name: 'pregunta_id', type: 'int', nullable: false })
     preguntaId: number;
+
 
     @Column({ name: 'valor_texto', type: 'varchar', nullable: false })
     valorTexto: string;
@@ -20,9 +21,9 @@ export class EncuestaRespuestasDetalle {
     valorNumero: number;
 
     // Relaciones
-    @ManyToOne(() => EncuestaRespuesta, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'encuesta_id' })
-    encuesta: EncuestaRespuesta;
+    @ManyToOne(() => EncuestaRespuesta, (respuesta) => respuesta.detalles, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'respuesta_id' })
+    respuesta: EncuestaRespuesta;
 
     @ManyToOne(() => EncuestaPregunta)
     @JoinColumn({ name: 'pregunta_id' })

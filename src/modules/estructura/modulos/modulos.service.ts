@@ -8,13 +8,13 @@ import { Modulo } from './entities/modulo.entity';
 @Injectable()
 export class ModulosService {
 	constructor(
-    @InjectRepository(Modulo)
-    private readonly repo: Repository<Modulo>,
-  	) {}
+		@InjectRepository(Modulo)
+		private readonly repo: Repository<Modulo>,
+	) { }
 
 	create(createModuloDto: CreateModuloDto) {
 		const nuevo = this.repo.create(createModuloDto);
-    	return this.repo.save(nuevo);
+		return this.repo.save(nuevo);
 	}
 
 	findAll() {
@@ -25,10 +25,10 @@ export class ModulosService {
 		});
 	}
 
-	findAllActive() {
+	findAllVisibles() {
 		return this.repo.find({
 			where: {
-				activo: true,
+				visible: true,
 			},
 			order: {
 				orden: 'ASC',
@@ -52,10 +52,16 @@ export class ModulosService {
 			return null;
 		}
 		await this.repo.update(id, updateModuloDto);
-    	return this.findOne(id);
+		return this.findOne(id);
 	}
 
 	remove(id: number) {
 		return this.repo.delete(id);
+	}
+
+	async findByName(nombre: string): Promise<Modulo | null> {
+		return await this.repo.findOne({
+			where: { nombre },
+		});
 	}
 }

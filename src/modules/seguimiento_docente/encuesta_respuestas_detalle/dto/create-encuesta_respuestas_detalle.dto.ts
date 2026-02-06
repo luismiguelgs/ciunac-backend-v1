@@ -3,7 +3,7 @@ import { IsInt, IsNotEmpty, IsString } from 'class-validator';
 export class CreateEncuestaRespuestasDetalleDto {
     @IsInt()
     @IsNotEmpty()
-    encuestaId: number;
+    respuestaId: number;
 
     @IsInt()
     @IsNotEmpty()

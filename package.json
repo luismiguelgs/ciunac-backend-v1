@@ -1,6 +1,6 @@
 {
   "name": "ciunac-backend",
-  "version": "0.8.9",
+  "version": "0.9.1",
   "description": "",
   "author": "",
   "private": true,
@@ -32,6 +32,7 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "csv-parser": "^3.2.0",
     "googleapis": "^164.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
