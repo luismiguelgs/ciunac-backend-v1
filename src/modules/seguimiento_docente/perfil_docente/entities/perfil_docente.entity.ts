@@ -11,7 +11,7 @@ export enum NivelIdioma {
 @Entity('perfil_docente')
 export class PerfilDocente {
     @PrimaryGeneratedColumn()
-    id: number;
+    id: string;
 
     @Column({ name: 'docente_id', type: 'uuid', unique: true, nullable: false })
     docenteId: string;

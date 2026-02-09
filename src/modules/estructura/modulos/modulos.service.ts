@@ -55,8 +55,8 @@ export class ModulosService {
 		return this.findOne(id);
 	}
 
-	remove(id: number) {
-		return this.repo.delete(id);
+	async remove(id: number) {
+		return await this.repo.update(id, { visible: false });
 	}
 
 	async findByName(nombre: string): Promise<Modulo | null> {

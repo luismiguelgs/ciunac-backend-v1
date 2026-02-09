@@ -4,19 +4,29 @@ import { Repository } from 'typeorm';
 import { CreateCumplimientoDocenteDto } from './dto/create-cumplimiento_docente.dto';
 import { UpdateCumplimientoDocenteDto } from './dto/update-cumplimiento_docente.dto';
 import { CumplimientoDocente } from './entities/cumplimiento_docente.entity';
+import { PerfilDocenteResultadosService } from '../perfil_docente_resultados/perfil_docente_resultados.service';
 
 @Injectable()
 export class CumplimientoDocenteService {
 	constructor(
 		@InjectRepository(CumplimientoDocente)
 		private readonly cumplimientoRepository: Repository<CumplimientoDocente>,
+		private readonly perfilDocenteResultadosService: PerfilDocenteResultadosService,
 	) { }
 
 	async create(createCumplimientoDocenteDto: CreateCumplimientoDocenteDto) {
 		const cumplimiento = this.cumplimientoRepository.create({
 			...createCumplimientoDocenteDto,
 		});
-		return await this.cumplimientoRepository.save(cumplimiento);
+		const result = await this.cumplimientoRepository.save(cumplimiento);
+
+		// Generar resultado del perfil docente
+		await this.perfilDocenteResultadosService.generarResultado(
+			result.moduloId,
+			result.docenteId,
+		);
+
+		return result;
 	}
 
 	async findAll(moduloId?: number, academicoAdministrativoId?: number) {
@@ -51,6 +61,14 @@ export class CumplimientoDocenteService {
 		if (academicoAdministrativoId) updateData.academicoAdministrativoId = academicoAdministrativoId;
 
 		Object.assign(cumplimiento, updateData);
-		return await this.cumplimientoRepository.save(cumplimiento);
+		const result = await this.cumplimientoRepository.save(cumplimiento);
+
+		// Generar resultado del perfil docente
+		await this.perfilDocenteResultadosService.generarResultado(
+			result.moduloId,
+			result.docenteId,
+		);
+
+		return result;
 	}
 }

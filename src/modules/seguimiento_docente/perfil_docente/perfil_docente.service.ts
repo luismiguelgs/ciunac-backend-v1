@@ -23,7 +23,7 @@ export class PerfilDocenteService {
 		});
 	}
 
-	async findOne(id: number) {
+	async findOne(id: string) {
 		const perfilDocente = await this.perfilDocenteRepository.findOne({
 			where: { id },
 			relations: ['docente', 'idioma']
@@ -34,7 +34,7 @@ export class PerfilDocenteService {
 		return perfilDocente;
 	}
 
-	async update(id: number, updatePerfilDocenteDto: UpdatePerfilDocenteDto) {
+	async update(id: string, updatePerfilDocenteDto: UpdatePerfilDocenteDto) {
 		const perfilDocente = await this.perfilDocenteRepository.preload({
 			id: id,
 			...updatePerfilDocenteDto,
@@ -45,7 +45,7 @@ export class PerfilDocenteService {
 		return this.perfilDocenteRepository.save(perfilDocente);
 	}
 
-	async remove(id: number) {
+	async remove(id: string) {
 		const perfilDocente = await this.findOne(id);
 		return await this.perfilDocenteRepository.remove(perfilDocente);
 	}
