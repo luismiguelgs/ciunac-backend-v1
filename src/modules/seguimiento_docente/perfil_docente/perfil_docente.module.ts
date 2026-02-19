@@ -8,5 +8,6 @@ import { PerfilDocente } from './entities/perfil_docente.entity';
   imports: [TypeOrmModule.forFeature([PerfilDocente])],
   controllers: [PerfilDocenteController],
   providers: [PerfilDocenteService],
+  exports: [PerfilDocenteService],
 })
 export class PerfilDocenteModule {}

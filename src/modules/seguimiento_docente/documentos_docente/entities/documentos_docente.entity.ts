@@ -10,7 +10,7 @@ export class DocumentosDocente {
 
     // Llaves foráneas
     @Column({ name: 'perfil_docente_id', nullable: false })
-    perfilDocenteId: number;
+    perfilDocenteId: string;
 
     @Column({ name: 'tipo_documento_perfil_id', nullable: false })
     tipoDocumentoPerfilId: number;

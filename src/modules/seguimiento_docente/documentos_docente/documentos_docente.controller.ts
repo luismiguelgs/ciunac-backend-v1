@@ -7,30 +7,35 @@ import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
 @UseGuards(ApiKeyGuard)
 @Controller('documentos-docente')
 export class DocumentosDocenteController {
-  constructor(private readonly documentosDocenteService: DocumentosDocenteService) { }
+  	constructor(private readonly documentosDocenteService: DocumentosDocenteService) { }
 
-  @Post()
-  create(@Body() createDocumentosDocenteDto: CreateDocumentosDocenteDto) {
-    return this.documentosDocenteService.create(createDocumentosDocenteDto);
-  }
+	@Post()
+	create(@Body() createDocumentosDocenteDto: CreateDocumentosDocenteDto) {
+		return this.documentosDocenteService.create(createDocumentosDocenteDto);
+	}
 
-  @Get()
-  findAll() {
-    return this.documentosDocenteService.findAll();
-  }
+	@Get()
+	findAll() {
+		return this.documentosDocenteService.findAll();
+	}
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.documentosDocenteService.findOne(+id);
-  }
+	@Get('perfil/:perfilDocenteId')
+	findByPerfilDocenteId(@Param('perfilDocenteId') perfilDocenteId: string) {
+		return this.documentosDocenteService.findByPerfilDocenteId(perfilDocenteId);
+	}
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateDocumentosDocenteDto: UpdateDocumentosDocenteDto) {
-    return this.documentosDocenteService.update(+id, updateDocumentosDocenteDto);
-  }
+	@Get(':id')
+	findOne(@Param('id') id: string) {
+		return this.documentosDocenteService.findOne(+id);
+	}
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.documentosDocenteService.remove(+id);
-  }
+	@Patch(':id')
+	update(@Param('id') id: string, @Body() updateDocumentosDocenteDto: UpdateDocumentosDocenteDto) {
+		return this.documentosDocenteService.update(+id, updateDocumentosDocenteDto);
+	}
+
+	@Delete(':id')
+	remove(@Param('id') id: string) {
+		return this.documentosDocenteService.remove(+id);
+	}
 }

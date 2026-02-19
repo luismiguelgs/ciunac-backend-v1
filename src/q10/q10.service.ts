@@ -107,8 +107,8 @@ export class Q10Service {
             const payload = {
                 ...body,
                 Direccion: 'Lima',
-                Lugar_nacimiento: '15001',
-                Lugar_residencia: '15001',
+                Lugar_nacimiento: '12158',
+                Lugar_residencia: '12158',
                 Consecutivo_sedejornada: SEDE_JORNADA,
                 Consecutivo_periodo: periodo,
             };

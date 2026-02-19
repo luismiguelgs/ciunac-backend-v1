@@ -1,9 +1,9 @@
 import { IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, IsDate, Min } from 'class-validator';
 
 export class CreateDocumentosDocenteDto {
-    @IsInt()
+    @IsString()
     @IsNotEmpty()
-    perfilDocenteId: number;
+    perfilDocenteId: string;
 
     @IsInt()
     @IsNotEmpty()

@@ -32,6 +32,16 @@ export class PerfilDocenteResultadosService {
 		});
 	}
 
+	async findByModuloIdDesc(moduloId: number): Promise<PerfilDocenteResultado[]> {
+		return await this.perfilDocenteResultadoRepository.find({
+			where: { moduloId },
+			relations: ['perfilDocente', 'modulo', 'docente'],
+			order: {
+				resultadoFinal: 'DESC',
+			},
+		});
+	}
+
 	async findOne(id: number): Promise<PerfilDocenteResultado> {
 		const record = await this.perfilDocenteResultadoRepository.findOne({
 			where: { id },
@@ -69,13 +79,6 @@ export class PerfilDocenteResultadosService {
 			}
 		});
 
-		/********************************************************************************************** */
-		//Calcular el resultado del perfil que tiene un peso de 0.30
-		const puntajeCurriculum = 100 * 0.30;
-		///*********************************************************************************************** */
-
-		const resultadoFinal = Number(puntajeEncuesta) + Number(puntajeCumplimientoTotal) + Number(puntajeCurriculum);
-
 		// 3. Obtener el PerfilDocente asociado
 		const perfilDocente = await this.perfilDocenteRepository.findOne({
 			where: { docenteId }
@@ -84,6 +87,13 @@ export class PerfilDocenteResultadosService {
 		if (!perfilDocente) {
 			throw new NotFoundException(`Perfil Docente para el docente ${docenteId} no encontrado`);
 		}
+
+		/********************************************************************************************** */
+		//Calcular el resultado del perfil que tiene un peso de 0.30
+		const puntajeCurriculum = Number(perfilDocente.puntajeFinal) * 0.30;
+		///*********************************************************************************************** */
+
+		const resultadoFinal = Number(puntajeEncuesta) + Number(puntajeCumplimientoTotal) + Number(puntajeCurriculum);
 
 		// 4. Crear o actualizar PerfilDocenteResultado
 		let record = await this.perfilDocenteResultadoRepository.findOne({

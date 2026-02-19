@@ -5,32 +5,35 @@ import { UpdatePerfilDocenteResultadoDto } from './dto/update-perfil_docente_res
 
 @Controller('perfil-docente-resultados')
 export class PerfilDocenteResultadosController {
-  constructor(private readonly perfilDocenteResultadosService: PerfilDocenteResultadosService) { }
+	constructor(private readonly perfilDocenteResultadosService: PerfilDocenteResultadosService) { }
 
-  @Post('generar')
-  generarResultado(@Body() body: { moduloId: number; docenteId: string }) {
-    return this.perfilDocenteResultadosService.generarResultado(body.moduloId, body.docenteId);
-  }
+	@Post('generar')
+	generarResultado(@Body() body: { moduloId: number; docenteId: string }) {
+		return this.perfilDocenteResultadosService.generarResultado(body.moduloId, body.docenteId);
+	}
 
-  @Post()
-  create(@Body() createPerfilDocenteResultadoDto: CreatePerfilDocenteResultadoDto) {
-    return this.perfilDocenteResultadosService.create(createPerfilDocenteResultadoDto);
-  }
+	@Get('modulo/:moduloId')
+	findByModulo(@Param('moduloId') moduloId: string) {
+		return this.perfilDocenteResultadosService.findByModuloIdDesc(+moduloId);
+	}
 
-  @Get()
-  findAll() {
-    return this.perfilDocenteResultadosService.findAll();
-  }
+	@Post()
+	create(@Body() createPerfilDocenteResultadoDto: CreatePerfilDocenteResultadoDto) {
+		return this.perfilDocenteResultadosService.create(createPerfilDocenteResultadoDto);
+	}
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.perfilDocenteResultadosService.findOne(+id);
-  }
+	@Get()
+	findAll() {
+		return this.perfilDocenteResultadosService.findAll();
+	}
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePerfilDocenteResultadoDto: UpdatePerfilDocenteResultadoDto) {
-    return this.perfilDocenteResultadosService.update(+id, updatePerfilDocenteResultadoDto);
-  }
+	@Get(':id')
+	findOne(@Param('id') id: string) {
+		return this.perfilDocenteResultadosService.findOne(+id);
+	}
 
-
+	@Patch(':id')
+	update(@Param('id') id: string, @Body() updatePerfilDocenteResultadoDto: UpdatePerfilDocenteResultadoDto) {
+		return this.perfilDocenteResultadosService.update(+id, updatePerfilDocenteResultadoDto);
+	}
 }

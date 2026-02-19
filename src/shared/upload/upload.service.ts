@@ -34,6 +34,8 @@ export class UploadService {
                 return process.env.GOOGLE_DRIVE_FOLDER_VOUCHERS ?? ''
             case 'BECAS':
                 return process.env.GOOGLE_DRIVE_FOLDER_BECAS ?? ''
+            case 'CVS':
+                return process.env.GOOGLE_DRIVE_FOLDER_CVS ?? ''
             default:
                 throw new BadRequestException(`Carpeta no válida: ${folder}`)
         }

@@ -45,6 +45,13 @@ export class PerfilDocenteService {
 		return this.perfilDocenteRepository.save(perfilDocente);
 	}
 
+	async aplicarDocumento(perfilDocenteId: string, puntajeDelta: number, experienciaLaboralDelta: number) {
+		const perfilDocente = await this.findOne(perfilDocenteId);
+		perfilDocente.puntajeFinal = Number(perfilDocente.puntajeFinal) + Number(puntajeDelta || 0);
+		perfilDocente.experienciaTotal = Number(perfilDocente.experienciaTotal) + Number(experienciaLaboralDelta || 0);
+		return await this.perfilDocenteRepository.save(perfilDocente);
+	}
+
 	async remove(id: string) {
 		const perfilDocente = await this.findOne(id);
 		return await this.perfilDocenteRepository.remove(perfilDocente);
