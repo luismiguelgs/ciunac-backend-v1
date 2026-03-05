@@ -31,6 +31,13 @@ export class EncuestaMetricasDocenteService {
 		});
 	}
 
+	async countByModuloId(moduloId: number): Promise<{ moduloId: number; encuestasRealizadas: number }> {
+		const encuestasRealizadas = await this.repository.count({
+			where: { moduloId },
+		});
+		return { moduloId, encuestasRealizadas };
+	}
+
 	async findOne(id: number) {
 		return await this.repository.findOne({
 			where: { id },

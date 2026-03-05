@@ -64,4 +64,11 @@ export class ModulosService {
 			where: { nombre },
 		});
 	}
+
+	//encuentra el modulo activo
+	async findActive(): Promise<Modulo | null> {
+		return await this.repo.findOne({
+			where: { activo: true },
+		});
+	}
 }

@@ -42,6 +42,8 @@ export class PerfilDocenteResultadosService {
 		});
 	}
 
+	
+
 	async findOne(id: number): Promise<PerfilDocenteResultado> {
 		const record = await this.perfilDocenteResultadoRepository.findOne({
 			where: { id },

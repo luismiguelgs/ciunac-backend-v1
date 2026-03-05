@@ -48,6 +48,7 @@ import { EncuestaRespuestasModule } from './modules/seguimiento_docente/encuesta
 import { EncuestaRespuestasDetalleModule } from './modules/seguimiento_docente/encuesta_respuestas_detalle/encuesta_respuestas_detalle.module';
 import { EncuestaMetricasDocenteModule } from './modules/seguimiento_docente/encuesta_metricas_docente/encuesta_metricas_docente.module';
 import { PerfilDocenteResultadosModule } from './modules/seguimiento_docente/perfil_docente_resultados/perfil_docente_resultados.module';
+import { DashboardDocentesModule } from './modules/seguimiento_docente/dashboard_docentes/dashboard_docentes.module';
 
 @Module({
 	imports: [
@@ -127,6 +128,7 @@ import { PerfilDocenteResultadosModule } from './modules/seguimiento_docente/per
 		EncuestaRespuestasDetalleModule,
 		EncuestaMetricasDocenteModule,
 		PerfilDocenteResultadosModule,
+		DashboardDocentesModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

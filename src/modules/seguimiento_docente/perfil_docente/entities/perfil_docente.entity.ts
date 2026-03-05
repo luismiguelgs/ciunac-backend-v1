@@ -33,6 +33,9 @@ export class PerfilDocente {
     @Column({ name: 'puntaje_final', type: 'int', nullable: false })
     puntajeFinal: number;
 
+    @Column({ name: 'visible', type: 'boolean', default: true })
+    visible: boolean;
+
     @Column({ name: 'creado_en', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     creadoEn: Date;
 

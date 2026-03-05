@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
 import { NivelIdioma } from '../entities/perfil_docente.entity';
 
 export class CreatePerfilDocenteDto {
@@ -22,4 +22,8 @@ export class CreatePerfilDocenteDto {
     @IsInt()
     @IsNotEmpty()
     puntajeFinal: number;
+
+    @IsBoolean()
+    @IsOptional()
+    visible: boolean;
 }

@@ -6,15 +6,21 @@ import { PerfilDocenteResultado } from './entities/perfil_docente_resultado.enti
 import { EncuestaMetricasDocente } from '../encuesta_metricas_docente/entities/encuesta_metricas_docente.entity';
 import { CumplimientoDocente } from '../cumplimiento_docente/entities/cumplimiento_docente.entity';
 import { PerfilDocente } from '../perfil_docente/entities/perfil_docente.entity';
+import { ModulosModule } from '../../estructura/modulos/modulos.module';
+import { EncuestaRespuesta } from '../encuesta_respuestas/entities/encuesta_respuesta.entity';
+import { Docente } from '../../principales/docentes/entities/docente.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       PerfilDocenteResultado,
       EncuestaMetricasDocente,
+      EncuestaRespuesta,
       CumplimientoDocente,
       PerfilDocente,
+      Docente,
     ]),
+    ModulosModule,
   ],
   controllers: [PerfilDocenteResultadosController],
   providers: [PerfilDocenteResultadosService],

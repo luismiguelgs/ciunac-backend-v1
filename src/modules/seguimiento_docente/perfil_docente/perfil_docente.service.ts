@@ -54,6 +54,10 @@ export class PerfilDocenteService {
 
 	async remove(id: string) {
 		const perfilDocente = await this.findOne(id);
-		return await this.perfilDocenteRepository.remove(perfilDocente);
+		if (!perfilDocente) {
+			throw new NotFoundException(`PerfilDocente with ID #${id} not found`);
+		}
+		perfilDocente.visible = false;
+		return await this.perfilDocenteRepository.save(perfilDocente);
 	}
 }
