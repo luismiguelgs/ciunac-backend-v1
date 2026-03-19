@@ -4,20 +4,23 @@ import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { Usuario } from './entities/usuario.entity';
 import { UseGuards } from '@nestjs/common';
-//import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 
-//@UseGuards(JwtAuthGuard)
-@UseGuards(ApiKeyGuard)
+@UseGuards(ApiKeyGuard, AuthGuard('jwt'), PermissionsGuard)
 @Controller('usuarios')
 export class UsuariosController {
 	constructor(private readonly usuariosService: UsuariosService) { }
 
+	@RequirePermissions('gestionar_usuarios')
 	@Post()
 	create(@Body() createUsuarioDto: CreateUsuarioDto) {
 		return this.usuariosService.create(createUsuarioDto);
 	}
 
+	@RequirePermissions('gestionar_usuarios')
 	@Get()
 	findAll() {
 		return this.usuariosService.findAll();
@@ -28,6 +31,7 @@ export class UsuariosController {
 		return this.usuariosService.findOne(id);
 	}
 
+	@RequirePermissions('gestionar_usuarios')
 	@Patch(':id')
 	update(@Param('id') id: string, @Body() updateUsuarioDto: UpdateUsuarioDto) {
 		return this.usuariosService.update(id, updateUsuarioDto);
@@ -38,6 +42,7 @@ export class UsuariosController {
 		return this.usuariosService.findByEmail(email);
 	}
 
+	@RequirePermissions('gestionar_usuarios')
 	@Delete(':id')
 	remove(@Param('id') id: string) {
 		return this.usuariosService.remove(id);

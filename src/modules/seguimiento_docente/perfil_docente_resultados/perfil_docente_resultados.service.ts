@@ -7,6 +7,8 @@ import { PerfilDocenteResultado } from './entities/perfil_docente_resultado.enti
 import { EncuestaMetricasDocente } from '../encuesta_metricas_docente/entities/encuesta_metricas_docente.entity';
 import { CumplimientoDocente } from '../cumplimiento_docente/entities/cumplimiento_docente.entity';
 import { PerfilDocente } from '../perfil_docente/entities/perfil_docente.entity';
+import { EncuestaRespuesta } from '../encuesta_respuestas/entities/encuesta_respuesta.entity';
+import { ModulosService } from 'src/modules/estructura/modulos/modulos.service';
 
 @Injectable()
 export class PerfilDocenteResultadosService {
@@ -19,6 +21,9 @@ export class PerfilDocenteResultadosService {
 		private readonly cumplimientoDocenteRepository: Repository<CumplimientoDocente>,
 		@InjectRepository(PerfilDocente)
 		private readonly perfilDocenteRepository: Repository<PerfilDocente>,
+		@InjectRepository(EncuestaRespuesta)
+		private readonly encuestaRespuestaRepository: Repository<EncuestaRespuesta>,
+		private readonly modulosService: ModulosService,
 	) { }
 
 	async create(createPerfilDocenteResultadoDto: CreatePerfilDocenteResultadoDto): Promise<PerfilDocenteResultado> {
@@ -42,7 +47,7 @@ export class PerfilDocenteResultadosService {
 		});
 	}
 
-	
+
 
 	async findOne(id: number): Promise<PerfilDocenteResultado> {
 		const record = await this.perfilDocenteResultadoRepository.findOne({
@@ -119,5 +124,56 @@ export class PerfilDocenteResultadosService {
 		// En PerfilDocente entity, el usuario cambió id a string recientemente.
 
 		return await this.perfilDocenteResultadoRepository.save(record);
+	}
+
+	async findResultadosByDocentePerfilId(perfilDocenteId: string) {
+		return await this.perfilDocenteResultadoRepository.find({
+			where: { perfilDocenteId }
+		});
+	}
+
+	async getDetalleEvaluacion(moduloId: number, docenteId: string) {
+		const modulo = await this.modulosService.findOne(moduloId);
+		if (!modulo) {
+			throw new NotFoundException(`Modulo with id ${moduloId} not found`);
+		}
+
+		// 1. Promedio de cada grupo según el periodo y el docente
+		const promediosGrupos = await this.encuestaRespuestaRepository.createQueryBuilder('r')
+			.select('r.grupo', 'grupo')
+			.addSelect('AVG(r.promedioIndividual)', 'promedio')
+			.where('r.docenteId = :docenteId', { docenteId })
+			.andWhere('r.periodo = :periodo', { periodo: modulo.nombre })
+			.groupBy('r.grupo')
+			.getRawMany();
+
+		const formateadoPromedios = promediosGrupos.map(g => ({
+			grupo: g.grupo,
+			promedio: Number(g.promedio).toFixed(2)
+		}));
+
+		// 2. Cumplimiento: puntajes por cada rubro academico administrativo
+		const cumplimientos = await this.cumplimientoDocenteRepository.find({
+			where: { moduloId, docenteId },
+			relations: ['academicoAdministrativo']
+		});
+
+		// 3. Encuesta metricas según el módulo y el docente
+		const encuestaMetricas = await this.encuestaMetricasDocenteRepository.findOne({
+			where: { moduloId, docenteId }
+		});
+
+		return {
+			modulo: modulo.nombre,
+			docenteId,
+			promediosGrupos: formateadoPromedios,
+			cumplimiento: cumplimientos.map(c => ({
+				rubro: c.academicoAdministrativo?.nombre,
+				puntaje: c.puntaje,
+				peso: c.academicoAdministrativo?.peso,
+				puntajePonderado: (Number(c.puntaje) * Number(c.academicoAdministrativo?.peso || 0)).toFixed(2)
+			})),
+			encuestaMetricas
+		};
 	}
 }

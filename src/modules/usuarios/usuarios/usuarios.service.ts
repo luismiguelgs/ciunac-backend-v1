@@ -63,17 +63,17 @@ export class UsuariosService {
       	await this.usuarioRepo.delete(id);
     }
 
-	async setRefreshToken(userId: string, refreshToken: string) {
-    	const hash = await bcrypt.hash(refreshToken, 10);
-    	await this.usuarioRepo.update({ id: userId }, { refreshTokenHash: hash });
-  	}
+	// async setRefreshToken(userId: string, refreshToken: string) {
+	// 	const hash = await bcrypt.hash(refreshToken, 10);
+	// 	await this.usuarioRepo.update({ id: userId }, { refreshTokenHash: hash });
+	// }
 
-	async removeRefreshToken(userId: string) {
-    	await this.usuarioRepo.update({ id: userId }, { refreshTokenHash: null });
-  	}
+	// async removeRefreshToken(userId: string) {
+	// 	await this.usuarioRepo.update({ id: userId }, { refreshTokenHash: null });
+	// }
 
-	async validateRefreshToken(user: Usuario, token: string) {
-    	if (!user?.refreshTokenHash) return false;
-    	return bcrypt.compare(token, user.refreshTokenHash);
-  	}
+	// async validateRefreshToken(user: Usuario, token: string) {
+	// 	if (!user?.refreshTokenHash) return false;
+	// 	return bcrypt.compare(token, user.refreshTokenHash);
+	// }
 }

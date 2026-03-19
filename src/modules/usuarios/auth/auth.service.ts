@@ -18,8 +18,7 @@ export class AuthService {
             throw new UnauthorizedException('El usuario ya existe');
         }
         const user = await this.usuariosService.createLocal(email, password, rol);
-        const tokens = this.generateTokens(user)
-        return tokens
+        return this.generateAccessToken(user)
     }
 
     async validateUser(email: string, password: string) {
@@ -32,13 +31,15 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
         const { password: _p, refreshTokenHash, ...result } = usuario as any;
-        return result as Usuario;
+        return result;
     }
 
     async login(usuario: Usuario) {
-        const tokens = await this.generateTokens(usuario);
-        await this.usuariosService.setRefreshToken(usuario.id, tokens.refresh_token);
-        return tokens;
+        const access_token = await this.generateAccessToken(usuario);
+        return {
+            access_token,
+            user: usuario
+        };
     }
 
     async oauthLogin(profile: { email: string; provider: Provider; providerId: string }) {
@@ -51,51 +52,38 @@ export class AuthService {
                 RolUsuario.ESTUDIANTE,
             )
         }
-        const tokens = await this.generateTokens(user);
-        await this.usuariosService.setRefreshToken(user.id, tokens.refresh_token);
-        return tokens;
+        const access_token = await this.generateAccessToken(user);
+        return { access_token };
     }
 
     async logout(userId: string) {
-        await this.usuariosService.removeRefreshToken(userId);
         return {
             message: 'Logout successful',
         };
     }
 
-    private generateTokens(usuario: Usuario) {
+    private generateAccessToken(usuario: Usuario) {
         const payload = { sub: usuario.id, email: usuario.email, rol: usuario.rol };
-        const accessToken = this.jwtService.sign(payload, {
-            secret: process.env.JWT_ACCESS_SECRET,
-            expiresIn: process.env.JWT_ACCESS_EXPIRATION || '900s',
-        });
-        const refreshToken = this.jwtService.sign({ sub: usuario.id }, {
-            secret: process.env.JWT_REFRESH_SECRET,
-            expiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
-        });
-        return {
-            access_token: accessToken,
-            refresh_token: refreshToken,
-        };
+        const accessToken = this.jwtService.sign(payload);
+        return accessToken;
     }
 
-    async refreshTokens(refreshToken: string) {
-        try {
-            const payload = this.jwtService.verify(refreshToken, {
-                secret: process.env.JWT_REFRESH_SECRET,
-            });
-            const usuario = await this.usuariosService.findOne(payload.sub);
-            if (!usuario || !usuario.refreshTokenHash) {
-                throw new UnauthorizedException('El usuario no existe');
-            }
-            const valid = await bcrypt.compare(refreshToken, usuario.refreshTokenHash);
-            if (!valid) throw new UnauthorizedException('El refresh token no es válido');
+    // async refreshTokens(refreshToken: string) {
+    //     try {
+    //         const payload = this.jwtService.verify(refreshToken, {
+    //             secret: process.env.JWT_REFRESH_SECRET,
+    //         });
+    //         const usuario = await this.usuariosService.findOne(payload.sub);
+    //         if (!usuario || !usuario.refreshTokenHash) {
+    //             throw new UnauthorizedException('El usuario no existe');
+    //         }
+    //         const valid = await bcrypt.compare(refreshToken, usuario.refreshTokenHash);
+    //         if (!valid) throw new UnauthorizedException('El refresh token no es válido');
 
-            const tokens = this.generateTokens(usuario);
-            await this.usuariosService.setRefreshToken(usuario.id, tokens.refresh_token);
-            return tokens;
-        } catch (error) {
-            throw new UnauthorizedException('El refresh token no es válido');
-        }
-    }
+    //         const access_token = this.generateAccessToken(usuario);
+    //         return { access_token };
+    //     } catch (error) {
+    //         throw new UnauthorizedException('El refresh token no es válido');
+    //     }
+    // }
 }

@@ -3,6 +3,7 @@ import { AuthService } from "./auth.service";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
+import { ApiKeyGuard } from "./guards/api-key.guard";
 
 @Controller('auth')
 export class AuthController {
@@ -21,14 +22,14 @@ export class AuthController {
         return this.authService.login(user);
     }
 
-    @Post('refresh')
-    @HttpCode(200)
-    async refresh(@Body('refresh_token') refresh_token: string) {
-        return this.authService.refreshTokens(refresh_token);
-    }
+    // @Post('refresh')
+    // @HttpCode(200)
+    // async refresh(@Body('refresh_token') refresh_token: string) {
+    //     return this.authService.refreshTokens(refresh_token);
+    // }
 
     @Post('logout')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, ApiKeyGuard)
     async logout(@Body('userId') userId: string) {
         await this.authService.logout(userId);
         return {ok: true, message: 'Logout exitoso'};
@@ -36,7 +37,7 @@ export class AuthController {
 
      // Ejemplo de endpoint protegido
     @Get('profile')
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, ApiKeyGuard)
     getProfile(@Req() req) {
         return {
             message: 'Ruta protegida OK',

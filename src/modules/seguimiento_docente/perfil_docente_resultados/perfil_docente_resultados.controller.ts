@@ -27,6 +27,16 @@ export class PerfilDocenteResultadosController {
 		return this.perfilDocenteResultadosService.findAll();
 	}
 
+	@Get('docente/:docenteId')
+	findResultadosByDocentePerfilId(@Param('docenteId') docenteId: string) {
+		return this.perfilDocenteResultadosService.findResultadosByDocentePerfilId(docenteId);
+	}
+
+	@Get('detalle/:moduloId/:docenteId')
+	getDetalleEvaluacion(@Param('moduloId') moduloId: string, @Param('docenteId') docenteId: string) {
+		return this.perfilDocenteResultadosService.getDetalleEvaluacion(+moduloId, docenteId);
+	}
+
 	@Get(':id')
 	findOne(@Param('id') id: string) {
 		return this.perfilDocenteResultadosService.findOne(+id);
