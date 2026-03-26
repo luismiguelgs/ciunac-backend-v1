@@ -9,14 +9,15 @@ async function bootstrap() {
 	app.enableCors({
 		origin: [
 			'http://localhost:3000',      // Para cuando desarrollas en tu PC
-        	'https://ciunac.site',        // Tu dominio principal (Frontend)
-        	'https://api.ciunac.site',    // Tu subdominio (por si acaso)
+			'https://ciunac.site',        // Tu dominio principal (Frontend)
+			'https://api.ciunac.site',    // Tu subdominio (por si acaso)
 			'https://ciunac-admin-1-3.vercel.app',
-			'https://ciunac-sol-1-3.vercel.app'
+			'https://ciunac-sol-1-3.vercel.app',
+			'https://ciunac-admin-2.vercel.app'
 		],
 		credentials: true,
 		methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-		allowedHeaders: ['Content-Type', 'Authorization','x-api-key'],
+		allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
 	});
 
 	app.useGlobalPipes(new ValidationPipe({
@@ -32,9 +33,9 @@ async function bootstrap() {
 
 	// 🔊 Escucha al final
 	const port = process.env.PORT || 3000;
-    await app.listen(port, '0.0.0.0'); 
-        
-    console.log(`Application is running on: ${await app.getUrl()}`);
+	await app.listen(port, '0.0.0.0');
+
+	console.log(`Application is running on: ${await app.getUrl()}`);
 }
 
 bootstrap();
