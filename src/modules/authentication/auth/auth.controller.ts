@@ -12,7 +12,7 @@ export class AuthController {
     @Post('register')
     async register(@Body() registerDto: RegisterDto) {
         console.log('register', registerDto);
-        return this.authService.register(registerDto.email, registerDto.password, registerDto.rol);
+        return this.authService.register(registerDto.email, registerDto.password, registerDto.rol, registerDto.numeroDocumento);
     }
 
     @Post('login')

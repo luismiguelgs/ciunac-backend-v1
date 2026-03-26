@@ -2,12 +2,12 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { DocumentosDocenteService } from './documentos_docente.service';
 import { CreateDocumentosDocenteDto } from './dto/create-documentos_docente.dto';
 import { UpdateDocumentosDocenteDto } from './dto/update-documentos_docente.dto';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 @UseGuards(ApiKeyGuard)
 @Controller('documentos-docente')
 export class DocumentosDocenteController {
-  	constructor(private readonly documentosDocenteService: DocumentosDocenteService) { }
+	constructor(private readonly documentosDocenteService: DocumentosDocenteService) { }
 
 	@Post()
 	create(@Body() createDocumentosDocenteDto: CreateDocumentosDocenteDto) {

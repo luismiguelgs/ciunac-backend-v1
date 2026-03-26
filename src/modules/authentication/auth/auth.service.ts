@@ -1,24 +1,50 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { UsuariosService } from "src/modules/usuarios/usuarios/usuarios.service";
+import { UsuariosService } from "src/modules/authentication/usuarios/usuarios.service";
 import * as bcrypt from 'bcrypt';
-import { Provider, RolUsuario, Usuario } from "src/modules/usuarios/usuarios/entities/usuario.entity";
+import { Provider, RolUsuario, Usuario } from "src/modules/authentication/usuarios/entities/usuario.entity";
+import { DocentesService } from "src/modules/principales/docentes/docentes.service";
+import { DataSource } from "typeorm";
 
 @Injectable()
 export class AuthService {
     constructor(
         private usuariosService: UsuariosService,
-        private jwtService: JwtService
+        private jwtService: JwtService,
+        private docentesService: DocentesService,
+        private dataSource: DataSource,
     ) { }
 
-    async register(email: string, password: string, rol?: RolUsuario) {
-        console.log('register', email, password, rol);
-        const existe = await this.usuariosService.findByEmail(email);
-        if (existe) {
-            throw new UnauthorizedException('El usuario ya existe');
-        }
-        const user = await this.usuariosService.createLocal(email, password, rol);
-        return this.generateAccessToken(user)
+    async register(email: string, password: string, rol?: RolUsuario, numeroDocumento?: string): Promise<string> {
+        return await this.dataSource.transaction(async (manager) => {
+            const existe = await this.usuariosService.findByEmail(email, manager);
+            if (existe) {
+                throw new ConflictException('El usuario ya existe');
+            }
+
+            if (rol === RolUsuario.DOCENTE) {
+                if (!numeroDocumento) {
+                    throw new BadRequestException('numeroDocumento es obligatorio para el rol DOCENTE');
+                }
+
+                const docente = await this.docentesService.findByIdentificacion(numeroDocumento, manager);
+
+                if (!docente) {
+                    throw new NotFoundException('No se encontro un docente con el numero de documento proporcionado');
+                }
+
+                if (docente.usuario_id) {
+                    throw new ConflictException('El docente ya tiene un usuario vinculado');
+                }
+
+                const user = await this.usuariosService.createLocal(email, password, rol, manager);
+                await this.docentesService.assignUsuario(docente.id, user.id, manager);
+                return this.generateAccessToken(user);
+            }
+
+            const user = await this.usuariosService.createLocal(email, password, rol, manager);
+            return this.generateAccessToken(user);
+        });
     }
 
     async validateUser(email: string, password: string) {

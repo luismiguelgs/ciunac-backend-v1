@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { AcademicoAdministrativoService } from './academico_administrativo.service';
 import { CreateAcademicoAdministrativoDto } from './dto/create-academico_administrativo.dto';
 import { UpdateAcademicoAdministrativoDto } from './dto/update-academico_administrativo.dto';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 @UseGuards(ApiKeyGuard)
 @Controller('academico-administrativo')

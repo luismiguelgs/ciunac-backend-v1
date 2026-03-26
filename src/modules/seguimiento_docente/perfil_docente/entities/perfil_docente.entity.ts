@@ -42,7 +42,7 @@ export class PerfilDocente {
     @Column({ name: 'modificado_en', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     modificadoEn: Date;
 
-    @OneToOne(() => Docente, { onDelete: 'CASCADE' })
+    @OneToOne(() => Docente, (docente) => docente.perfil, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'docente_id' })
     docente: Docente;
 

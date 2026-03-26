@@ -3,7 +3,7 @@ import { CertificadosService } from './certificados.service';
 import { CreateCertificadoDto } from './dto/create-certificado.dto';
 import { UpdateCertificadoDto } from './dto/update-certificado.dto';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 import { Certificado } from './schemas/certificado.schema';
 
 //@UseGuards(JwtAuthGuard)

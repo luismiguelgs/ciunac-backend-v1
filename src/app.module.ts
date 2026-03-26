@@ -8,7 +8,7 @@ import { EscuelasModule } from './modules/auxiliares/escuelas/escuelas.module';
 import { ModulosModule } from './modules/estructura/modulos/modulos.module';
 import { FacultadesModule } from './modules/auxiliares/facultades/facultades.module';
 import { EstudiantesModule } from './modules/principales/estudiantes/estudiantes.module';
-import { UsuariosModule } from './modules/usuarios/usuarios/usuarios.module';
+import { UsuariosModule } from './modules/authentication/usuarios/usuarios.module';
 import { IdiomasModule } from './modules/estructura/idiomas/idiomas.module';
 import { DocentesModule } from './modules/principales/docentes/docentes.module';
 import { NivelesModule } from './modules/estructura/niveles/niveles.module';
@@ -33,7 +33,7 @@ import { ConstanciasModule } from './modules/administrativas/constancias/constan
 import { CertificadosModule } from './modules/administrativas/certificados/certificados.module';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { AuthModule } from './modules/usuarios/auth/auth.module';
+import { AuthModule } from './modules/authentication/auth/auth.module';
 import { UploadModule } from './shared/upload/upload.module';
 import { MailerModule } from './shared/mailer/mailer.module';
 import { Q10Module } from './q10/q10.module';
@@ -49,6 +49,7 @@ import { EncuestaRespuestasDetalleModule } from './modules/seguimiento_docente/e
 import { EncuestaMetricasDocenteModule } from './modules/seguimiento_docente/encuesta_metricas_docente/encuesta_metricas_docente.module';
 import { PerfilDocenteResultadosModule } from './modules/seguimiento_docente/perfil_docente_resultados/perfil_docente_resultados.module';
 import { DashboardDocentesModule } from './modules/seguimiento_docente/dashboard_docentes/dashboard_docentes.module';
+import { RolPermisosModule } from './modules/authentication/rol_permisos/rol_permisos.module';
 
 @Module({
 	imports: [
@@ -129,7 +130,9 @@ import { DashboardDocentesModule } from './modules/seguimiento_docente/dashboard
 		EncuestaMetricasDocenteModule,
 		PerfilDocenteResultadosModule,
 		DashboardDocentesModule,
+		RolPermisosModule,
 	],
+
 	controllers: [AppController],
 	providers: [AppService],
 })

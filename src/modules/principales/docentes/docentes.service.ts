@@ -3,7 +3,7 @@ import { CreateDocenteDto } from './dto/create-docente.dto';
 import { UpdateDocenteDto } from './dto/update-docente.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Docente } from './entities/docente.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 @Injectable()
 export class DocentesService {
@@ -11,6 +11,10 @@ export class DocentesService {
 		@InjectRepository(Docente)
 		private docenteRepository: Repository<Docente>,
 	) { }
+
+	private getDocenteRepository(manager?: EntityManager): Repository<Docente> {
+		return manager ? manager.getRepository(Docente) : this.docenteRepository;
+	}
 
 	async create(createDocenteDto: CreateDocenteDto): Promise<Docente> {
 		const item = this.docenteRepository.create(createDocenteDto);
@@ -57,10 +61,25 @@ export class DocentesService {
 		return { message: 'Docente desactivado (eliminación lógica) exitosamente' };
 	}
 
-	async findByIdentificacion(numeroDocumento: string): Promise<Docente | null> {
-		return await this.docenteRepository.findOne({
+	async findByIdentificacion(numeroDocumento: string, manager?: EntityManager): Promise<Docente | null> {
+		return await this.getDocenteRepository(manager).findOne({
 			where: { numeroDocumento },
-			relations: ['usuario']
+			relations: ['usuario'],
+		});
+	}
+
+	async findByUser(usuarioId: string): Promise<Docente | null> {
+		return await this.docenteRepository.findOne({
+			where: { usuario_id: usuarioId },
+		});
+	}
+
+	async assignUsuario(docenteId: string, usuarioId: string, manager?: EntityManager): Promise<Docente | null> {
+		const docenteRepository = this.getDocenteRepository(manager);
+		await docenteRepository.update(docenteId, { usuario_id: usuarioId });
+		return await docenteRepository.findOne({
+			where: { id: docenteId },
+			relations: ['usuario'],
 		});
 	}
 }

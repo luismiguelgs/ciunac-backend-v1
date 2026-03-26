@@ -1,10 +1,14 @@
-import { Usuario } from "src/modules/usuarios/usuarios/entities/usuario.entity";
+import { Usuario } from "src/modules/authentication/usuarios/entities/usuario.entity";
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { PerfilDocente } from "src/modules/seguimiento_docente/perfil_docente/entities/perfil_docente.entity";
 
 @Entity('docentes')
 export class Docente {
     @PrimaryGeneratedColumn('uuid')
     id: string;
+
+    @Column({ name: 'usuario_id', unique: true, nullable: true })
+    usuario_id: string;
 
     @Column({
         nullable: false,
@@ -46,4 +50,7 @@ export class Docente {
     @OneToOne(() => Usuario, (usuario) => usuario.docente)
     @JoinColumn({ name: 'usuario_id' })
     usuario: Usuario;
+
+    @OneToOne(() => PerfilDocente, (perfil) => perfil.docente, { eager: true })
+    perfil: PerfilDocente;
 }

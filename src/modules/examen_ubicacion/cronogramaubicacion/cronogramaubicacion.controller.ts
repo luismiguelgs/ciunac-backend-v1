@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { CronogramaubicacionService } from './cronogramaubicacion.service';
 import { CreateCronogramaubicacionDto } from './dto/create-cronogramaubicacion.dto';
 import { UpdateCronogramaubicacionDto } from './dto/update-cronogramaubicacion.dto';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 //@UseGuards(JwtAuthGuard)

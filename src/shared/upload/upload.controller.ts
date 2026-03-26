@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { UploadService } from './upload.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 @UseGuards(ApiKeyGuard)
 @Controller('upload')
@@ -26,7 +26,7 @@ export class UploadController {
 	) {
 
 		if (!file) throw new Error('No se ha enviado ningún archivo')
-		if (!folder || !['DNIS', 'VOUCHERS', 'BECAS','CVS'].includes(folder.toUpperCase()))
+		if (!folder || !['DNIS', 'VOUCHERS', 'BECAS', 'CVS'].includes(folder.toUpperCase()))
 			throw new BadRequestException('Debes especificar una carpeta válida: DNIS, BECAS, VOUCHERS o CVS');
 
 		const result = await this.uploadService.uploadToDrive(

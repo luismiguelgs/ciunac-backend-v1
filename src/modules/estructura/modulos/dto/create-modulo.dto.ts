@@ -15,5 +15,9 @@ export class CreateModuloDto {
 
     @IsBoolean()
     @IsOptional()
+    visible: boolean;
+
+    @IsBoolean()
+    @IsOptional()
     activo: boolean;
 }

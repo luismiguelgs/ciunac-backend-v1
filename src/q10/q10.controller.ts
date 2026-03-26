@@ -2,7 +2,7 @@ import { Body, Controller, Post, UseGuards, Get, Query } from '@nestjs/common';
 import { Q10Service } from './q10.service';
 import { Q10EstudianteDto } from './dto/q10-estudiante.dto';
 import { Q10HorariosDto } from './dto/q10-horarios.dto';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 @UseGuards(ApiKeyGuard)
 @Controller('q10')

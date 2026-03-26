@@ -3,7 +3,7 @@ import { PerfilDocenteService } from './perfil_docente.service';
 import { CreatePerfilDocenteDto } from './dto/create-perfil_docente.dto';
 import { UpdatePerfilDocenteDto } from './dto/update-perfil_docente.dto';
 import { UseGuards } from '@nestjs/common';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 @UseGuards(ApiKeyGuard)
 @Controller('perfil-docente')

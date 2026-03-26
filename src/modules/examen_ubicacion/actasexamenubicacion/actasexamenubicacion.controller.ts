@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { ActasexamenubicacionService } from './actasexamenubicacion.service';
 import { CreateActasexamenubicacionDto } from './dto/create-actasexamenubicacion.dto';
 import { UpdateActasexamenubicacionDto } from './dto/update-actasexamenubicacion.dto';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 //@UseGuards(JwtAuthGuard)

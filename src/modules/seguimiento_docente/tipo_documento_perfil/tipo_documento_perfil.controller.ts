@@ -3,7 +3,7 @@ import { TipoDocumentoPerfilService } from './tipo_documento_perfil.service';
 import { CreateTipoDocumentoPerfilDto } from './dto/create-tipo_documento_perfil.dto';
 import { UpdateTipoDocumentoPerfilDto } from './dto/update-tipo_documento_perfil.dto';
 import { UseGuards } from '@nestjs/common';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 @UseGuards(ApiKeyGuard)
 @Controller('tipos-documento-perfil')

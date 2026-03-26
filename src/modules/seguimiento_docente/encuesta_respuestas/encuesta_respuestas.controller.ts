@@ -1,7 +1,7 @@
 import { Controller, Post, UseInterceptors, UploadedFile, BadRequestException, UseGuards, Get, Query } from '@nestjs/common';
 import { EncuestaRespuestasService } from './encuesta_respuestas.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 @UseGuards(ApiKeyGuard)
 @Controller('encuesta-respuestas')

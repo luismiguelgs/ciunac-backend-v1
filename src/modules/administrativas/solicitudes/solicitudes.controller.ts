@@ -3,7 +3,7 @@ import { SolicitudesService } from './solicitudes.service';
 import { CreateSolicitudDto } from './dto/create-solicitud.dto';
 import { UpdateSolicitudDto } from './dto/update-solicitud.dto';
 import { UseGuards } from '@nestjs/common';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 import { Solicitud } from './entities/solicitud.entity';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 

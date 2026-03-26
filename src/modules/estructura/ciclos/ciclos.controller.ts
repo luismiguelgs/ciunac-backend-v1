@@ -3,7 +3,7 @@ import { CiclosService } from './ciclos.service';
 import { CreateCicloDto } from './dto/create-ciclo.dto';
 import { UpdateCicloDto } from './dto/update-ciclo.dto';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 //@UseGuards(JwtAuthGuard)
 @UseGuards(ApiKeyGuard)

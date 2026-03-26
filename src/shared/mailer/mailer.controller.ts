@@ -1,7 +1,7 @@
 import { Body, Controller, InternalServerErrorException, Post, UseGuards } from '@nestjs/common';
 import { MailerService } from './mailer.service';
 import { SendMailDto } from './dto/send-mail.dto';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 @UseGuards(ApiKeyGuard)
 @Controller('mailer')

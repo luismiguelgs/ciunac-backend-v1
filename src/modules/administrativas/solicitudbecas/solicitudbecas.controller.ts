@@ -3,7 +3,7 @@ import { SolicitudbecasService } from './solicitudbecas.service';
 import { CreateSolicitudbecaDto } from './dto/create-solicitudbeca.dto';
 import { UpdateSolicitudbecaDto } from './dto/update-solicitudbeca.dto';
 import { UseGuards } from '@nestjs/common';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 import { EstadoSolicitud } from './schemas/solicitudbeca.schema';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 

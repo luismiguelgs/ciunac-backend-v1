@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, OneToOne, OneToMany } from 'typeorm';
-import { Usuario } from 'src/modules/usuarios/usuarios/entities/usuario.entity';
+import { Usuario } from 'src/modules/authentication/usuarios/entities/usuario.entity';
 import { Facultad } from 'src/modules/auxiliares/facultades/entities/facultad.entity';
 import { Escuela } from 'src/modules/auxiliares/escuelas/entities/escuela.entity';
 import { Solicitud } from 'src/modules/administrativas/solicitudes/entities/solicitud.entity';

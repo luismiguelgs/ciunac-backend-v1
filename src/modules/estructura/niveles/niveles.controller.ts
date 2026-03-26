@@ -4,7 +4,7 @@ import { CreateNivelDto } from './dto/create-nivel.dto';
 import { UpdateNivelDto } from './dto/update-nivel.dto';
 import { UseGuards } from '@nestjs/common';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 //@UseGuards(JwtAuthGuard)
 @UseGuards(ApiKeyGuard)

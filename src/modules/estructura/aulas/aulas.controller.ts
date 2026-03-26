@@ -3,7 +3,7 @@ import { AulasService } from './aulas.service';
 import { CreateAulaDto } from './dto/create-aula.dto';
 import { UpdateAulaDto } from './dto/update-aula.dto';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { ApiKeyGuard } from 'src/modules/usuarios/auth/guards/api-key.guard';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 //@UseGuards(JwtAuthGuard)
 @UseGuards(ApiKeyGuard)
