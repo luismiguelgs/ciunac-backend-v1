@@ -5,9 +5,7 @@ import { UpdateSolicitudbecaDto } from './dto/update-solicitudbeca.dto';
 import { UseGuards } from '@nestjs/common';
 import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 import { EstadoSolicitud } from './schemas/solicitudbeca.schema';
-//import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
-//@UseGuards(JwtAuthGuard)
 @UseGuards(ApiKeyGuard)
 @Controller('solicitudbecas')
 export class SolicitudbecasController {

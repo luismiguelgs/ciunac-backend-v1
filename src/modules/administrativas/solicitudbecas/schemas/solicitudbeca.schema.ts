@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Schema as MongooseSchema } from 'mongoose';
 
 export type SolicitudBecaDocument = SolicitudBeca & Document;
 
@@ -11,6 +11,9 @@ export enum EstadoSolicitud {
 
 @Schema({ collection: 'solicitud_becas', timestamps: { createdAt: 'creado_en', updatedAt: 'modificado_en' } })
 export class SolicitudBeca {
+    @Prop({ type: MongooseSchema.Types.Mixed })
+    _id: any;
+
     @Prop({ required: true })
     nombres: string;
 
