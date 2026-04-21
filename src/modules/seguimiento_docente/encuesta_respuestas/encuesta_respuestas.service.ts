@@ -65,12 +65,17 @@ export class EncuestaRespuestasService {
 			const periodosProcesados = new Set<string>();
 
 			for (const row of rows) {
-				const dni = row['Número Identificación'];
-				const nombreDocente = row['Docente'];
-				const asignatura = row['Curso'];
-				const periodo = row['Período'];
-				const estudiante = row['Estudiante'];
-				const comentario = row['Comentario'];
+				const dni = row['Número Identificación']?.toString().trim();
+				const nombreDocente = row['Docente']?.toString().trim();
+				const asignatura = row['Curso']?.toString().trim();
+				const periodo = row['Período']?.toString().trim();
+				const estudiante = row['Estudiante']?.toString().trim();
+				const comentario = row['Comentario']?.toString().trim();
+
+				if (!dni || dni === 'undefined') {
+					this.logger.warn(`Saltando fila: DNI no válido (${dni}) para estudiante ${estudiante}`);
+					continue;
+				}
 
 				periodosProcesados.add(periodo);
 
@@ -83,7 +88,7 @@ export class EncuestaRespuestasService {
 						this.logger.warn(`Docente con DNI ${dni} no encontrado. Creando registro básico.`);
 						docente = await this.docentesService.create({
 							numeroDocumento: dni,
-							nombres: nombreDocente,
+							nombres: nombreDocente || 'Docente Desconocido',
 							apellidos: '',
 							genero: 'M',
 							celular: '',
@@ -124,9 +129,17 @@ export class EncuestaRespuestasService {
 				let contadorRespuestas = 0;
 
 				Object.keys(row).forEach((key) => {
-					const preguntaId = parseInt(key, 10);
+					const cleanKey = key.trim();
+					const preguntaId = parseInt(cleanKey, 10);
 					if (!isNaN(preguntaId) && preguntaId > 0) {
-						const valorTexto = row[key];
+						let valorTexto = row[key]?.toString().trim();
+						
+						// Mapeo flexible (trim y capitalización básica)
+						if (valorTexto) {
+							// Forzar primera letra mayúscula por si acaso
+							valorTexto = valorTexto.charAt(0).toUpperCase() + valorTexto.slice(1).toLowerCase();
+						}
+
 						if (ESCALA[valorTexto]) {
 							const valor = ESCALA[valorTexto];
 							sumaPuntos += valor;
@@ -166,11 +179,27 @@ export class EncuestaRespuestasService {
 	}
 
 	private parseCsv(buffer: Buffer): Promise<any[]> {
-		const stream = Readable.from(buffer.toString())
+		const content = buffer.toString();
+		const lines = content.split(/\r?\n/);
+		let headerLineIndex = 0;
+
+		// Buscar dinámicamente la línea de encabezados
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			if (line.includes('Número Identificación') || line.includes('Estudiante') || line.includes('Docente')) {
+				headerLineIndex = i;
+				break;
+			}
+		}
+
+		const stream = Readable.from(content);
 		return new Promise((resolve, reject) => {
 			const results: any[] = [];
 			stream
-				.pipe(csv({ separator: ';', skipLines: 5 }))
+				.pipe(csv({
+					separator: ';',
+					skipLines: headerLineIndex
+				}))
 				.on('data', (data) => results.push(data))
 				.on('end', () => resolve(results))
 				.on('error', (error) => reject(error));
