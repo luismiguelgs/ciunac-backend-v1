@@ -2,7 +2,7 @@ import { IsEmail, IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class SendMailDto {
     @IsString()
-    @IsIn(['RANDOM', 'REGISTER', 'BECA', 'CERTIFICADO', 'UBICACION'])
+    @IsIn(['RANDOM', 'REGISTER', 'BECA', 'CERTIFICADO', 'UBICACION', 'RECAUDA'])
     type: string;
 
     @IsEmail()
@@ -15,4 +15,8 @@ export class SendMailDto {
     @IsOptional()
     @IsString()
     user?: string;
+
+    @IsOptional()
+    @IsString()
+    motivo?: string;
 }

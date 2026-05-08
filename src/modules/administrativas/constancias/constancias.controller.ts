@@ -22,10 +22,19 @@ export class ConstanciasController {
 		return this.constanciasService.findAll();
 	}
 
+	@Get('pendientes')
+	findPendientes(): Promise<Constancia[]> {
+		return this.constanciasService.findPendientes();
+	}
+
 	@Get('impresos')
-	findByImpreso(@Query('impreso') impreso: string): Promise<Constancia[]> {
-		const impresoBoolean = impreso === 'true';
-		return this.constanciasService.findByImpreso(impresoBoolean);
+	findByImpreso(): Promise<Constancia[]> {
+		return this.constanciasService.findByImpreso();
+	}
+
+	@Get('aceptados')
+	findByAceptado(): Promise<Constancia[]> {
+		return this.constanciasService.findByAceptado();
 	}
 
 	@Get(':id')

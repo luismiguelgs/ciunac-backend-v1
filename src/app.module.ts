@@ -50,6 +50,7 @@ import { EncuestaMetricasDocenteModule } from './modules/seguimiento_docente/enc
 import { PerfilDocenteResultadosModule } from './modules/seguimiento_docente/perfil_docente_resultados/perfil_docente_resultados.module';
 import { DashboardDocentesModule } from './modules/seguimiento_docente/dashboard_docentes/dashboard_docentes.module';
 import { RolPermisosModule } from './modules/authentication/rol_permisos/rol_permisos.module';
+import { PagosBancoModule } from './modules/administrativas/pagos-banco/pagos-banco.module';
 
 @Module({
 	imports: [
@@ -131,6 +132,7 @@ import { RolPermisosModule } from './modules/authentication/rol_permisos/rol_per
 		PerfilDocenteResultadosModule,
 		DashboardDocentesModule,
 		RolPermisosModule,
+		PagosBancoModule,
 	],
 
 	controllers: [AppController],

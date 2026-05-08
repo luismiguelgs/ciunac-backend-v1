@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsBoolean, IsNumber, IsOptional, IsArray, ValidateNested } from "class-validator";
+import { IsString, IsEnum, IsBoolean, IsNumber, IsOptional, IsArray, ValidateNested, IsDate } from "class-validator";
 import { Type } from "class-transformer";
 import { Modalidad, TipoConstancia } from "../schemas/constancia.schema";
 
@@ -50,14 +50,22 @@ export class CreateConstanciaDto {
     @IsNumber()
     nivelId: number;
 
-    @IsString()
-    ciclo: string;
+    @IsNumber()
+    ciclo: number;
 
     @IsBoolean()
     impreso: boolean;
 
+    @IsBoolean()
+    @IsOptional()
+    aceptado?: boolean;
+
+    @IsDate()
+    @IsOptional()
+    fechaAceptacion?: Date;
+
     @IsNumber()
-    solicitud_id: number;
+    id_solicitud: number;
 
     @IsOptional()
     @IsString()

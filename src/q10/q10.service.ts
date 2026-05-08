@@ -135,7 +135,7 @@ export class Q10Service {
             }
 
             // 2️⃣ Si fue exitoso, registrar en tu BD local
-            await this.crearEstudianteLocal(data);
+            await this.crearEstudianteLocal(data, body);
 
             const register = await this.registrarEnPrograma(data.Codigo_estudiante, data.Numero_identificacion);
             if (!register) {
@@ -190,7 +190,7 @@ export class Q10Service {
     }
 
     // 3️⃣ Función que registra localmente usando el servicio de estudiantes
-    private async crearEstudianteLocal(data: any) {
+    private async crearEstudianteLocal(data: any, originalBody: Q10EstudianteDto) {
         switch (data.Codigo_tipo_identificacion) {
             case 'PE01':
                 data.Codigo_tipo_identificacion = 'DNI';
@@ -209,9 +209,13 @@ export class Q10Service {
             fechaNacimiento: new Date(data.Fecha_nacimiento),
             tipoDocumento: data.Codigo_tipo_identificacion,
             numeroDocumento: data.Numero_identificacion,
-            celular: data.Celular || data.Telefono
+            celular: data.Celular || data.Telefono,
+            email: data.Correo_electronico || data.Email || originalBody?.Email,
         };
-
+        console.log("Q10 Response data:", JSON.stringify(data));
+        console.log("Original body:", JSON.stringify(originalBody));
+        console.log("Email to save:", dto.email);
+        //creando estudiante local
         await this.estudiantesService.create(dto as any);
     }
 

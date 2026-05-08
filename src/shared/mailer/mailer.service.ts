@@ -29,6 +29,15 @@ export class MailerService {
             pass: process.env.CERT_EMAIL_PASSWORD,
             },
         }),
+        recauda: nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+            user: process.env.RECAUDA_EMAIL_USER,
+            pass: process.env.RECAUDA_EMAIL_PASSWORD,
+            },
+        }),
         };
     }
 
@@ -37,6 +46,7 @@ export class MailerService {
         const gruposAlumnos = ['RANDOM', 'BECA', 'REGISTER', 'UBICACION'];
         if (gruposAlumnos.includes(type)) return this.transporters.alumnos;
         if (type === 'CERTIFICADO') return this.transporters.certificados;
+        if (type === 'RECAUDA') return this.transporters.recauda;
 
         throw new Error(`No hay configuración de remitente para el tipo: ${type}`);
     }
@@ -45,7 +55,9 @@ export class MailerService {
         const template = getTemplate(data);
         const transporter = this.getTransporterByType(data.type);
 
-        const from = data.type === 'CERTIFICADO' ? process.env.CERT_EMAIL_USER : process.env.ALUMNOS_EMAIL_USER;
+        let from = process.env.ALUMNOS_EMAIL_USER;
+        if (data.type === 'CERTIFICADO') from = process.env.CERT_EMAIL_USER;
+        if (data.type === 'RECAUDA') from = process.env.RECAUDA_EMAIL_USER;
 
         const mailData = {
             from,

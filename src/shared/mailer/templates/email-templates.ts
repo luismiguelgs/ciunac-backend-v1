@@ -67,6 +67,19 @@ export function getTemplate(body: SendMailDto) {
           <hr>${FOOTER}
         </body></html>`,
     },
+    RECAUDA: {
+      subject: 'CIUNAC - NOTIFICACIÓN DE OBSERVACIÓN EN PAGO',
+      text: `Su pago ha sido observado. Motivo: ${body.motivo}`,
+      html: `
+        <!DOCTYPE html><html>${HEAD}<body>
+          <img src="https://ciunac.unac.edu.pe/wp-content/uploads/2024/04/cropped-WhatsApp-Image-2024-04-19-at-2.48.00-PM-2.jpeg" alt="logo" width="200px"/>
+          <h1>NOTIFICACIÓN DE OBSERVACIÓN EN PAGO</h1>
+          <p>Lamentamos informarle que su solicitud ha sido observada debido a una inconsistencia en el pago.</p>
+          <p><b>Motivo de observación:</b> ${body.motivo}</p>
+          <p>Por favor, verifique sus datos y vuelva a intentarlo o acérquese a nuestras oficinas.</p>
+          <hr>${FOOTER}
+        </body></html>`,
+    },
   };
 
   return templates[body.type];

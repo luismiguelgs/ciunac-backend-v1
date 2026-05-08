@@ -46,10 +46,28 @@ export class ConstanciasService {
 		return constancias.map(constancia => this.mapId(constancia));
     }
 
-    async findByImpreso(impreso: boolean) : Promise<Constancia[]> {
+    async findPendientes() : Promise<Constancia[]> {
     	const constancias = await this.constanciaModel
-    		.find({ impreso }) // Filtrar por impreso true o false
-    		.sort({ creado_en: -1 }) // Ordenar por fecha de creación descendente
+    		.find({ impreso: false, aceptado: false })
+    		.sort({ creadoEn: -1 })
+			.lean()
+    		.exec();
+		return constancias.map(constancia => this.mapId(constancia));
+    }
+
+    async findByImpreso() : Promise<Constancia[]> {
+    	const constancias = await this.constanciaModel
+    		.find({ impreso: true, aceptado: false }) // Filtrar por impreso, pero que no hayan sido recogidas (aceptado: false)
+    		.sort({ creadoEn: -1 })
+			.lean()
+    		.exec();
+		return constancias.map(constancia => this.mapId(constancia));
+    }
+
+    async findByAceptado() : Promise<Constancia[]> {
+    	const constancias = await this.constanciaModel
+    		.find({ aceptado: true })
+    		.sort({ creadoEn: -1 })
 			.lean()
     		.exec();
 		return constancias.map(constancia => this.mapId(constancia));

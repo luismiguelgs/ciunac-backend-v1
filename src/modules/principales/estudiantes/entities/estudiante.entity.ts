@@ -46,6 +46,9 @@ export class Estudiante {
     @Column({ nullable: true })
     direccion: string;
 
+    @Column({ nullable: true })
+    email: string;
+
     @CreateDateColumn({ name: 'creado_en' })
     creadoEn: Date;
 
