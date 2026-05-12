@@ -9,7 +9,7 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
-  @IsEnum(RolUsuario, { message: 'rol debe ser ESTUDIANTE, DOCENTE o ADMINISTRATIVO' })
+  @IsEnum(RolUsuario, { message: 'rol debe ser ESTUDIANTE, MESADEPARTES, DOCENTE o ADMINISTRATIVO' })
   rol: RolUsuario;
 
   @ValidateIf((dto: RegisterDto) => dto.rol === RolUsuario.DOCENTE || dto.numeroDocumento !== undefined)

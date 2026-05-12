@@ -26,8 +26,8 @@ export class UploadController {
 	) {
 
 		if (!file) throw new Error('No se ha enviado ningún archivo')
-		if (!folder || !['DNIS', 'VOUCHERS', 'BECAS', 'CVS'].includes(folder.toUpperCase()))
-			throw new BadRequestException('Debes especificar una carpeta válida: DNIS, BECAS, VOUCHERS o CVS');
+		if (!folder || !['DNIS', 'VOUCHERS', 'BECAS', 'CVS', 'CONSTANCIAS'].includes(folder.toUpperCase()))
+			throw new BadRequestException('Debes especificar una carpeta válida: DNIS, BECAS, VOUCHERS, CVS o CONSTANCIAS');
 
 		const result = await this.uploadService.uploadToDrive(
 			file,

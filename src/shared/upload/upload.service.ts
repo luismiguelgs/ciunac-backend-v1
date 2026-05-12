@@ -4,7 +4,7 @@ import * as stream from 'stream'
 
 @Injectable()
 export class UploadService {
-    private driveClient:any
+    private driveClient: any
 
     constructor() {
         // 1. Configuramos el cliente OAuth2
@@ -36,13 +36,15 @@ export class UploadService {
                 return process.env.GOOGLE_DRIVE_FOLDER_BECAS ?? ''
             case 'CVS':
                 return process.env.GOOGLE_DRIVE_FOLDER_CVS ?? ''
+            case 'CONSTANCIAS':
+                return process.env.GOOGLE_DRIVE_FOLDER_CONSTANCIAS ?? ''
             default:
                 throw new BadRequestException(`Carpeta no válida: ${folder}`)
         }
     }
 
-    async uploadToDrive(file: Express.Multer.File, folder: string,nombre:string) {
-        try{
+    async uploadToDrive(file: Express.Multer.File, folder: string, nombre: string) {
+        try {
             const folderId = this.getFolderId(folder)
             const bufferStream = new stream.PassThrough()
             bufferStream.end(file.buffer)
