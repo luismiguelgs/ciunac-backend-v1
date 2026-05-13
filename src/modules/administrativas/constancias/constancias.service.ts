@@ -71,7 +71,7 @@ export class ConstanciasService {
 
 	async findByAceptado(): Promise<Constancia[]> {
 		const constancias = await this.constanciaModel
-			.find({ aceptado: true })
+			.find({ impreso: true, aceptado: true })
 			.sort({ creadoEn: -1 })
 			.lean()
 			.exec();
@@ -128,8 +128,15 @@ export class ConstanciasService {
 			const driveResult = await this.uploadService.moveFileToRepository(fileId);
 
 			// 2. Actualizar la constancia en MongoDB
-			await this.constanciaModel.findByIdAndUpdate(
-				constanciaId,
+			const query = {
+				$or: [
+					{ _id: constanciaId },
+					...(Types.ObjectId.isValid(constanciaId) ? [{ _id: new Types.ObjectId(constanciaId) }] : [])
+				]
+			};
+
+			await this.constanciaModel.findOneAndUpdate(
+				query,
 				{
 					impreso: true,
 					url: driveResult.viewLink // Actualizamos la URL por si cambió al mover (aunque usualmente no cambia)
