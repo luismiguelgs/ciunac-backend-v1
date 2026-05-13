@@ -82,4 +82,8 @@ export class CreateConstanciaDto {
     @ValidateNested({ each: true })
     @Type(() => DetalleConstanciaDto)
     detalle: DetalleConstanciaDto[];
+
+    @IsString()
+    @IsOptional()
+    driveId?: string;
 }

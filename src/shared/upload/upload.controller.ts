@@ -23,6 +23,7 @@ export class UploadController {
 		@UploadedFile() file: Express.Multer.File,
 		@Param('folder') folder: string,
 		@Body('nombre') nombre: string,
+		@Body('fileId') fileId?: string,
 	) {
 
 		if (!file) throw new Error('No se ha enviado ningún archivo')
@@ -33,6 +34,7 @@ export class UploadController {
 			file,
 			folder.toUpperCase(),
 			nombre,
+			fileId,
 		);
 		return {
 			success: true,

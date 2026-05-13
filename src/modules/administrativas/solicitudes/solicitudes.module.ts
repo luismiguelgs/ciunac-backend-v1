@@ -20,5 +20,6 @@ import { Estado } from 'src/modules/auxiliares/estados/entities/estado.entity';
   ])],
   controllers: [SolicitudesController],
   providers: [SolicitudesService],
+  exports: [SolicitudesService],
 })
 export class SolicitudesModule { }

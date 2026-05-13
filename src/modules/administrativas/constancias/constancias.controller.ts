@@ -37,6 +37,11 @@ export class ConstanciasController {
 		return this.constanciasService.findByAceptado();
 	}
 
+	@Patch('procesar-firma')
+	procesarFirma(@Body() body: { constanciaId: string, fileId: string, solicitudId: number }) {
+		return this.constanciasService.procesarFirma(body.constanciaId, body.fileId, body.solicitudId);
+	}
+
 	@Get(':id')
 	findOne(@Param('id') id: string) {
 		return this.constanciasService.findOne(id);

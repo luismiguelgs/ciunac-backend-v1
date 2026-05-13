@@ -92,6 +92,9 @@ export class Constancia {
 	@Prop({ type: [DetalleConstancia], default: [] })
 	detalle: DetalleConstancia[];
 
+	@Prop({ type: String, default: null })
+	driveId?: string;
+
 	@Prop()
 	creado_en: Date;
 
