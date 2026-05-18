@@ -65,10 +65,15 @@ export class UploadService {
 
             let data;
 
-            if (fileId) {
+            // 🛡️ Sanitizar fileId: FormData convierte null/undefined a strings literales
+            const sanitizedFileId = fileId && fileId !== 'null' && fileId !== 'undefined' && fileId.trim() !== ''
+                ? fileId
+                : undefined;
+
+            if (sanitizedFileId) {
                 // 🔄 Si existe fileId, actualizamos el archivo
                 const response = await this.driveClient.files.update({
-                    fileId,
+                    fileId: sanitizedFileId,
                     requestBody: {
                         name: nombreFinal,
                     },

@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { version } = require('../package.json');
 import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
@@ -6,7 +8,7 @@ export class AppService {
 	constructor(private jwtService: JwtService) { }
 
 	getHello(): string {
-		return 'Hello World from Docker CIUNAC V1!';
+		return `CIUNAC Backend v${version}`;
 	}
 
 	generarToken(payload: any) {
