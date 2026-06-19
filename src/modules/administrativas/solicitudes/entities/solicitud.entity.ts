@@ -1,5 +1,5 @@
 import { Estudiante } from "src/modules/principales/estudiantes/entities/estudiante.entity";
-import { Column, Entity, JoinColumn, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
+import { Column, Entity, JoinColumn, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { Tipossolicitud } from "src/modules/administrativas/tipossolicitud/entities/tipossolicitud.entity";
 import { Idioma } from "src/modules/estructura/idiomas/entities/idioma.entity";
 import { Nivel } from "src/modules/estructura/niveles/entities/nivel.entity";
@@ -52,10 +52,13 @@ export class Solicitud {
     @Column({ name: 'manual', default: false })
     manual: boolean;
 
-    @Column({ name: 'creado_en' })
+    @Column({ name: 'observaciones', type: 'text', nullable: true })
+    observaciones: string;
+
+    @CreateDateColumn({ name: 'creado_en' })
     creadoEn: Date;
 
-    @Column({ name: 'modificado_en' })
+    @UpdateDateColumn({ name: 'modificado_en' })
     modificadoEn: Date;
 
     //relaciones

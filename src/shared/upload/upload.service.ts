@@ -1,11 +1,25 @@
-import { Injectable, BadRequestException, InternalServerErrorException, Inject, forwardRef } from '@nestjs/common'
-import { google } from 'googleapis'
+import { Injectable, BadRequestException, InternalServerErrorException, Inject, forwardRef, NotFoundException } from '@nestjs/common'
+import { drive_v3, google } from 'googleapis'
 import { ConstanciasService } from 'src/modules/administrativas/constancias/constancias.service'
+import type {} from 'multer'
 import * as stream from 'stream'
+
+export interface DriveFileInfo {
+    id: string;
+    name: string;
+    viewLink: string;
+    downloadLink: string;
+    modifiedTime?: string;
+}
+
+export interface SignedFileResolution {
+    originalFile: DriveFileInfo;
+    signedFile: DriveFileInfo;
+}
 
 @Injectable()
 export class UploadService {
-    private driveClient: any
+    private driveClient: drive_v3.Drive
 
     constructor(
         @Inject(forwardRef(() => ConstanciasService))
@@ -15,18 +29,18 @@ export class UploadService {
         const oauth2Client = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID,
             process.env.GOOGLE_CLIENT_SECRET,
-            'https://developers.google.com/oauthplayground' // Esta URL debe coincidir con la que pusiste en la consola
+            'https://developers.google.com/oauthplayground'
         );
 
-        // 2. Establecemos el Refresh Token para que se autentique automáticamente
+        // 2. Establecemos el Refresh Token para que se autentique automaticamente
         oauth2Client.setCredentials({
             refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
         });
 
-        // 3. Creamos el cliente de Drive usando la autenticación OAuth2
+        // 3. Creamos el cliente de Drive usando la autenticacion OAuth2
         this.driveClient = google.drive({
             version: 'v3',
-            auth: oauth2Client, // Usamos el cliente OAuth2 en lugar de 'GoogleAuth'
+            auth: oauth2Client,
         });
     }
 
@@ -45,7 +59,7 @@ export class UploadService {
             case 'REPO_CONSTANCIAS':
                 return process.env.GOOGLE_DRIVE_FOLDER_CONSTANCIAS_REPOSITORIO ?? ''
             default:
-                throw new BadRequestException(`Carpeta no válida: ${folder}`)
+                throw new BadRequestException(`Carpeta no valida: ${folder}`)
         }
     }
 
@@ -55,23 +69,17 @@ export class UploadService {
             const bufferStream = new stream.PassThrough()
             bufferStream.end(file.buffer)
 
-            // 🔠 Obtenemos la extensión original
             const extension = file.originalname.split('.').pop()
-
-            // 📁 Definimos el nombre final del archivo
             const nombreFinal = nombre
                 ? `${nombre}.${extension}`
                 : file.originalname
 
-            let data;
-
-            // 🛡️ Sanitizar fileId: FormData convierte null/undefined a strings literales
+            let data: drive_v3.Schema$File;
             const sanitizedFileId = fileId && fileId !== 'null' && fileId !== 'undefined' && fileId.trim() !== ''
                 ? fileId
                 : undefined;
 
             if (sanitizedFileId) {
-                // 🔄 Si existe fileId, actualizamos el archivo
                 const response = await this.driveClient.files.update({
                     fileId: sanitizedFileId,
                     requestBody: {
@@ -85,7 +93,6 @@ export class UploadService {
                 })
                 data = response.data
             } else {
-                // 🆕 Si no existe fileId, creamos uno nuevo
                 const response = await this.driveClient.files.create({
                     requestBody: {
                         name: nombreFinal,
@@ -100,61 +107,202 @@ export class UploadService {
                 data = response.data
             }
 
-            // 🔓 Hacer público el archivo (siempre por si acaso, o para nuevos)
+            const uploadedFile = this.mapDriveFile(data)
             await this.driveClient.permissions.create({
-                fileId: data.id!,
+                fileId: uploadedFile.id,
                 requestBody: { role: 'reader', type: 'anyone' },
             })
 
-            // 💾 Si es CONSTANCIAS, guardamos el driveId en la DB si es nuevo o cambió
-            if (folder.toUpperCase() === 'CONSTANCIAS' && nombre && data.id) {
-                await this.updateConstancia(nombre, data.id);
+            if (folder.toUpperCase() === 'CONSTANCIAS' && nombre) {
+                await this.updateConstancia(nombre, uploadedFile.id);
             }
 
             return {
-                id: data.id,
-                name: data.name,
+                id: uploadedFile.id,
+                name: uploadedFile.name,
                 folder,
-                viewLink: data.webViewLink,
-                downloadLink: data.webContentLink,
+                viewLink: uploadedFile.viewLink,
+                downloadLink: uploadedFile.downloadLink,
             }
         } catch (error) {
-            throw new InternalServerErrorException(`Error al subir el archivo a Google Drive: ${error.message}`)
+            throw new InternalServerErrorException(`Error al subir el archivo a Google Drive: ${this.getErrorMessage(error)}`)
         }
     }
 
-    async updateConstancia(nombre: string, fileId?: string) {
+    async updateConstancia(nombre: string, fileId?: string): Promise<void> {
         const id = nombre.split('-')[0];
         await this.constanciasService.update(id, { driveId: fileId });
     }
 
-    async moveFileToRepository(fileId: string) {
-        try {
-            const repositoryFolderId = process.env.GOOGLE_DRIVE_FOLDER_CONSTANCIAS_REPOSITORIO;
+    async findSignedVersion(originalFileId: string): Promise<SignedFileResolution> {
+        let originalData: drive_v3.Schema$File;
 
-            // 1. Obtener los padres actuales del archivo
+        try {
+            const response = await this.driveClient.files.get({
+                fileId: originalFileId,
+                fields: 'id, name, parents, modifiedTime, webViewLink, webContentLink, trashed',
+            });
+            originalData = response.data;
+        } catch (error) {
+            throw new InternalServerErrorException(
+                `Error al consultar el archivo original en Google Drive: ${this.getErrorMessage(error)}`,
+            );
+        }
+
+        const originalFile = this.mapDriveFile(originalData);
+        if (this.isSignedFileName(originalFile.name)) {
+            return { originalFile, signedFile: originalFile };
+        }
+
+        const repositoryFolderId = this.getRepositoryFolderId();
+        const folderIds = new Set<string>(originalData.parents ?? []);
+        folderIds.add(repositoryFolderId);
+
+        let files: drive_v3.Schema$File[] = [];
+        try {
+            for (const folderId of folderIds) {
+                files = files.concat(await this.listFilesInFolder(folderId));
+            }
+        } catch (error) {
+            throw new InternalServerErrorException(
+                `Error al buscar la constancia firmada en Google Drive: ${this.getErrorMessage(error)}`,
+            );
+        }
+
+        const normalizedOriginalName = this.normalizeConstanciaFileName(originalFile.name);
+        const candidatesById = new Map<string, drive_v3.Schema$File>();
+
+        for (const file of files) {
+            if (
+                file.id &&
+                file.id !== originalFile.id &&
+                file.name &&
+                this.isSignedFileName(file.name) &&
+                this.normalizeConstanciaFileName(file.name) === normalizedOriginalName
+            ) {
+                candidatesById.set(file.id, file);
+            }
+        }
+
+        const candidates = [...candidatesById.values()].sort((left, right) => {
+            const rightTime = right.modifiedTime ? new Date(right.modifiedTime).getTime() : 0;
+            const leftTime = left.modifiedTime ? new Date(left.modifiedTime).getTime() : 0;
+            return rightTime - leftTime;
+        });
+
+        if (candidates.length === 0) {
+            throw new NotFoundException(
+                `No se encontro una version [FIRMADO] para el archivo ${originalFile.name}`,
+            );
+        }
+
+        return {
+            originalFile,
+            signedFile: this.mapDriveFile(candidates[0]),
+        };
+    }
+
+    async moveFileToRepository(fileId: string): Promise<DriveFileInfo> {
+        try {
+            const repositoryFolderId = this.getRepositoryFolderId();
             const file = await this.driveClient.files.get({
                 fileId,
-                fields: 'parents',
+                fields: 'id, name, parents, modifiedTime, webViewLink, webContentLink',
             });
-            const previousParents = file.data.parents ? file.data.parents.join(',') : '';
+            const parents: string[] = file.data.parents ?? [];
 
-            // 2. Mover el archivo: añadir el nuevo padre y quitar los antiguos
-            const { data } = await this.driveClient.files.update({
+            if (parents.includes(repositoryFolderId)) {
+                return this.mapDriveFile(file.data);
+            }
+
+            const updateParams: drive_v3.Params$Resource$Files$Update = {
                 fileId,
                 addParents: repositoryFolderId,
-                removeParents: previousParents,
-                fields: 'id, name, webViewLink, webContentLink',
+                fields: 'id, name, modifiedTime, webViewLink, webContentLink',
+            };
+            if (parents.length > 0) {
+                updateParams.removeParents = parents.join(',');
+            }
+
+            const { data } = await this.driveClient.files.update(updateParams);
+            return this.mapDriveFile(data);
+        } catch (error) {
+            throw new InternalServerErrorException(`Error al mover el archivo en Google Drive: ${this.getErrorMessage(error)}`);
+        }
+    }
+
+    async trashFile(fileId: string): Promise<void> {
+        try {
+            await this.driveClient.files.update({
+                fileId,
+                requestBody: { trashed: true },
+                fields: 'id, trashed',
+            });
+        } catch (error) {
+            throw new InternalServerErrorException(
+                `Error al enviar el archivo original a la papelera: ${this.getErrorMessage(error)}`,
+            );
+        }
+    }
+
+    private async listFilesInFolder(folderId: string): Promise<drive_v3.Schema$File[]> {
+        const files: drive_v3.Schema$File[] = [];
+        let pageToken: string | undefined;
+
+        do {
+            const response = await this.driveClient.files.list({
+                q: `'${folderId}' in parents and trashed = false`,
+                fields: 'nextPageToken, files(id, name, parents, modifiedTime, webViewLink, webContentLink)',
+                orderBy: 'modifiedTime desc',
+                pageSize: 1000,
+                pageToken,
             });
 
-            return {
-                id: data.id,
-                name: data.name,
-                viewLink: data.webViewLink,
-                downloadLink: data.webContentLink,
-            };
-        } catch (error) {
-            throw new InternalServerErrorException(`Error al mover el archivo en Google Drive: ${error.message}`);
+            files.push(...(response.data.files ?? []));
+            pageToken = response.data.nextPageToken ?? undefined;
+        } while (pageToken);
+
+        return files;
+    }
+
+    private isSignedFileName(name: string): boolean {
+        return /\[\s*FIRMADO\s*\]/i.test(name);
+    }
+
+    private normalizeConstanciaFileName(name: string): string {
+        return name
+            .normalize('NFKC')
+            .replace(/(?:[\s_-]*)\[\s*FIRMADO\s*\](?:[\s_-]*)/gi, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLocaleLowerCase('es');
+    }
+
+    private mapDriveFile(file: drive_v3.Schema$File): DriveFileInfo {
+        if (!file.id || !file.name) {
+            throw new InternalServerErrorException('Google Drive devolvio un archivo sin id o nombre');
         }
+
+        return {
+            id: file.id,
+            name: file.name,
+            viewLink: file.webViewLink ?? '',
+            downloadLink: file.webContentLink ?? '',
+            modifiedTime: file.modifiedTime ?? undefined,
+        };
+    }
+
+    private getRepositoryFolderId(): string {
+        const folderId = this.getFolderId('REPO_CONSTANCIAS');
+        if (!folderId) {
+            throw new InternalServerErrorException(
+                'No se ha configurado GOOGLE_DRIVE_FOLDER_CONSTANCIAS_REPOSITORIO',
+            );
+        }
+        return folderId;
+    }
+
+    private getErrorMessage(error: unknown): string {
+        return error instanceof Error ? error.message : String(error);
     }
 }

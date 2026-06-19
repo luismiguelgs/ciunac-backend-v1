@@ -35,7 +35,10 @@ export class SolicitudesService {
 		if (!item) {
 			return null;
 		}
-		await this.solicitudRepository.update(id, updateSolicitudDto);
+		await this.solicitudRepository.update(id, {
+			...updateSolicitudDto,
+			modificadoEn: new Date(),
+		});
 		return await this.findOne(id);
 	}
 

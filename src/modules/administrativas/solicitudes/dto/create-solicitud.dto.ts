@@ -1,59 +1,70 @@
-import { IsBoolean, IsDate, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import {
+	IsBoolean,
+	IsDate,
+	IsNotEmpty,
+	IsNumber,
+	IsOptional,
+	IsString,
+} from 'class-validator';
 
 export class CreateSolicitudDto {
-    @IsNotEmpty()
-    @IsString()
-    estudianteId: string;
+	@IsNotEmpty()
+	@IsString()
+	estudianteId!: string;
 
-    @IsNotEmpty()
-    @IsNumber()
-    tipoSolicitudId: number;
+	@IsNotEmpty()
+	@IsNumber()
+	tipoSolicitudId!: number;
 
-    @IsNotEmpty()
-    @IsNumber()
-    idiomaId: number;
+	@IsOptional()
+	@IsNumber()
+	carreraId?: number;
 
-    @IsNotEmpty()
-    @IsNumber()
-    nivelId: number;
+	@IsNotEmpty()
+	@IsNumber()
+	idiomaId!: number;
 
-    @IsNotEmpty()
-    @IsNumber()
-    estadoId: number;
+	@IsNotEmpty()
+	@IsNumber()
+	nivelId!: number;
 
-    @IsNotEmpty()
-    @IsString()
-    periodo: string;
+	@IsNotEmpty()
+	@IsNumber()
+	estadoId!: number;
 
-    @IsOptional()
-    @IsBoolean()
-    alumnoCiunac: boolean;
+	@IsNotEmpty()
+	@IsString()
+	periodo!: string;
 
-    @IsOptional()
-    @IsDate()
-    fechaPago: Date;
+	@IsOptional()
+	@IsBoolean()
+	alumnoCiunac?: boolean;
 
-    @IsOptional()
-    @IsNumber({maxDecimalPlaces: 2})
-    pago: number;
+	@IsOptional()
+	@IsDate()
+	fechaPago?: Date;
 
-    @IsOptional()
-    @IsBoolean()
-    digital: boolean;
+	@IsOptional()
+	@IsNumber({ maxDecimalPlaces: 2 })
+	pago?: number;
 
-    @IsOptional()
-    @IsString()
-    numeroVoucher: string;
+	@IsOptional()
+	@IsBoolean()
+	digital?: boolean;
 
-    @IsOptional()
-    @IsString()
-    imgVoucher: string;
+	@IsOptional()
+	@IsString()
+	numeroVoucher?: string;
 
-    @IsOptional()
-    @IsString()
-    imgCertEstudio: string;
+	@IsOptional()
+	@IsString()
+	imgVoucher?: string;
 
-    @IsOptional()
-    @IsBoolean()
-    manual: boolean;
+	@IsOptional()
+	@IsString()
+	imgCertEstudio?: string;
+
+	@IsOptional()
+	@IsBoolean()
+	manual?: boolean;
 }

@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { BadRequestException, Injectable, Inject, forwardRef, Logger, NotFoundException } from '@nestjs/common';
 import { CreateConstanciaDto } from './dto/create-constancia.dto';
 import { UpdateConstanciaDto } from './dto/update-constancia.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -7,8 +7,19 @@ import { Model, Types } from 'mongoose';
 import { UploadService } from 'src/shared/upload/upload.service';
 import { SolicitudesService } from '../solicitudes/solicitudes.service';
 
+export interface ProcesarFirmaResult {
+	success: true;
+	fileId: string;
+	name: string;
+	viewLink: string;
+	originalTrashed: boolean;
+	warning?: string;
+}
+
 @Injectable()
 export class ConstanciasService {
+	private readonly logger = new Logger(ConstanciasService.name);
+
 	constructor(
 		@InjectModel(Constancia.name)
 		private constanciaModel: Model<ConstanciaDocument>,
@@ -17,16 +28,14 @@ export class ConstanciasService {
 		private readonly solicitudesService: SolicitudesService,
 	) { }
 
-	// Función auxiliar para normalizar el ID
+	// Funcion auxiliar para normalizar el ID
 	private mapId(doc: any) {
 		if (!doc) return null;
 
-		// Si el documento es un array (para findAll)
 		if (Array.isArray(doc)) {
 			return doc.map(item => this.mapId(item));
 		}
 
-		// Convertimos _id a string (funciona con el String de Firebase y el ObjectId de Mongo)
 		const idString = doc._id ? doc._id.toString() : null;
 
 		return {
@@ -38,7 +47,6 @@ export class ConstanciasService {
 
 	async create(createConstanciaDto: CreateConstanciaDto): Promise<Constancia> {
 		const created = new this.constanciaModel(createConstanciaDto);
-		// Si es un documento nuevo y no trae ID, generamos un ObjectId de Mongo
 		if (!created._id) {
 			created._id = new Types.ObjectId();
 		}
@@ -62,7 +70,7 @@ export class ConstanciasService {
 
 	async findByImpreso(): Promise<Constancia[]> {
 		const constancias = await this.constanciaModel
-			.find({ impreso: true, aceptado: false }) // Filtrar por impreso, pero que no hayan sido recogidas (aceptado: false)
+			.find({ impreso: true, aceptado: false })
 			.sort({ creadoEn: -1 })
 			.lean()
 			.exec();
@@ -122,34 +130,85 @@ export class ConstanciasService {
 		return this.mapId(deleted);
 	}
 
-	async procesarFirma(constanciaId: string, fileId: string, solicitudId: number) {
-		try {
-			// 1. Mover el archivo en Google Drive al repositorio
-			const driveResult = await this.uploadService.moveFileToRepository(fileId);
-
-			// 2. Actualizar la constancia en MongoDB
-			const query = {
-				$or: [
-					{ _id: constanciaId },
-					...(Types.ObjectId.isValid(constanciaId) ? [{ _id: new Types.ObjectId(constanciaId) }] : [])
-				]
-			};
-
-			await this.constanciaModel.findOneAndUpdate(
-				query,
-				{
-					impreso: true,
-					url: driveResult.viewLink // Actualizamos la URL por si cambió al mover (aunque usualmente no cambia)
-				}
-			).exec();
-
-			// 3. Actualizar la solicitud en PostgreSQL
-			await this.solicitudesService.update(solicitudId, { estadoId: 3 });
-
-			return { success: true };
-		} catch (error) {
-			console.error('Error en procesarFirma:', error);
-			throw error;
+	async procesarFirma(
+		constanciaId: string,
+		fileId: string | undefined,
+		solicitudId: number,
+	): Promise<ProcesarFirmaResult> {
+		const constancia = await this.findOne(constanciaId);
+		if (!constancia) {
+			throw new NotFoundException(`Constancia ${constanciaId} no encontrada`);
 		}
+
+		const solicitud = await this.solicitudesService.findOne(solicitudId);
+		if (!solicitud) {
+			throw new NotFoundException(`Solicitud ${solicitudId} no encontrada`);
+		}
+
+		const originalFileId = constancia.driveId?.trim() || this.sanitizeFileId(fileId);
+		if (!originalFileId) {
+			throw new BadRequestException('La constancia no tiene un driveId asociado');
+		}
+
+		const { originalFile, signedFile } = await this.uploadService.findSignedVersion(originalFileId);
+		const driveResult = await this.uploadService.moveFileToRepository(signedFile.id);
+		const query = {
+			$or: [
+				{ _id: constanciaId },
+				...(Types.ObjectId.isValid(constanciaId) ? [{ _id: new Types.ObjectId(constanciaId) }] : [])
+			]
+		};
+
+		const updatedConstancia = await this.constanciaModel.findOneAndUpdate(
+			query,
+			{
+				impreso: true,
+				driveId: driveResult.id,
+				url: driveResult.viewLink || driveResult.downloadLink || constancia.url,
+			},
+			{ new: true },
+		).exec();
+
+		if (!updatedConstancia) {
+			throw new NotFoundException(`Constancia ${constanciaId} no encontrada durante la actualizacion`);
+		}
+
+		const updatedSolicitud = await this.solicitudesService.update(solicitudId, { estadoId: 3 });
+		if (!updatedSolicitud) {
+			throw new NotFoundException(`Solicitud ${solicitudId} no encontrada durante la actualizacion`);
+		}
+
+		let originalTrashed = true;
+		let warning: string | undefined;
+
+		if (originalFile.id !== driveResult.id) {
+			try {
+				await this.uploadService.trashFile(originalFile.id);
+			} catch (error) {
+				originalTrashed = false;
+				warning = 'La constancia firmada fue procesada, pero no se pudo enviar el archivo original a la papelera';
+				this.logger.warn(`${warning}: ${this.getErrorMessage(error)}`);
+			}
+		}
+
+		return {
+			success: true,
+			fileId: driveResult.id,
+			name: driveResult.name,
+			viewLink: driveResult.viewLink,
+			originalTrashed,
+			...(warning ? { warning } : {}),
+		};
+	}
+
+	private sanitizeFileId(fileId?: string): string | undefined {
+		if (!fileId || fileId === 'null' || fileId === 'undefined' || !fileId.trim()) {
+			return undefined;
+		}
+		return fileId.trim();
+	}
+
+	private getErrorMessage(error: unknown): string {
+		return error instanceof Error ? error.message : String(error);
 	}
 }

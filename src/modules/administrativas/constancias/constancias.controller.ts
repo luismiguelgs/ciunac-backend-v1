@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
-import { ConstanciasService } from './constancias.service';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
+import { ConstanciasService, ProcesarFirmaResult } from './constancias.service';
 import { CreateConstanciaDto } from './dto/create-constancia.dto';
 import { UpdateConstanciaDto } from './dto/update-constancia.dto';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 import { Constancia } from './schemas/constancia.schema';
+import { ProcesarFirmaDto } from './dto/procesar-firma.dto';
 
 //@UseGuards(JwtAuthGuard)
 @UseGuards(ApiKeyGuard)
@@ -38,7 +39,7 @@ export class ConstanciasController {
 	}
 
 	@Patch('procesar-firma')
-	procesarFirma(@Body() body: { constanciaId: string, fileId: string, solicitudId: number }) {
+	procesarFirma(@Body() body: ProcesarFirmaDto): Promise<ProcesarFirmaResult> {
 		return this.constanciasService.procesarFirma(body.constanciaId, body.fileId, body.solicitudId);
 	}
 
