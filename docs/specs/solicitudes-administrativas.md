@@ -1,5 +1,7 @@
 # Spec: Solicitudes Administrativas
 
+> El rechazo de solicitudes se documenta en detalle en [Rechazo de solicitud](rechazo-solicitud.md).
+
 ## Objetivo funcional
 
 Gestionar solicitudes administrativas y documentos derivados: constancias, certificados y becas.
@@ -46,6 +48,7 @@ Gestionar solicitudes administrativas y documentos derivados: constancias, certi
 | Metodo | Endpoint | Auth | Request | Response |
 | --- | --- | --- | --- | --- |
 | `POST` | `/solicitudes` | ApiKey | `CreateSolicitudDto` | Solicitud creada |
+| `PATCH` | `/solicitudes/:id/rechazo` | ApiKey | `RejectSolicitudDto` | Solicitud rechazada y estado de notificacion |
 | `GET` | `/solicitudes` | ApiKey | Query opcional | Lista de solicitudes |
 | `GET` | `/solicitudes/documento/:numeroDocumento` | ApiKey | Numero documento | Solicitudes del documento |
 | `GET` | `/solicitudes/reporte-fechas` | ApiKey | `inicio`, `fin`, `tipo` | Reporte filtrado |

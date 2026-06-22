@@ -4,6 +4,7 @@
 | --- | --- | --- | --- | --- |
 | [Authentication](authentication.md) | Authentication | `/auth`, `/usuarios`, `/rol-permisos` | `AuthService`, `UsuariosService`, `RolPermisosService` | Inicial |
 | [Solicitudes administrativas](solicitudes-administrativas.md) | Administrativas | `/solicitudes`, `/constancias`, `/certificados`, `/solicitudbecas` | `SolicitudesService`, `ConstanciasService`, `CertificadosService`, `SolicitudbecasService` | Inicial |
+| [Rechazo de solicitud](rechazo-solicitud.md) | Administrativas | `PATCH /solicitudes/:id/rechazo`; `DELETE /solicitudes/:id` legado | `SolicitudesService`, `MailerService` | Implementado |
 | [Pagos banco](pagos-banco.md) | Administrativas | `/pagos-banco/upload`, `/pagos-banco/reverify` | `PagosBancoService` | Inicial |
 | [Examen ubicacion](examen-ubicacion.md) | Examen ubicacion | `/examenesubicacion`, `/detallesubicacion`, `/calificacionesubicacion`, `/cronogramaubicacion`, `/actasexamenubicacion` | Servicios de examen ubicacion | Inicial |
 | [Seguimiento docente](seguimiento-docente.md) | Seguimiento docente | `/perfil-docente`, `/encuesta-respuestas`, `/perfil-docente-resultados`, `/dashboard-docentes` | Servicios de seguimiento docente | Inicial |

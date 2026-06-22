@@ -273,6 +273,7 @@ export class UploadService {
         return name
             .normalize('NFKC')
             .replace(/(?:[\s_-]*)\[\s*FIRMADO\s*\](?:[\s_-]*)/gi, '')
+            .replace(/\.[a-z0-9]{1,10}$/i, '')
             .replace(/\s+/g, ' ')
             .trim()
             .toLocaleLowerCase('es');

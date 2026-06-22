@@ -8,18 +8,22 @@ import { Tipossolicitud } from 'src/modules/administrativas/tipossolicitud/entit
 import { Idioma } from 'src/modules/estructura/idiomas/entities/idioma.entity';
 import { Nivel } from 'src/modules/estructura/niveles/entities/nivel.entity';
 import { Estado } from 'src/modules/auxiliares/estados/entities/estado.entity';
+import { MailerModule } from 'src/shared/mailer/mailer.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    Solicitud,
-    Estudiante,
-    Tipossolicitud,
-    Idioma,
-    Nivel,
-    Estado,
-  ])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Solicitud,
+      Estudiante,
+      Tipossolicitud,
+      Idioma,
+      Nivel,
+      Estado,
+    ]),
+    MailerModule,
+  ],
   controllers: [SolicitudesController],
   providers: [SolicitudesService],
   exports: [SolicitudesService],
 })
-export class SolicitudesModule { }
+export class SolicitudesModule {}

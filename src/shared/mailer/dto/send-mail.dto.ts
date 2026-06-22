@@ -1,8 +1,8 @@
-import { IsEmail, IsIn, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 
 export class SendMailDto {
     @IsString()
-    @IsIn(['RANDOM', 'REGISTER', 'BECA', 'CERTIFICADO', 'UBICACION', 'RECAUDA'])
+    @IsIn(['RANDOM', 'REGISTER', 'BECA', 'CERTIFICADO', 'UBICACION', 'RECAUDA', 'SOLICITUD_RECHAZADA'])
     type: string;
 
     @IsEmail()
@@ -16,7 +16,9 @@ export class SendMailDto {
     @IsString()
     user?: string;
 
-    @IsOptional()
+    @ValidateIf((dto: SendMailDto) => ['RECAUDA', 'SOLICITUD_RECHAZADA'].includes(dto.type))
     @IsString()
+    @IsNotEmpty()
+    @MaxLength(1000)
     motivo?: string;
 }

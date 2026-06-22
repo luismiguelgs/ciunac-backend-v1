@@ -43,7 +43,7 @@ export class MailerService {
 
     private getTransporterByType(type: string): nodemailer.Transporter {
         // 🔹 Según el tipo de correo, seleccionamos la cuenta
-        const gruposAlumnos = ['RANDOM', 'BECA', 'REGISTER', 'UBICACION'];
+        const gruposAlumnos = ['RANDOM', 'BECA', 'REGISTER', 'UBICACION', 'SOLICITUD_RECHAZADA'];
         if (gruposAlumnos.includes(type)) return this.transporters.alumnos;
         if (type === 'CERTIFICADO') return this.transporters.certificados;
         if (type === 'RECAUDA') return this.transporters.recauda;

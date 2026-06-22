@@ -52,7 +52,7 @@ describe('UploadService', () => {
             },
             {
               id: 'new-signed-id',
-              name: 'constancia-123-Juan Perez [FIRMADO].pdf',
+              name: 'constancia-123-Juan Perez[FIRMADO]',
               modifiedTime: '2026-06-19T10:00:00.000Z',
             },
             {

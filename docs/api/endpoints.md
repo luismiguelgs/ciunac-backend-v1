@@ -38,7 +38,7 @@ Convenciones:
 | `constancias` | ApiKey; JWT en delete | `POST /constancias`, `GET /constancias`, `GET /constancias/pendientes`, `GET /constancias/impresos`, `GET /constancias/aceptados`, `PATCH /constancias/procesar-firma`, `GET /constancias/:id`, `PATCH /constancias/:id`, `DELETE /constancias/:id` |
 | `pagos-banco` | ApiKey | `POST /pagos-banco/upload`, `POST /pagos-banco/reverify`, `POST /pagos-banco`, `GET /pagos-banco`, `GET /pagos-banco/:id`, `PATCH /pagos-banco/:id`, `DELETE /pagos-banco/:id` |
 | `solicitudbecas` | ApiKey | `POST /solicitudbecas`, `GET /solicitudbecas`, `GET /solicitudbecas/estado/:estado`, `GET /solicitudbecas/:id`, `PATCH /solicitudbecas/:id`, `DELETE /solicitudbecas/:id` |
-| `solicitudes` | ApiKey | `POST /solicitudes`, `GET /solicitudes`, `GET /solicitudes/certificados`, `GET /solicitudes/constancias`, `GET /solicitudes/examenes-ubicacion`, `GET /solicitudes/documento/:numeroDocumento`, `GET /solicitudes/reporte-fechas`, `GET /solicitudes/:id`, `PATCH /solicitudes/:id`, `DELETE /solicitudes/:id` |
+| `solicitudes` | ApiKey | `POST /solicitudes`, `GET /solicitudes`, `GET /solicitudes/certificados`, `GET /solicitudes/constancias`, `GET /solicitudes/examenes-ubicacion`, `GET /solicitudes/documento/:numeroDocumento`, `GET /solicitudes/reporte-fechas`, `GET /solicitudes/:id`, `PATCH /solicitudes/:id`, `PATCH /solicitudes/:id/rechazo`, `DELETE /solicitudes/:id` (rechazo legado, deprecado) |
 | `tipossolicitud` | ApiKey | `POST /tipossolicitud`, `GET /tipossolicitud`, `GET /tipossolicitud/:id`, `PATCH /tipossolicitud/:id`, `DELETE /tipossolicitud/:id` |
 
 ## Authentication

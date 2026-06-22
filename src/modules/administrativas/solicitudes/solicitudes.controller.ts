@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, BadRequestException, ParseIntPipe } from '@nestjs/common';
 import { SolicitudesService } from './solicitudes.service';
 import { CreateSolicitudDto } from './dto/create-solicitud.dto';
 import { UpdateSolicitudDto } from './dto/update-solicitud.dto';
 import { UseGuards } from '@nestjs/common';
 import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 import { Solicitud } from './entities/solicitud.entity';
+import { RejectSolicitudDto } from './dto/reject-solicitud.dto';
+import { RejectSolicitudResult } from './interfaces/reject-solicitud-result.interface';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 //@UseGuards(JwtAuthGuard)
@@ -89,6 +91,14 @@ export class SolicitudesController {
 	@Get(':id')
 	findOne(@Param('id') id: string) {
 		return this.solicitudesService.findOne(+id);
+	}
+
+	@Patch(':id/rechazo')
+	reject(
+		@Param('id', ParseIntPipe) id: number,
+		@Body() rejectSolicitudDto: RejectSolicitudDto,
+	): Promise<RejectSolicitudResult> {
+		return this.solicitudesService.reject(id, rejectSolicitudDto);
 	}
 
 	@Patch(':id')

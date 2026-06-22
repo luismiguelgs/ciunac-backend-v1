@@ -65,6 +65,10 @@ export class CreateSolicitudDto {
 	imgCertEstudio?: string;
 
 	@IsOptional()
+	@IsString()
+	observaciones?: string;
+
+	@IsOptional()
 	@IsBoolean()
 	manual?: boolean;
 }

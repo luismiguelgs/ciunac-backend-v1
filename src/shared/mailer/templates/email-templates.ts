@@ -44,7 +44,8 @@ export function getTemplate(body: SendMailDto) {
         </body></html>`,
     },
     CERTIFICADO: {
-      subject: 'CIUNAC - CONFIRMACIÓN DE REGISTRO PARA SOLICITUD DE CERTIFICADO/CONSTANCIA',
+      subject:
+        'CIUNAC - CONFIRMACIÓN DE REGISTRO PARA SOLICITUD DE CERTIFICADO/CONSTANCIA',
       text: `Código de transacción: ${body.user}`,
       html: `
         <!DOCTYPE html><html>${HEAD}<body>
@@ -77,6 +78,19 @@ export function getTemplate(body: SendMailDto) {
           <p>Lamentamos informarle que su solicitud ha sido observada debido a una inconsistencia en el pago.</p>
           <p><b>Motivo de observación:</b> ${body.motivo}</p>
           <p>Por favor, verifique sus datos y vuelva a intentarlo o acérquese a nuestras oficinas.</p>
+          <hr>${FOOTER}
+        </body></html>`,
+    },
+    SOLICITUD_RECHAZADA: {
+      subject: 'CIUNAC - SOLICITUD RECHAZADA',
+      text: `Su solicitud ha sido rechazada. Motivo: ${body.motivo}`,
+      html: `
+        <!DOCTYPE html><html>${HEAD}<body>
+          <img src="https://ciunac.unac.edu.pe/wp-content/uploads/2024/04/cropped-WhatsApp-Image-2024-04-19-at-2.48.00-PM-2.jpeg" alt="logo" width="200px"/>
+          <h1>SOLICITUD RECHAZADA</h1>
+          <p>Le informamos que su solicitud ha sido rechazada.</p>
+          <p><b>Motivo:</b> ${body.motivo}</p>
+          <p>Para mayor informacion, comuniquese con las oficinas de CIUNAC.</p>
           <hr>${FOOTER}
         </body></html>`,
     },
