@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { CreateModuloDto } from './create-modulo.dto';
 import { IsString, IsNumber, IsOptional, IsDate } from 'class-validator';
 

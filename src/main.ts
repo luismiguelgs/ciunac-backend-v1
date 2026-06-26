@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
+import { isSwaggerEnabled, setupSwagger } from './config/swagger.config';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
@@ -13,7 +14,7 @@ async function bootstrap() {
 			'https://api.ciunac.site',    // Tu subdominio (por si acaso)
 			'https://ciunac-admin-1-3.vercel.app',
 			'https://ciunac-sol-1-3.vercel.app',
-			'https://ciunac-admin-2.vercel.app'
+			'https://ciunac-admin-2.vercel.app',
 		],
 		credentials: true,
 		methods: ['GET', 'POST', 'PATCH', 'DELETE'],
@@ -29,7 +30,17 @@ async function bootstrap() {
 		},
 	}));
 
-	app.use(helmet());
+	app.use(
+		helmet(
+			isSwaggerEnabled()
+				? {
+						contentSecurityPolicy: false,
+					}
+				: undefined,
+		),
+	);
+
+	setupSwagger(app);
 
 	// 🔊 Escucha al final
 	const port = process.env.PORT || 3000;

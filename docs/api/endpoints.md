@@ -1,6 +1,6 @@
 # Inventario Inicial de Endpoints
 
-Este inventario se genero desde los controllers actuales. Los DTOs y respuestas se deben completar progresivamente al incorporar OpenAPI.
+Este inventario se genero desde los controllers actuales. El contrato verificable se genera con Swagger/OpenAPI en `/api/docs-json` fuera de produccion; este documento queda como mapa funcional para lectura rapida y trazabilidad.
 
 Convenciones:
 

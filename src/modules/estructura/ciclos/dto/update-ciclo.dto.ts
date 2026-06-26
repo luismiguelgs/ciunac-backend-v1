@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { CreateCicloDto } from './create-ciclo.dto';
 
 export class UpdateCicloDto extends PartialType(CreateCicloDto) {}

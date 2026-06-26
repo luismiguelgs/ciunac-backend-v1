@@ -8,7 +8,7 @@ Esta carpeta contiene la documentacion versionada del backend CIUNAC. Esta pensa
 - Para entender dominios y modulos NestJS, leer [Mapa de modulos](architecture/modules.md).
 - Para revisar seguridad, variables sensibles y riesgos, leer [Seguridad](architecture/security.md).
 - Para revisar persistencia, leer [Datos y persistencia](architecture/data.md).
-- Para implementar o validar endpoints, usar [Inventario API](api/endpoints.md).
+- Para implementar o validar endpoints, usar [Inventario API](api/endpoints.md) y [Swagger / OpenAPI](api/openapi.md).
 - Para trabajar con spec-driven development, usar [Plantilla de specs](specs/spec-template.md) y [Indice de casos de uso](specs/use-cases-index.md).
 - Para pruebas, usar [Estrategia de testing](testing/strategy.md).
 - Para operacion y configuracion, usar [Configuracion operacional](operations/configuration.md).
@@ -31,7 +31,7 @@ La documentacion refleja el estado actual del codigo fuente bajo `src/`:
 | Seguridad | [Security](architecture/security.md) |
 | Datos | [Data](architecture/data.md) |
 | Integraciones | [Integrations](architecture/integrations.md) |
-| API | [Endpoints](api/endpoints.md) |
+| API | [Endpoints](api/endpoints.md), [OpenAPI](api/openapi.md) |
 | Specs | [Template](specs/spec-template.md), [Use cases](specs/use-cases-index.md) |
 | Operacion | [Configuration](operations/configuration.md) |
 | Testing | [Strategy](testing/strategy.md) |
@@ -43,5 +43,6 @@ Cada cambio funcional nuevo debe actualizar al menos:
 
 1. El spec del caso de uso afectado.
 2. El inventario API si cambia un endpoint.
-3. La documentacion de datos si cambia una entidad o schema.
-4. La estrategia de pruebas si cambia el criterio de aceptacion o el riesgo.
+3. La metadata OpenAPI si cambia seguridad, multipart, deprecacion o contrato.
+4. La documentacion de datos si cambia una entidad o schema.
+5. La estrategia de pruebas si cambia el criterio de aceptacion o el riesgo.

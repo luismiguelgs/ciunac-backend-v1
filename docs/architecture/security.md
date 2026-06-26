@@ -10,6 +10,7 @@
 | JWT | Bearer token firmado con `JWT_ACCESS_SECRET` | `JwtAuthGuard`, `JwtStrategy` |
 | Permisos | Decorador `@RequirePermissions` y guard | `PermissionsGuard` |
 | Validacion | `ValidationPipe` global con whitelist | `src/main.ts` |
+| OpenAPI | Contrato Swagger solo fuera de produccion | `/api/docs`, `/api/docs-json` |
 
 ## Variables sensibles
 
@@ -31,7 +32,7 @@
 - Algunos controllers de `seguimiento_docente` no declaran guards a nivel de clase: `cumplimiento-docente`, `dashboard-docentes`, `encuesta-metricas-docente`, `encuesta-preguntas`, `encuesta-respuestas-detalle`, `perfil-docente-resultados`, `puntaje-academico-administrativo`.
 - Hay comentarios de `JwtAuthGuard` deshabilitado en varios controllers CRUD que actualmente dependen de `ApiKeyGuard`.
 - Varias respuestas de error usan `throw new Error`, lo que puede producir codigos HTTP menos precisos.
-- No hay documentacion OpenAPI activa para indicar auth requerida por endpoint.
+- Swagger/OpenAPI ya documenta esquemas `api-key` y `jwt`; las rutas sin guard visible aparecen sin seguridad y deben revisarse antes de exponer nuevas superficies.
 
 ## Politica recomendada
 

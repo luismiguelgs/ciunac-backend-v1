@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { ConstanciasService, ProcesarFirmaResult } from './constancias.service';
 import { CreateConstanciaDto } from './dto/create-constancia.dto';
 import { UpdateConstanciaDto } from './dto/update-constancia.dto';
@@ -11,49 +19,57 @@ import { ProcesarFirmaDto } from './dto/procesar-firma.dto';
 @UseGuards(ApiKeyGuard)
 @Controller('constancias')
 export class ConstanciasController {
-	constructor(private readonly constanciasService: ConstanciasService) { }
+  constructor(private readonly constanciasService: ConstanciasService) {}
 
-	@Post()
-	create(@Body() createConstanciaDto: CreateConstanciaDto) {
-		return this.constanciasService.create(createConstanciaDto);
-	}
+  @Post()
+  create(@Body() createConstanciaDto: CreateConstanciaDto) {
+    return this.constanciasService.create(createConstanciaDto);
+  }
 
-	@Get()
-	findAll() {
-		return this.constanciasService.findAll();
-	}
+  @Get()
+  findAll() {
+    return this.constanciasService.findAll();
+  }
 
-	@Get('pendientes')
-	findPendientes(): Promise<Constancia[]> {
-		return this.constanciasService.findPendientes();
-	}
+  @Get('pendientes')
+  findPendientes(): Promise<Constancia[]> {
+    return this.constanciasService.findPendientes();
+  }
 
-	@Get('impresos')
-	findByImpreso(): Promise<Constancia[]> {
-		return this.constanciasService.findByImpreso();
-	}
+  @Get('impresos')
+  findByImpreso(): Promise<Constancia[]> {
+    return this.constanciasService.findByImpreso();
+  }
 
-	@Get('aceptados')
-	findByAceptado(): Promise<Constancia[]> {
-		return this.constanciasService.findByAceptado();
-	}
+  @Get('aceptados')
+  findByAceptado(): Promise<Constancia[]> {
+    return this.constanciasService.findByAceptado();
+  }
 
-	@Patch('procesar-firma')
-	procesarFirma(@Body() body: ProcesarFirmaDto): Promise<ProcesarFirmaResult> {
-		return this.constanciasService.procesarFirma(body.constanciaId, body.fileId, body.solicitudId);
-	}
+  @Patch('procesar-firma')
+  procesarFirma(@Body() body: ProcesarFirmaDto): Promise<ProcesarFirmaResult> {
+    return this.constanciasService.procesarFirma(
+      body.constanciaId,
+      body.fileId,
+      body.solicitudId,
+      body.signedFileId,
+    );
+  }
 
-	@Get(':id')
-	findOne(@Param('id') id: string) {
-		return this.constanciasService.findOne(id);
-	}
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.constanciasService.findOne(id);
+  }
 
-	@Patch(':id')
-	update(@Param('id') id: string, @Body() updateConstanciaDto: UpdateConstanciaDto) {
-		return this.constanciasService.update(id, updateConstanciaDto);
-	}
+  @Patch(':id')
+  update(
+    @Param('id') id: string,
+    @Body() updateConstanciaDto: UpdateConstanciaDto,
+  ) {
+    return this.constanciasService.update(id, updateConstanciaDto);
+  }
 
-	/* las constancias no se borran
+  /* las constancias no se borran
 	@UseGuards(JwtAuthGuard)
 	@Delete(':id')
 	remove(@Param('id') id: string) {

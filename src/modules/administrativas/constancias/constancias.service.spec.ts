@@ -171,6 +171,7 @@ describe('ConstanciasService', () => {
 
       expect(uploadService.findSignedVersion).toHaveBeenCalledWith(
         'stored-original-id',
+        undefined,
       );
       expect(uploadService.moveFileToRepository).toHaveBeenCalledWith(
         'signed-id',
@@ -181,6 +182,8 @@ describe('ConstanciasService', () => {
           impreso: true,
           driveId: 'signed-id',
           url: 'signed-view',
+          driveIdOriginal: 'stored-original-id',
+          originalTrashed: false,
         }),
         { new: true },
       );
@@ -227,6 +230,39 @@ describe('ConstanciasService', () => {
 
       expect(uploadService.findSignedVersion).toHaveBeenCalledWith(
         'fallback-id',
+        undefined,
+      );
+    });
+
+    it('uses the stored solicitud id when the request omits it', async () => {
+      await service.procesarFirma('constancia-1', undefined);
+
+      expect(solicitudesService.findOne).toHaveBeenCalledWith(123);
+      expect(solicitudesService.update).toHaveBeenCalledWith(123, {
+        estadoId: 3,
+      });
+    });
+
+    it('rejects a solicitud id that does not belong to the constancia', async () => {
+      await expect(
+        service.procesarFirma('constancia-1', undefined, 999),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(solicitudesService.findOne).not.toHaveBeenCalled();
+      expect(uploadService.findSignedVersion).not.toHaveBeenCalled();
+    });
+
+    it('forwards an explicit signed file id to Drive', async () => {
+      await service.procesarFirma(
+        'constancia-1',
+        undefined,
+        123,
+        'signed-from-frontend',
+      );
+
+      expect(uploadService.findSignedVersion).toHaveBeenCalledWith(
+        'stored-original-id',
+        'signed-from-frontend',
       );
     });
 
@@ -256,6 +292,78 @@ describe('ConstanciasService', () => {
       expect(result.success).toBe(true);
       expect(result.originalTrashed).toBe(false);
       expect(result.warning).toContain('no se pudo enviar el archivo original');
+      expect(mockConstanciaModel.findOneAndUpdate).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          driveIdOriginal: 'stored-original-id',
+          originalTrashed: false,
+        }),
+        { new: true },
+      );
+    });
+
+    it('retries cleanup using the stored original id', async () => {
+      mockFindOne({
+        ...mockConstancia,
+        impreso: true,
+        driveId: 'signed-id',
+        driveIdOriginal: 'stored-original-id',
+        originalTrashed: false,
+      });
+
+      await service.procesarFirma('constancia-1', undefined);
+
+      expect(uploadService.findSignedVersion).toHaveBeenCalledWith(
+        'stored-original-id',
+        'signed-id',
+      );
+      expect(uploadService.trashFile).toHaveBeenCalledWith(
+        'stored-original-id',
+      );
+    });
+
+    it('reports successful trash when only recording cleanup fails', async () => {
+      mockConstanciaModel.findOneAndUpdate
+        .mockReturnValueOnce({
+          exec: jest
+            .fn()
+            .mockResolvedValue({ ...mockConstancia, driveId: 'signed-id' }),
+        })
+        .mockReturnValueOnce({
+          exec: jest.fn().mockRejectedValue(new Error('Mongo unavailable')),
+        });
+
+      const result = await service.procesarFirma(
+        'constancia-1',
+        undefined,
+        123,
+      );
+
+      expect(result.originalTrashed).toBe(true);
+      expect(result.warning).toContain('no se pudo registrar la limpieza');
+    });
+
+    it('restores Mongo when updating PostgreSQL fails', async () => {
+      solicitudesService.update.mockRejectedValue(
+        new Error('PostgreSQL unavailable'),
+      );
+
+      await expect(
+        service.procesarFirma('constancia-1', undefined, 123),
+      ).rejects.toThrow('PostgreSQL unavailable');
+
+      expect(mockConstanciaModel.findOneAndUpdate).toHaveBeenNthCalledWith(
+        2,
+        expect.anything(),
+        expect.objectContaining({
+          impreso: false,
+          driveId: 'stored-original-id',
+          url: 'original-url',
+          originalTrashed: false,
+        }),
+        { new: true },
+      );
+      expect(uploadService.trashFile).not.toHaveBeenCalled();
     });
 
     it('does not trash the signed file during an idempotent retry', async () => {

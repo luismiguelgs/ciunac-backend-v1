@@ -1,6 +1,6 @@
 {
   "name": "ciunac-backend",
-  "version": "1.2.4",
+  "version": "1.2.6",
   "description": "Backend Apps CIUNAC",
   "author": "",
   "private": true,
@@ -29,6 +29,7 @@
     "@nestjs/mongoose": "^11.0.3",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.4.4",
     "@nestjs/typeorm": "^11.0.0",
     "bcrypt": "^6.0.0",
     "cache-manager": "^7.2.8",

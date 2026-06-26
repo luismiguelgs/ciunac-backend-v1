@@ -5,6 +5,7 @@
 | Variable | Uso |
 | --- | --- |
 | `PORT` | Puerto HTTP, por defecto `3000`. |
+| `NODE_ENV` | Si es `production`, Swagger UI y JSON no se montan. |
 | `POSTGRES_HOST` | Host PostgreSQL. |
 | `POSTGRES_PORT` | Puerto PostgreSQL, por defecto `5432`. |
 | `POSTGRES_USER` | Usuario PostgreSQL. |
@@ -40,6 +41,13 @@
 | Lint con fix | `npm run lint` |
 | Format | `npm run format` |
 | Tests | `npm run test` |
+
+## Swagger / OpenAPI
+
+- UI local: `http://localhost:3000/api/docs`.
+- JSON local: `http://localhost:3000/api/docs-json`.
+- Disponible solo cuando `NODE_ENV !== "production"`.
+- La seguridad documentada usa `api-key` (`x-api-key`) y `jwt` (`Authorization: Bearer <token>`).
 
 ## Checklist de arranque
 

@@ -6,12 +6,19 @@ export class ProcesarFirmaDto {
   @IsNotEmpty()
   constanciaId: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
+  @IsNotEmpty()
   fileId?: string;
 
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  solicitudId: number;
+  solicitudId?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  signedFileId?: string;
 }
