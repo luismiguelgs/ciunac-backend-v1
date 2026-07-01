@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PerfilDocenteResultadosService } from './perfil_docente_resultados.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { PerfilDocenteResultado } from './entities/perfil_docente_resultado.entity';
 
 describe('PerfilDocenteResultadosService', () => {
   let service: PerfilDocenteResultadosService;
-  let repository: Repository<PerfilDocenteResultado>;
 
   const mockPerfilDocenteResultadoRepository = {
     create: jest.fn(),
@@ -26,10 +24,13 @@ describe('PerfilDocenteResultadosService', () => {
           useValue: mockPerfilDocenteResultadoRepository,
         },
       ],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    service = module.get<PerfilDocenteResultadosService>(PerfilDocenteResultadosService);
-    repository = module.get<Repository<PerfilDocenteResultado>>(getRepositoryToken(PerfilDocenteResultado));
+    service = module.get<PerfilDocenteResultadosService>(
+      PerfilDocenteResultadosService,
+    );
   });
 
   it('should be defined', () => {

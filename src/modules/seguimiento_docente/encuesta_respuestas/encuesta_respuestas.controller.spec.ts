@@ -1,25 +1,17 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { EncuestaRespuestasController } from './encuesta_respuestas.controller';
 import { EncuestaRespuestasService } from './encuesta_respuestas.service';
+import { BadRequestException } from '@nestjs/common';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 
 describe('EncuestaRespuestasController', () => {
   let controller: EncuestaRespuestasController;
   let service: EncuestaRespuestasService;
 
-  const mockEncuestaRespuesta = {
-    id: 1,
-    grupoId: 10,
-    promedioPonderado: 18,
-    creadoEn: new Date(),
-    modificadoEn: new Date(),
-  };
-
   const mockService = {
-    create: jest.fn().mockResolvedValue(mockEncuestaRespuesta),
-    findAll: jest.fn().mockResolvedValue([mockEncuestaRespuesta]),
-    findOne: jest.fn().mockResolvedValue(mockEncuestaRespuesta),
-    update: jest.fn().mockResolvedValue(mockEncuestaRespuesta),
-    remove: jest.fn().mockResolvedValue(mockEncuestaRespuesta),
+    uploadAndProcess: jest.fn(),
+    findByDocenteAndModulo: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -31,9 +23,14 @@ describe('EncuestaRespuestasController', () => {
           useValue: mockService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(ApiKeyGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
-    controller = module.get<EncuestaRespuestasController>(EncuestaRespuestasController);
+    controller = module.get<EncuestaRespuestasController>(
+      EncuestaRespuestasController,
+    );
     service = module.get<EncuestaRespuestasService>(EncuestaRespuestasService);
   });
 
@@ -41,46 +38,51 @@ describe('EncuestaRespuestasController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('create', () => {
-    it('should create a new response', async () => {
-      const dto = { grupoId: 10, promedioPonderado: 18 };
-      const result = await controller.create(dto);
-      expect(service.create).toHaveBeenCalledWith(dto);
-      expect(result).toEqual(mockEncuestaRespuesta);
+  describe('uploadFile', () => {
+    it('should process a CSV file', async () => {
+      const file = {
+        buffer: Buffer.from('docente,modulo'),
+        mimetype: 'text/csv',
+        originalname: 'respuestas.csv',
+      } as Express.Multer.File;
+      const expected = { processed: 1 };
+      mockService.uploadAndProcess.mockResolvedValue(expected);
+
+      await expect(controller.uploadFile(file)).resolves.toEqual(expected);
+      expect(service.uploadAndProcess).toHaveBeenCalledWith(file.buffer);
+    });
+
+    it('should reject a missing file', async () => {
+      await expect(controller.uploadFile(undefined as never)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reject a non-CSV file', async () => {
+      const file = {
+        buffer: Buffer.from('contenido'),
+        mimetype: 'application/pdf',
+        originalname: 'respuestas.pdf',
+      } as Express.Multer.File;
+
+      await expect(controller.uploadFile(file)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
-  describe('findAll', () => {
-    it('should return an array of responses', async () => {
-      const result = await controller.findAll();
-      expect(service.findAll).toHaveBeenCalled();
-      expect(result).toEqual([mockEncuestaRespuesta]);
-    });
-  });
+  describe('findByDocenteAndModulo', () => {
+    it('should convert moduloId and delegate the search', async () => {
+      const expected = [{ docenteId: 'docente-1', moduloId: 5 }];
+      mockService.findByDocenteAndModulo.mockResolvedValue(expected);
 
-  describe('findOne', () => {
-    it('should return a response by id', async () => {
-      const result = await controller.findOne('1');
-      expect(service.findOne).toHaveBeenCalledWith(1);
-      expect(result).toEqual(mockEncuestaRespuesta);
-    });
-  });
-
-  describe('update', () => {
-    it('should update a response', async () => {
-      const dto = { promedioPonderado: 20 };
-      const result = await controller.update('1', dto);
-      expect(service.update).toHaveBeenCalledWith(1, dto);
-      expect(result).toEqual(mockEncuestaRespuesta);
-    });
-  });
-
-  describe('remove', () => {
-    it('should remove a response', async () => {
-      const result = await controller.remove('1');
-      expect(service.remove).toHaveBeenCalledWith(1);
-      expect(result).toEqual(mockEncuestaRespuesta);
+      await expect(
+        controller.findByDocenteAndModulo('docente-1', '5'),
+      ).resolves.toEqual(expected);
+      expect(service.findByDocenteAndModulo).toHaveBeenCalledWith(
+        'docente-1',
+        5,
+      );
     });
   });
 });
-

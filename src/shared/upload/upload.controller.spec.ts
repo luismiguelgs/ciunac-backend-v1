@@ -4,11 +4,17 @@ import { UploadService } from './upload.service';
 
 describe('UploadController', () => {
   let controller: UploadController;
+  const uploadService = {
+    uploadToDrive: jest.fn(),
+    findSignedVersion: jest.fn(),
+    moveFileToRepository: jest.fn(),
+    trashFile: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UploadController],
-      providers: [UploadService],
+      providers: [{ provide: UploadService, useValue: uploadService }],
     }).compile();
 
     controller = module.get<UploadController>(UploadController);

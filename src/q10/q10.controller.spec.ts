@@ -8,8 +8,10 @@ describe('Q10Controller', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [Q10Controller],
-      providers: [Q10Service],
-    }).compile();
+      providers: [{ provide: Q10Service, useValue: {} }],
+    })
+      .useMocker(() => ({}))
+      .compile();
 
     controller = module.get<Q10Controller>(Q10Controller);
   });

@@ -8,10 +8,14 @@ describe('TipoDocumentoPerfilController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TipoDocumentoPerfilController],
-      providers: [TipoDocumentoPerfilService],
-    }).compile();
+      providers: [{ provide: TipoDocumentoPerfilService, useValue: {} }],
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    controller = module.get<TipoDocumentoPerfilController>(TipoDocumentoPerfilController);
+    controller = module.get<TipoDocumentoPerfilController>(
+      TipoDocumentoPerfilController,
+    );
   });
 
   it('should be defined', () => {

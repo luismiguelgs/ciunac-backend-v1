@@ -8,10 +8,14 @@ describe('CronogramaubicacionController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CronogramaubicacionController],
-      providers: [CronogramaubicacionService],
-    }).compile();
+      providers: [{ provide: CronogramaubicacionService, useValue: {} }],
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    controller = module.get<CronogramaubicacionController>(CronogramaubicacionController);
+    controller = module.get<CronogramaubicacionController>(
+      CronogramaubicacionController,
+    );
   });
 
   it('should be defined', () => {

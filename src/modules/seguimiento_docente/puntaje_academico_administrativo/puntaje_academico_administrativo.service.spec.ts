@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
 import { Test, TestingModule } from '@nestjs/testing';
 import { PuntajeAcademicoAdministrativoService } from './puntaje_academico_administrativo.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -36,8 +37,12 @@ describe('PuntajeAcademicoAdministrativoService', () => {
       ],
     }).compile();
 
-    service = module.get<PuntajeAcademicoAdministrativoService>(PuntajeAcademicoAdministrativoService);
-    repository = module.get<Repository<PuntajeAcademicoAdministrativo>>(getRepositoryToken(PuntajeAcademicoAdministrativo));
+    service = module.get<PuntajeAcademicoAdministrativoService>(
+      PuntajeAcademicoAdministrativoService,
+    );
+    repository = module.get<Repository<PuntajeAcademicoAdministrativo>>(
+      getRepositoryToken(PuntajeAcademicoAdministrativo),
+    );
   });
 
   it('should be defined', () => {
@@ -46,12 +51,13 @@ describe('PuntajeAcademicoAdministrativoService', () => {
 
   describe('create', () => {
     it('should create a new puntaje', async () => {
-      const dto = { academico_administrativo_id: 1, nombre: 'Test Puntaje', puntaje: 10 };
+      const dto = {
+        academico_administrativo_id: 1,
+        nombre: 'Test Puntaje',
+        puntaje: 10,
+      };
       expect(await service.create(dto)).toEqual(mockPuntaje);
-      expect(repository.create).toHaveBeenCalledWith({
-        ...dto,
-        academicoAdministrativoId: 1,
-      });
+      expect(repository.create).toHaveBeenCalledWith(dto);
       expect(repository.save).toHaveBeenCalled();
     });
   });
@@ -59,7 +65,9 @@ describe('PuntajeAcademicoAdministrativoService', () => {
   describe('findAll', () => {
     it('should return an array of puntajes', async () => {
       expect(await service.findAll()).toEqual([mockPuntaje]);
-      expect(repository.find).toHaveBeenCalledWith({ relations: ['academicoAdministrativo'] });
+      expect(repository.find).toHaveBeenCalledWith({
+        relations: ['academicoAdministrativo'],
+      });
     });
   });
 
@@ -82,7 +90,9 @@ describe('PuntajeAcademicoAdministrativoService', () => {
     it('should update a puntaje', async () => {
       const updateDto = { nombre: 'Updated Name' };
       const updatedPuntaje = { ...mockPuntaje, ...updateDto };
-      jest.spyOn(repository, 'save').mockResolvedValueOnce(updatedPuntaje as any);
+      jest
+        .spyOn(repository, 'save')
+        .mockResolvedValueOnce(updatedPuntaje as any);
 
       expect(await service.update(1, updateDto)).toEqual(updatedPuntaje);
       expect(repository.findOne).toHaveBeenCalled();

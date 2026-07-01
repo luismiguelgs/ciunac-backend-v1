@@ -8,8 +8,10 @@ describe('TextosController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TextosController],
-      providers: [TextosService],
-    }).compile();
+      providers: [{ provide: TextosService, useValue: {} }],
+    })
+      .useMocker(() => ({}))
+      .compile();
 
     controller = module.get<TextosController>(TextosController);
   });

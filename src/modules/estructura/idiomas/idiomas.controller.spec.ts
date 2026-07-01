@@ -8,8 +8,10 @@ describe('IdiomasController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [IdiomasController],
-      providers: [IdiomasService],
-    }).compile();
+      providers: [{ provide: IdiomasService, useValue: {} }],
+    })
+      .useMocker(() => ({}))
+      .compile();
 
     controller = module.get<IdiomasController>(IdiomasController);
   });

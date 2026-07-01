@@ -51,6 +51,8 @@ import { PerfilDocenteResultadosModule } from './modules/seguimiento_docente/per
 import { DashboardDocentesModule } from './modules/seguimiento_docente/dashboard_docentes/dashboard_docentes.module';
 import { RolPermisosModule } from './modules/authentication/rol_permisos/rol_permisos.module';
 import { PagosBancoModule } from './modules/administrativas/pagos-banco/pagos-banco.module';
+import { TiemposModule } from './shared/reportes/tiempos/tiempos.module';
+import { CertificadosrModule } from './shared/reportes/certificadosr/certificadosr.module';
 
 @Module({
 	imports: [
@@ -133,6 +135,8 @@ import { PagosBancoModule } from './modules/administrativas/pagos-banco/pagos-ba
 		DashboardDocentesModule,
 		RolPermisosModule,
 		PagosBancoModule,
+		TiemposModule,
+		CertificadosrModule,
 	],
 
 	controllers: [AppController],

@@ -8,8 +8,10 @@ describe('TipossolicitudController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TipossolicitudController],
-      providers: [TipossolicitudService],
-    }).compile();
+      providers: [{ provide: TipossolicitudService, useValue: {} }],
+    })
+      .useMocker(() => ({}))
+      .compile();
 
     controller = module.get<TipossolicitudController>(TipossolicitudController);
   });

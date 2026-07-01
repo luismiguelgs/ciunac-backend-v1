@@ -1,7 +1,11 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { RolPermisosController } from './rol_permisos.controller';
 import { RolPermisosService } from './rol_permisos.service';
 import { RolUsuario } from '../usuarios/entities/usuario.entity';
+import { ApiKeyGuard } from '../auth/guards/api-key.guard';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
 
 describe('RolPermisosController', () => {
   let controller: RolPermisosController;
@@ -12,14 +16,16 @@ describe('RolPermisosController', () => {
     rol: RolUsuario.ADMINISTRATIVO,
     permisoId: 10,
     descripcion: 'Test',
-    permiso: { id: 10, codigo: 'TEST_CODE', modulo: 'TEST_MODULE' }
+    permiso: { id: 10, codigo: 'TEST_CODE', modulo: 'TEST_MODULE' },
   };
 
   const mockRolPermisosService = {
     create: jest.fn().mockResolvedValue(mockRolPermiso),
     findAll: jest.fn().mockResolvedValue([mockRolPermiso]),
     findOne: jest.fn().mockResolvedValue(mockRolPermiso),
-    update: jest.fn().mockResolvedValue({ ...mockRolPermiso, descripcion: 'Updated' }),
+    update: jest
+      .fn()
+      .mockResolvedValue({ ...mockRolPermiso, descripcion: 'Updated' }),
     remove: jest.fn().mockResolvedValue(undefined),
   };
 
@@ -32,7 +38,14 @@ describe('RolPermisosController', () => {
           useValue: mockRolPermisosService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(ApiKeyGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(AuthGuard('jwt'))
+      .useValue({ canActivate: () => true })
+      .overrideGuard(PermissionsGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<RolPermisosController>(RolPermisosController);
     service = module.get<RolPermisosService>(RolPermisosService);
@@ -44,7 +57,11 @@ describe('RolPermisosController', () => {
 
   describe('create', () => {
     it('should create a rol_permiso', async () => {
-      const dto = { rol: RolUsuario.ADMINISTRATIVO, permisoId: 10, descripcion: 'Test' };
+      const dto = {
+        rol: RolUsuario.ADMINISTRATIVO,
+        permisoId: 10,
+        descripcion: 'Test',
+      };
       const result = await controller.create(dto);
       expect(result).toEqual(mockRolPermiso);
       expect(service.create).toHaveBeenCalledWith(dto);

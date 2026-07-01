@@ -8,8 +8,10 @@ describe('GruposController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [GruposController],
-      providers: [GruposService],
-    }).compile();
+      providers: [{ provide: GruposService, useValue: {} }],
+    })
+      .useMocker(() => ({}))
+      .compile();
 
     controller = module.get<GruposController>(GruposController);
   });

@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/unbound-method, @typescript-eslint/no-unsafe-argument */
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PagosBancoService } from './pagos-banco.service';
 import { PagosBanco } from './entities/pagos-banco.entity';
 import { Solicitud } from '../solicitudes/entities/solicitud.entity';
@@ -29,7 +30,7 @@ describe('PagosBancoService', () => {
     dniCodigo: '12345678',
     numeroVoucher: 'V001',
     alumno: 'Juan Perez',
-    monto: 100.50,
+    monto: 100.5,
     fechaPago: new Date(),
     fechaEfectiva: new Date(),
     archivo: 'voucher.pdf',
@@ -49,11 +50,17 @@ describe('PagosBancoService', () => {
           provide: getRepositoryToken(Solicitud),
           useValue: mockSolicitudRepository,
         },
+        {
+          provide: DataSource,
+          useValue: { createQueryRunner: jest.fn() },
+        },
       ],
     }).compile();
 
     service = module.get<PagosBancoService>(PagosBancoService);
-    repository = module.get<Repository<PagosBanco>>(getRepositoryToken(PagosBanco));
+    repository = module.get<Repository<PagosBanco>>(
+      getRepositoryToken(PagosBanco),
+    );
   });
 
   it('should be defined', () => {
@@ -80,7 +87,9 @@ describe('PagosBancoService', () => {
 
       const result = await service.findAll();
 
-      expect(repository.find).toHaveBeenCalledWith({ order: { creadoEn: 'DESC' } });
+      expect(repository.find).toHaveBeenCalledWith({
+        order: { creadoEn: 'DESC' },
+      });
       expect(result).toEqual([mockPago]);
     });
   });
@@ -106,7 +115,10 @@ describe('PagosBancoService', () => {
     it('should update and save the pago', async () => {
       const updateDto = { alumno: 'Juan Updated' };
       mockPagosBancoRepository.findOne.mockResolvedValue(mockPago);
-      mockPagosBancoRepository.save.mockResolvedValue({ ...mockPago, ...updateDto });
+      mockPagosBancoRepository.save.mockResolvedValue({
+        ...mockPago,
+        ...updateDto,
+      });
 
       const result = await service.update(1, updateDto as any);
 

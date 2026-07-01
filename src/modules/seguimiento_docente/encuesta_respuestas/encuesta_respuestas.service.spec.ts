@@ -1,99 +1,109 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { EncuestaRespuestasService } from './encuesta_respuestas.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { ModulosService } from 'src/modules/estructura/modulos/modulos.service';
+import { DocentesService } from 'src/modules/principales/docentes/docentes.service';
 import { EncuestaRespuesta } from './entities/encuesta_respuesta.entity';
-import { Repository } from 'typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { EncuestaRespuestasService } from './encuesta_respuestas.service';
 
 describe('EncuestaRespuestasService', () => {
   let service: EncuestaRespuestasService;
-  let repository: Repository<EncuestaRespuesta>;
-
-  const mockEncuestaRespuesta = {
-    id: 1,
-    grupoId: 10,
-    promedioPonderado: 18,
-    creadoEn: new Date(),
-    modificadoEn: new Date(),
-    grupo: { id: 10, codigo: 'G-01' },
-  };
-
-  const mockRepository = {
-    create: jest.fn().mockImplementation(dto => dto),
-    save: jest.fn().mockImplementation(respuesta => Promise.resolve({ ...mockEncuestaRespuesta, ...respuesta })),
-    find: jest.fn().mockResolvedValue([mockEncuestaRespuesta]),
-    findOne: jest.fn().mockImplementation(({ where: { id } }) => {
-      if (id === 1) return Promise.resolve(mockEncuestaRespuesta);
-      return Promise.resolve(null);
-    }),
-    merge: jest.fn().mockImplementation((entity, dto) => Object.assign(entity, dto)),
-    remove: jest.fn().mockResolvedValue(mockEncuestaRespuesta),
+  let repository: { find: jest.Mock };
+  let modulosService: { findOne: jest.Mock; findByName: jest.Mock };
+  let queryRunner: {
+    connect: jest.Mock;
+    startTransaction: jest.Mock;
+    commitTransaction: jest.Mock;
+    rollbackTransaction: jest.Mock;
+    release: jest.Mock;
+    query: jest.Mock;
+    manager: { create: jest.Mock; save: jest.Mock };
   };
 
   beforeEach(async () => {
+    repository = { find: jest.fn() };
+    modulosService = {
+      findOne: jest.fn(),
+      findByName: jest.fn(),
+    };
+    queryRunner = {
+      connect: jest.fn().mockResolvedValue(undefined),
+      startTransaction: jest.fn().mockResolvedValue(undefined),
+      commitTransaction: jest.fn().mockResolvedValue(undefined),
+      rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+      release: jest.fn().mockResolvedValue(undefined),
+      query: jest.fn().mockResolvedValue(undefined),
+      manager: {
+        create: jest.fn(),
+        save: jest.fn(),
+      },
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EncuestaRespuestasService,
         {
           provide: getRepositoryToken(EncuestaRespuesta),
-          useValue: mockRepository,
+          useValue: repository,
+        },
+        {
+          provide: DocentesService,
+          useValue: {
+            findByIdentificacion: jest.fn(),
+            create: jest.fn(),
+          },
+        },
+        {
+          provide: ModulosService,
+          useValue: modulosService,
+        },
+        {
+          provide: DataSource,
+          useValue: { createQueryRunner: jest.fn(() => queryRunner) },
         },
       ],
     }).compile();
 
     service = module.get<EncuestaRespuestasService>(EncuestaRespuestasService);
-    repository = module.get<Repository<EncuestaRespuesta>>(getRepositoryToken(EncuestaRespuesta));
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('create', () => {
-    it('should create a new response', async () => {
-      const dto = { grupoId: 10, promedioPonderado: 18 };
-      const result = await service.create(dto);
-      expect(repository.create).toHaveBeenCalledWith(dto);
-      expect(repository.save).toHaveBeenCalled();
-      expect(result).toEqual(expect.objectContaining(dto));
+  it('should return an empty list when the module does not exist', async () => {
+    modulosService.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.findByDocenteAndModulo('docente-1', 10),
+    ).resolves.toEqual([]);
+    expect(repository.find).not.toHaveBeenCalled();
+  });
+
+  it('should find responses using the module period', async () => {
+    const responses = [{ id: 1, docenteId: 'docente-1' }];
+    modulosService.findOne.mockResolvedValue({ id: 10, nombre: '2026-I' });
+    repository.find.mockResolvedValue(responses);
+
+    await expect(
+      service.findByDocenteAndModulo('docente-1', 10),
+    ).resolves.toEqual(responses);
+    expect(repository.find).toHaveBeenCalledWith({
+      where: { docenteId: 'docente-1', periodo: '2026-I' },
+      relations: ['docente'],
+      order: { fechaRegistro: 'DESC' },
     });
   });
 
-  describe('findAll', () => {
-    it('should return an array of responses', async () => {
-      const result = await service.findAll();
-      expect(repository.find).toHaveBeenCalled();
-      expect(result).toEqual([mockEncuestaRespuesta]);
+  it('should commit and release the transaction for an empty CSV', async () => {
+    await expect(service.uploadAndProcess(Buffer.from(''))).resolves.toEqual({
+      success: true,
+      message: 'Procesadas 0 encuestas correctamente.',
     });
-  });
-
-  describe('findOne', () => {
-    it('should return a response by id', async () => {
-      const result = await service.findOne(1);
-      expect(result).toEqual(mockEncuestaRespuesta);
-    });
-
-    it('should throw NotFoundException if response not found', async () => {
-      await expect(service.findOne(2)).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('update', () => {
-    it('should update a response', async () => {
-      const dto = { promedioPonderado: 20 };
-      const result = await service.update(1, dto);
-      expect(repository.merge).toHaveBeenCalled();
-      expect(repository.save).toHaveBeenCalled();
-      expect(result.promedioPonderado).toBe(20);
-    });
-  });
-
-  describe('remove', () => {
-    it('should remove a response', async () => {
-      const result = await service.remove(1);
-      expect(repository.remove).toHaveBeenCalled();
-      expect(result).toEqual(mockEncuestaRespuesta);
-    });
+    expect(queryRunner.connect).toHaveBeenCalledTimes(1);
+    expect(queryRunner.startTransaction).toHaveBeenCalledTimes(1);
+    expect(queryRunner.commitTransaction).toHaveBeenCalledTimes(1);
+    expect(queryRunner.rollbackTransaction).not.toHaveBeenCalled();
+    expect(queryRunner.release).toHaveBeenCalledTimes(1);
   });
 });
-

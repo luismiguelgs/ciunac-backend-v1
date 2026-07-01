@@ -8,10 +8,14 @@ describe('CalificacionesubicacionController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CalificacionesubicacionController],
-      providers: [CalificacionesubicacionService],
-    }).compile();
+      providers: [{ provide: CalificacionesubicacionService, useValue: {} }],
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    controller = module.get<CalificacionesubicacionController>(CalificacionesubicacionController);
+    controller = module.get<CalificacionesubicacionController>(
+      CalificacionesubicacionController,
+    );
   });
 
   it('should be defined', () => {

@@ -22,7 +22,9 @@ describe('DocumentosDocenteService', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
     service = module.get<DocumentosDocenteService>(DocumentosDocenteService);
   });

@@ -7,9 +7,13 @@ describe('EncuestaMetricasDocenteService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [EncuestaMetricasDocenteService],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    service = module.get<EncuestaMetricasDocenteService>(EncuestaMetricasDocenteService);
+    service = module.get<EncuestaMetricasDocenteService>(
+      EncuestaMetricasDocenteService,
+    );
   });
 
   it('should be defined', () => {
