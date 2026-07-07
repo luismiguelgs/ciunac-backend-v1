@@ -40,3 +40,19 @@ Schemas actuales:
 - Relaciones TypeORM deben documentarse cuando impacten casos de uso.
 - Schemas Mongoose deben incluir reglas de validacion necesarias para documentos persistidos.
 - Procesos CSV deben definir columnas requeridas, validaciones y comportamiento ante filas invalidas.
+
+## Modelo objetivo: acta de examen de ubicación
+
+El spec de examen de ubicación mantiene PostgreSQL como fuente transaccional y MongoDB como fotografía histórica:
+
+- `Examenesubicacion` agregará `cronogramaId` mediante migración TypeORM.
+- `Detallesubicacion` conserva `solicitudId` y enlaza examen, estudiante, nota y resultado calculado.
+- `Solicitud.numeroVoucher` es obligatorio para cada participante que formará parte del acta.
+- `ActaExamenUbicacion` agregará `examenId` obligatorio con índice único.
+- Cada participante embebido conservará `detalleId`, `solicitudId`, `numeroVoucher`, datos del estudiante, nota, nivel, ciclo y estado terminado.
+- El documento se genera desde PostgreSQL; el cliente no proporciona la fotografía completa.
+- Una vez publicada, el acta no se modifica ni se elimina.
+
+La creación cruza dos motores sin transacción distribuida. Todas las validaciones se ejecutan antes de insertar en MongoDB. Si la inserción termina pero falla el cambio del examen a `ACTA_GENERADA`, el servicio debe compensar eliminando únicamente el documento todavía no publicado y registrar el error.
+
+Véase [Spec SDD: Exámenes de ubicación](../specs/examen-ubicacion.md).

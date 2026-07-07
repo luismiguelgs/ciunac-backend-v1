@@ -28,7 +28,7 @@ Alinear pruebas con specs de negocio y contratos tecnicos. Cada caso de uso impo
 | Authentication | `AuthService`, guards, permisos | register/login/profile | login -> profile -> permiso |
 | Solicitudes administrativas | filtros, estados, fechas | solicitud + documento | solicitud -> constancia/certificado |
 | Pagos banco | parseo CSV, reverificacion | upload CSV | upload -> list -> reverify |
-| Examen ubicacion | CRUD y busquedas | examen -> detalle -> calificacion | consulta por documento |
+| Examen ubicación | rangos, elegibilidad, cálculo, cierre, consolidación, duplicidad y compensación | cronograma -> examen -> detalle -> resultado -> acta | examen cerrado -> acta -> consulta; segundo intento `409` |
 | Seguimiento docente | resultados y dashboard | perfil -> documento -> resultado | CSV encuesta -> dashboard |
 | Q10 | mock Q10 | endpoints con API key | horarios/cursos |
 | Uploads y mailer | resolver carpeta, transporter | mocks Drive/SMTP | upload/mail basico |
@@ -42,6 +42,18 @@ Alinear pruebas con specs de negocio y contratos tecnicos. Cada caso de uso impo
 - Recurso inexistente.
 - Error de integracion externa.
 - CSV vacio, invalido y valido.
+
+## Matriz mínima: examen de ubicación
+
+- Rangos: límites 0 y 100, mínimo mayor al máximo, solapamientos y nota sin coincidencia.
+- Cronograma y examen: referencias inexistentes, código duplicado y transiciones inválidas.
+- Participantes: solicitud distinta de tipo 7, estado distinto de 4, voucher vacío, idioma incompatible y asignación duplicada.
+- Resultados: nota válida, fuera de rango, cálculo único de nivel/ciclo y detalle inactivo.
+- Cierre: examen vacío, participante pendiente y cierre exitoso.
+- Acta: DTO con solo `examenId`, examen inexistente, estado distinto de `CERRADO`, participante incompleto, creación exitosa e índice único.
+- Inmutabilidad: `PATCH` y `DELETE` de acta publicada responden `409 ACTA_INMUTABLE`.
+- Consistencia: fallo MongoDB, fallo PostgreSQL posterior a la inserción y compensación del documento no publicado.
+- Seguridad: API key, JWT, permiso administrativo y campos no permitidos.
 
 ## Criterio de salida para nuevas features
 

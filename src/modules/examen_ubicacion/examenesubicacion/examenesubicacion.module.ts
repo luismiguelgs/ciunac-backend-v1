@@ -7,16 +7,20 @@ import { Aula } from 'src/modules/estructura/aulas/entities/aula.entity';
 import { Docente } from 'src/modules/principales/docentes/entities/docente.entity';
 import { Idioma } from 'src/modules/estructura/idiomas/entities/idioma.entity';
 import { Estado } from 'src/modules/auxiliares/estados/entities/estado.entity';
+import { Detallesubicacion } from '../detallesubicacion/entities/detallesubicacion.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    Examenesubicacion,
-    Aula,
-    Docente,
-    Idioma,
-    Estado,
-  ])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Examenesubicacion,
+      Aula,
+      Docente,
+      Idioma,
+      Estado,
+      Detallesubicacion,
+    ]),
+  ],
   controllers: [ExamenesubicacionController],
   providers: [ExamenesubicacionService],
 })
-export class ExamenesubicacionModule { }
+export class ExamenesubicacionModule {}

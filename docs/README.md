@@ -9,7 +9,7 @@ Esta carpeta contiene la documentacion versionada del backend CIUNAC. Esta pensa
 - Para revisar seguridad, variables sensibles y riesgos, leer [Seguridad](architecture/security.md).
 - Para revisar persistencia, leer [Datos y persistencia](architecture/data.md).
 - Para implementar o validar endpoints, usar [Inventario API](api/endpoints.md) y [Swagger / OpenAPI](api/openapi.md).
-- Para trabajar con spec-driven development, usar [Plantilla de specs](specs/spec-template.md) y [Indice de casos de uso](specs/use-cases-index.md).
+- Para trabajar con spec-driven development, usar [Plantilla de specs](specs/spec-template.md), [Índice de casos de uso](specs/use-cases-index.md) y, para el flujo ya especificado, [Exámenes de ubicación](specs/examen-ubicacion.md).
 - Para pruebas, usar [Estrategia de testing](testing/strategy.md).
 - Para operacion y configuracion, usar [Configuracion operacional](operations/configuration.md).
 
@@ -32,7 +32,7 @@ La documentacion refleja el estado actual del codigo fuente bajo `src/`:
 | Datos | [Data](architecture/data.md) |
 | Integraciones | [Integrations](architecture/integrations.md) |
 | API | [Endpoints](api/endpoints.md), [OpenAPI](api/openapi.md) |
-| Specs | [Template](specs/spec-template.md), [Use cases](specs/use-cases-index.md) |
+| Specs | [Template](specs/spec-template.md), [Use cases](specs/use-cases-index.md), [Exámenes de ubicación](specs/examen-ubicacion.md), [Implementación de actas](specs/implementacion-actas-examen-ubicacion.md) |
 | Operacion | [Configuration](operations/configuration.md) |
 | Testing | [Strategy](testing/strategy.md) |
 | ADR | [0001 Architecture](adr/0001-architecture-style.md), [0002 Persistence](adr/0002-persistence.md), [0003 API Security](adr/0003-api-security.md) |

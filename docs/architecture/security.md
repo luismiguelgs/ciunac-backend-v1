@@ -41,3 +41,20 @@
 - Operaciones de gestion deben usar `PermissionsGuard` y `@RequirePermissions`.
 - Endpoints publicos deben declararse explicitamente en esta documentacion con razon de negocio.
 - Secrets nunca deben registrarse en logs ni documentarse con valores reales.
+
+## Exámenes de ubicación
+
+### Estado actual
+
+Los controladores `cronogramaubicacion`, `examenesubicacion`, `calificacionesubicacion`, `detallesubicacion` y `actasexamenubicacion` aplican únicamente `ApiKeyGuard`. El JWT aparece comentado y no existe una verificación del administrativo que ejecuta la operación.
+
+### Requisito objetivo
+
+- Conservar la API key para identificar al cliente.
+- Exigir JWT y el permiso `gestionar_examen_ubicacion` para crear, modificar, cerrar o generar actas.
+- Aplicar autorización antes de consultar PostgreSQL o MongoDB.
+- No incluir número de voucher, documento completo ni secretos en logs.
+- Rechazar campos adicionales en `POST /actasexamenubicacion`; el DTO público acepta solo `examenId`.
+- Mantener `PATCH` y `DELETE` de actas como rutas legadas deprecadas y rechazar actas publicadas con `409 ACTA_INMUTABLE`.
+
+Estos controles no cambian las URI existentes.

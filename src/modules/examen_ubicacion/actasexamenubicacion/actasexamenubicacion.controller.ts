@@ -1,38 +1,80 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
-import { ActasexamenubicacionService } from './actasexamenubicacion.service';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiOperation } from '@nestjs/swagger';
+import { Request } from 'express';
+import { RequirePermissions } from 'src/modules/authentication/auth/decorators/permissions.decorator';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
+import { PermissionsGuard } from 'src/modules/authentication/auth/guards/permissions.guard';
+import { ActaExamenUbicacionResponseDto } from './dto/acta-examen-ubicacion-response.dto';
 import { CreateActasexamenubicacionDto } from './dto/create-actasexamenubicacion.dto';
 import { UpdateActasexamenubicacionDto } from './dto/update-actasexamenubicacion.dto';
-import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
-//import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { ActasexamenubicacionService } from './actasexamenubicacion.service';
 
-//@UseGuards(JwtAuthGuard)
+type AuthenticatedRequest = Request & {
+  user: {
+    id: string;
+    email: string;
+    rol: string;
+  };
+};
+
 @UseGuards(ApiKeyGuard)
 @Controller('actasexamenubicacion')
 export class ActasexamenubicacionController {
-	constructor(private readonly actasexamenubicacionService: ActasexamenubicacionService) { }
+  constructor(
+    private readonly actasexamenubicacionService: ActasexamenubicacionService,
+  ) {}
 
-	@Post()
-	create(@Body() createActasexamenubicacionDto: CreateActasexamenubicacionDto) {
-		return this.actasexamenubicacionService.create(createActasexamenubicacionDto);
-	}
+  @Post()
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('gestionar_examen_ubicacion')
+  create(
+    @Body() createDto: CreateActasexamenubicacionDto,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<ActaExamenUbicacionResponseDto> {
+    return this.actasexamenubicacionService.create(createDto, {
+      usuarioId: request.user.id,
+      email: request.user.email,
+      rol: request.user.rol,
+    });
+  }
 
-	@Get()
-	findAll() {
-		return this.actasexamenubicacionService.findAll();
-	}
+  @Get()
+  findAll(): Promise<ActaExamenUbicacionResponseDto[]> {
+    return this.actasexamenubicacionService.findAll();
+  }
 
-	@Get(':id')
-	findOne(@Param('id') id: string) {
-		return this.actasexamenubicacionService.findOne(id);
-	}
+  @Get(':id')
+  findOne(@Param('id') id: string): Promise<ActaExamenUbicacionResponseDto> {
+    return this.actasexamenubicacionService.findOne(id);
+  }
 
-	@Patch(':id')
-	update(@Param('id') id: string, @Body() updateActasexamenubicacionDto: UpdateActasexamenubicacionDto) {
-		return this.actasexamenubicacionService.update(id, updateActasexamenubicacionDto);
-	}
+  @Patch(':id')
+  @ApiOperation({ deprecated: true })
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('gestionar_examen_ubicacion')
+  update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateActasexamenubicacionDto,
+  ): never {
+    return this.actasexamenubicacionService.update(id, updateDto);
+  }
 
-	@Delete(':id')
-	remove(@Param('id') id: string) {
-		return this.actasexamenubicacionService.remove(id);
-	}
+  @Delete(':id')
+  @ApiOperation({ deprecated: true })
+  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+  @RequirePermissions('gestionar_examen_ubicacion')
+  remove(@Param('id') id: string): never {
+    return this.actasexamenubicacionService.remove(id);
+  }
 }

@@ -1,15 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateExamenesubicacionDto } from './dto/create-examenesubicacion.dto';
 import { UpdateExamenesubicacionDto } from './dto/update-examenesubicacion.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Examenesubicacion } from './entities/examenesubicacion.entity';
+import { Detallesubicacion } from '../detallesubicacion/entities/detallesubicacion.entity';
 
 @Injectable()
 export class ExamenesubicacionService {
 	constructor(
 		@InjectRepository(Examenesubicacion)
 		private examenesubicacionRepository: Repository<Examenesubicacion>,
+		@InjectRepository(Detallesubicacion)
+		private detallesubicacionRepository: Repository<Detallesubicacion>,
 	) {}
 	
 	async create(createExamenesubicacionDto: CreateExamenesubicacionDto) : Promise<Examenesubicacion> {
@@ -44,6 +47,21 @@ export class ExamenesubicacionService {
 		if (!item) {
 			return null;
 		}
+
+		const detallesCount = await this.detallesubicacionRepository.count({
+			where: { examenId: id },
+		});
+
+		if (detallesCount > 0) {
+			throw new ConflictException({
+				statusCode: 409,
+				code: 'EXAMEN_CON_DETALLES',
+				message:
+					'No se puede eliminar el examen porque tiene participantes asociados',
+				detallesCount,
+			});
+		}
+
 		await this.examenesubicacionRepository.delete(id);
 		return item;
 	}

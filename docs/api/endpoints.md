@@ -82,11 +82,21 @@ Convenciones:
 
 | Controller | Auth | Endpoints |
 | --- | --- | --- |
-| `actasexamenubicacion` | ApiKey | `POST /actasexamenubicacion`, `GET /actasexamenubicacion`, `GET /actasexamenubicacion/:id`, `PATCH /actasexamenubicacion/:id`, `DELETE /actasexamenubicacion/:id` |
+| `actasexamenubicacion` | ApiKey | `POST /actasexamenubicacion`, `GET /actasexamenubicacion`, `GET /actasexamenubicacion/:id`, `PATCH /actasexamenubicacion/:id` (legado, deprecado), `DELETE /actasexamenubicacion/:id` (legado, deprecado) |
 | `calificacionesubicacion` | ApiKey | `POST /calificacionesubicacion`, `GET /calificacionesubicacion`, `GET /calificacionesubicacion/:id`, `PATCH /calificacionesubicacion/:id`, `DELETE /calificacionesubicacion/:id` |
 | `cronogramaubicacion` | ApiKey | `POST /cronogramaubicacion`, `GET /cronogramaubicacion`, `GET /cronogramaubicacion/:id`, `PATCH /cronogramaubicacion/:id`, `DELETE /cronogramaubicacion/:id` |
 | `detallesubicacion` | ApiKey | `POST /detallesubicacion`, `GET /detallesubicacion`, `GET /detallesubicacion/examen/:id`, `GET /detallesubicacion/estudiante/documento/:documentNumber`, `GET /detallesubicacion/:id`, `PATCH /detallesubicacion/:id`, `DELETE /detallesubicacion/:id` |
 | `examenesubicacion` | ApiKey | `POST /examenesubicacion`, `GET /examenesubicacion`, `GET /examenesubicacion/:id`, `PATCH /examenesubicacion/:id`, `DELETE /examenesubicacion/:id` |
+
+### Contrato objetivo documentado
+
+- No se agregan rutas al dominio.
+- `POST /actasexamenubicacion` recibirá solamente `{ "examenId": number }`; el backend consolidará el acta desde PostgreSQL.
+- `POST /examenesubicacion` incorporará `cronogramaId` en su contrato sin cambiar la URI.
+- `PATCH /detallesubicacion/:id` registrará nota y terminación; el backend calculará nivel y ciclo.
+- `PATCH /examenesubicacion/:id` continuará siendo la ruta para cambiar el estado y cerrar el examen.
+- Las actas publicadas serán inmutables; `PATCH` y `DELETE` responderán `409 ACTA_INMUTABLE` cuando se implemente el comportamiento objetivo.
+- El detalle completo y la transición están definidos en [Spec SDD: Exámenes de ubicación](../specs/examen-ubicacion.md).
 
 ## Principales
 
