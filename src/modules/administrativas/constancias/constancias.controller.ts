@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ConstanciasService, ProcesarFirmaResult } from './constancias.service';
 import { CreateConstanciaDto } from './dto/create-constancia.dto';
@@ -44,6 +45,13 @@ export class ConstanciasController {
   @Get('aceptados')
   findByAceptado(): Promise<Constancia[]> {
     return this.constanciasService.findByAceptado();
+  }
+
+  @Get('solicitud/:solicitudId')
+  findBySolicitudId(
+    @Param('solicitudId', ParseIntPipe) solicitudId: number,
+  ): Promise<Constancia | null> {
+    return this.constanciasService.findBySolicitudId(solicitudId);
   }
 
   @Patch('procesar-firma')

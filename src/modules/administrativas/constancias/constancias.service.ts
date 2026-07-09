@@ -95,6 +95,15 @@ export class ConstanciasService {
     return constancias.map((constancia) => this.mapId(constancia));
   }
 
+  async findBySolicitudId(solicitudId: number): Promise<Constancia | null> {
+    const constancia = await this.constanciaModel
+      .findOne({ id_solicitud: solicitudId })
+      .lean()
+      .exec();
+
+    return this.mapId(constancia);
+  }
+
   async findOne(id: string): Promise<Constancia | null> {
     const criterios: any = [];
     criterios.push({ _id: id });

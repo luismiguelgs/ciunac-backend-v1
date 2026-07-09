@@ -133,6 +133,28 @@ describe('ConstanciasService', () => {
     });
   });
 
+  describe('findBySolicitudId', () => {
+    it('returns a constancia by solicitud id and normalizes ids', async () => {
+      mockFindOne(mockConstancia);
+
+      const constancia = await service.findBySolicitudId(123);
+
+      expect(model.findOne).toHaveBeenCalledWith({ id_solicitud: 123 });
+      expect(constancia).toMatchObject({
+        _id: mockConstancia._id.toString(),
+        id: mockConstancia._id.toString(),
+        id_solicitud: 123,
+      });
+    });
+
+    it('returns null when no constancia exists for the solicitud id', async () => {
+      mockFindOne(null);
+
+      await expect(service.findBySolicitudId(999)).resolves.toBeNull();
+      expect(model.findOne).toHaveBeenCalledWith({ id_solicitud: 999 });
+    });
+  });
+
   describe('procesarFirma', () => {
     beforeEach(() => {
       mockFindOne(mockConstancia);
