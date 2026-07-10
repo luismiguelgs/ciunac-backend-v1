@@ -85,9 +85,9 @@ describe('CertificadosrService', () => {
       },
     ]);
     solicitudFind.mockResolvedValue([
-      { id: 1, numeroVoucher: 'V-001' },
-      { id: 3, numeroVoucher: 'V-003' },
-      { id: 4, numeroVoucher: 'V-004' },
+      { id: 1, periodo: '2026-I', numeroVoucher: 'V-001' },
+      { id: 3, periodo: '2025-II', numeroVoucher: 'V-003' },
+      { id: 4, periodo: '2025-I', numeroVoucher: 'V-004' },
     ]);
 
     await expect(service.findAll()).resolves.toEqual({
@@ -99,6 +99,7 @@ describe('CertificadosrService', () => {
             alumno: 'Ana Torres',
             idioma: 'Inglés',
             nivel: 'Básico',
+            periodo: '2026-I',
             numeroVoucher: 'V-001',
           },
         ],
@@ -109,6 +110,7 @@ describe('CertificadosrService', () => {
             alumno: 'Luis Ramos',
             idioma: 'Portugués',
             nivel: 'BASICO',
+            periodo: null,
             numeroVoucher: null,
           },
         ],
@@ -121,6 +123,7 @@ describe('CertificadosrService', () => {
             alumno: 'María León',
             idioma: 'Inglés',
             nivel: 'Intermedio',
+            periodo: '2025-II',
             numeroVoucher: 'V-003',
           },
         ],
@@ -131,6 +134,7 @@ describe('CertificadosrService', () => {
             alumno: 'José Paz',
             idioma: 'Inglés',
             nivel: 'Avanzado',
+            periodo: '2025-I',
             numeroVoucher: 'V-004',
           },
         ],
@@ -215,15 +219,20 @@ describe('CertificadosrService', () => {
         solicitudId: 'invalido',
       },
     ]);
-    solicitudFind.mockResolvedValue([{ id: 7, numeroVoucher: 'V-007' }]);
+    solicitudFind.mockResolvedValue([
+      { id: 7, periodo: '2026-I', numeroVoucher: 'V-007' },
+    ]);
 
     const resultado = await service.findAll();
 
+    expect(resultado.basico.digitales[0].periodo).toBe('2026-I');
     expect(resultado.basico.digitales[0].numeroVoucher).toBe('V-007');
+    expect(resultado.intermedioAvanzado.fisicos[0].periodo).toBe('2026-I');
     expect(resultado.intermedioAvanzado.fisicos[0].numeroVoucher).toBe('V-007');
+    expect(resultado.intermedioAvanzado.fisicos[1].periodo).toBeNull();
     expect(resultado.intermedioAvanzado.fisicos[1].numeroVoucher).toBeNull();
     expect(solicitudFind).toHaveBeenCalledWith({
-      select: { id: true, numeroVoucher: true },
+      select: { id: true, periodo: true, numeroVoucher: true },
       where: {
         id: expect.objectContaining({
           _type: 'in',

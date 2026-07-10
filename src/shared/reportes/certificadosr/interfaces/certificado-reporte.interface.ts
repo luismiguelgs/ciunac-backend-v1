@@ -6,6 +6,7 @@ export interface CertificadoReporte {
   alumno: string;
   idioma: string;
   nivel: string;
+  periodo: string | null;
   numeroVoucher: string | null;
 }
 

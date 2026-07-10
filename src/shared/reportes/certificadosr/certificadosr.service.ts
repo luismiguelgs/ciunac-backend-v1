@@ -15,6 +15,11 @@ import {
   GrupoNivelReporte,
 } from './interfaces/certificado-reporte.interface';
 
+interface DatosSolicitudReporte {
+  periodo: string;
+  numeroVoucher: string;
+}
+
 @Injectable()
 export class CertificadosrService {
   constructor(
@@ -48,7 +53,7 @@ export class CertificadosrService {
       ),
     ];
 
-    const vouchersPorSolicitud = await this.obtenerVouchers(solicitudIds);
+    const solicitudesPorId = await this.obtenerDatosSolicitudes(solicitudIds);
     const reporte = this.crearReporteVacio();
 
     for (const certificado of certificados) {
@@ -60,13 +65,15 @@ export class CertificadosrService {
       }
 
       const solicitudId = Number(certificado.solicitudId);
+      const solicitud = solicitudesPorId.get(solicitudId);
       const item: CertificadoReporte = {
         numeroRegistro: certificado.numeroRegistro,
         tipo: certificado.tipo,
         alumno: certificado.estudiante,
         idioma: certificado.idioma,
         nivel: certificado.nivel,
-        numeroVoucher: vouchersPorSolicitud.get(solicitudId) ?? null,
+        periodo: solicitud?.periodo ?? null,
+        numeroVoucher: solicitud?.numeroVoucher ?? null,
       };
 
       reporte[grupoNivel][grupoFormato].push(item);
@@ -75,20 +82,26 @@ export class CertificadosrService {
     return reporte;
   }
 
-  private async obtenerVouchers(
+  private async obtenerDatosSolicitudes(
     solicitudIds: number[],
-  ): Promise<Map<number, string>> {
+  ): Promise<Map<number, DatosSolicitudReporte>> {
     if (solicitudIds.length === 0) {
       return new Map();
     }
 
     const solicitudes = await this.solicitudRepository.find({
-      select: { id: true, numeroVoucher: true },
+      select: { id: true, periodo: true, numeroVoucher: true },
       where: { id: In(solicitudIds) },
     });
 
     return new Map(
-      solicitudes.map((solicitud) => [solicitud.id, solicitud.numeroVoucher]),
+      solicitudes.map((solicitud) => [
+        solicitud.id,
+        {
+          periodo: solicitud.periodo,
+          numeroVoucher: solicitud.numeroVoucher,
+        },
+      ]),
     );
   }
 
