@@ -225,8 +225,7 @@ export class ConstanciasService {
     const noOriginalToTrash =
       !originalToTrashId || originalToTrashId === driveResult.id;
     const initialOriginalTrashed = cleanupAlreadyDone || noOriginalToTrash;
-    const resolvedViewLink =
-      driveResult.viewLink || driveResult.downloadLink || constancia.url;
+    const signedFileUrl = `https://drive.google.com/uc?export=download&id=${driveResult.id}`;
     const previousConstanciaState = {
       impreso: constancia.impreso,
       driveId: constancia.driveId ?? null,
@@ -241,7 +240,7 @@ export class ConstanciasService {
         {
           impreso: true,
           driveId: driveResult.id,
-          url: resolvedViewLink,
+          url: signedFileUrl,
           driveIdOriginal: originalToTrashId ?? null,
           originalTrashed: initialOriginalTrashed,
         },
@@ -313,7 +312,7 @@ export class ConstanciasService {
       success: true,
       fileId: driveResult.id,
       name: driveResult.name,
-      viewLink: resolvedViewLink,
+      viewLink: signedFileUrl,
       originalTrashed,
       ...(warning ? { warning } : {}),
     };

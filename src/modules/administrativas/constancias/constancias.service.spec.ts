@@ -203,7 +203,7 @@ describe('ConstanciasService', () => {
         expect.objectContaining({
           impreso: true,
           driveId: 'signed-id',
-          url: 'signed-view',
+          url: 'https://drive.google.com/uc?export=download&id=signed-id',
           driveIdOriginal: 'stored-original-id',
           originalTrashed: false,
         }),
@@ -219,7 +219,7 @@ describe('ConstanciasService', () => {
         success: true,
         fileId: 'signed-id',
         name: '[FIRMADO] constancia-123.pdf',
-        viewLink: 'signed-view',
+        viewLink: 'https://drive.google.com/uc?export=download&id=signed-id',
         originalTrashed: true,
       });
     });
