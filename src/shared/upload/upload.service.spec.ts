@@ -20,6 +20,9 @@ describe('UploadService', () => {
   beforeEach(() => {
     process.env.GOOGLE_DRIVE_FOLDER_CONSTANCIAS_REPOSITORIO =
       'repository-folder';
+    process.env.GOOGLE_DRIVE_FOLDER_CERTIFICADOS = 'certificates-folder';
+    process.env.GOOGLE_DRIVE_FOLDER_CERTIFICADOS_REPOSITORIO =
+      'certificates-repository';
     service = new UploadService({
       update: jest.fn(),
     } as unknown as ConstanciasService);
@@ -188,6 +191,135 @@ describe('UploadService', () => {
     expect(driveClient.permissions.list).toHaveBeenCalledWith(
       expect.objectContaining({
         fileId: 'signed-id',
+        supportsAllDrives: true,
+      }),
+    );
+  });
+
+  it('uploads certificate files to the configured source folder', async () => {
+    driveClient.files.create.mockResolvedValue({
+      data: {
+        id: 'certificate-id',
+        name: 'certificado-1-Juan Perez.pdf',
+        webViewLink: 'view-link',
+        webContentLink: 'download-link',
+      },
+    });
+    const file = {
+      originalname: 'documento.pdf',
+      mimetype: 'application/pdf',
+      buffer: Buffer.from('pdf'),
+    } as Express.Multer.File;
+
+    const result = await service.uploadToDrive(
+      file,
+      'CERTIFICADOS',
+      'certificado-1-Juan Perez',
+    );
+
+    expect(driveClient.files.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        supportsAllDrives: true,
+        requestBody: expect.objectContaining({
+          parents: ['certificates-folder'],
+        }),
+      }),
+    );
+    expect(result).toMatchObject({
+      id: 'certificate-id',
+      folder: 'CERTIFICADOS',
+    });
+  });
+
+  it('finds the exact certificate period folder', async () => {
+    driveClient.files.list.mockResolvedValue({
+      data: {
+        files: [
+          { id: 'similar-folder', name: '202607-old' },
+          { id: 'period-folder', name: '202607' },
+        ],
+      },
+    });
+
+    await expect(
+      service.getCertificatePeriodFolderId('202607'),
+    ).resolves.toBe('period-folder');
+    expect(driveClient.files.list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        q: expect.stringContaining("name = '202607'"),
+        includeItemsFromAllDrives: true,
+        supportsAllDrives: true,
+      }),
+    );
+  });
+
+  it('fails when the certificate period folder does not exist', async () => {
+    driveClient.files.list.mockResolvedValue({ data: { files: [] } });
+
+    await expect(
+      service.getCertificatePeriodFolderId('202607'),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('searches signed certificates in the supplied period folder', async () => {
+    driveClient.files.get.mockResolvedValue({
+      data: {
+        id: 'original-id',
+        name: 'certificado-123.pdf',
+        parents: ['source-folder'],
+      },
+    });
+    driveClient.files.list
+      .mockResolvedValueOnce({ data: { files: [] } })
+      .mockResolvedValueOnce({
+        data: {
+          files: [
+            {
+              id: 'signed-id',
+              name: 'certificado-123[FIRMADO].pdf',
+              modifiedTime: '2026-07-13T10:00:00.000Z',
+            },
+          ],
+        },
+      });
+
+    const result = await service.findSignedVersion(
+      'original-id',
+      undefined,
+      'period-folder',
+    );
+
+    expect(result.signedFile.id).toBe('signed-id');
+    expect(driveClient.files.list).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        q: expect.stringContaining("'period-folder' in parents"),
+      }),
+    );
+  });
+
+  it('moves a signed certificate to the supplied period folder', async () => {
+    driveClient.files.get.mockResolvedValue({
+      data: {
+        id: 'signed-id',
+        name: 'certificado-123[FIRMADO].pdf',
+        parents: ['source-folder'],
+      },
+    });
+    driveClient.files.update.mockResolvedValue({
+      data: {
+        id: 'signed-id',
+        name: 'certificado-123[FIRMADO].pdf',
+      },
+    });
+
+    await service.moveFileToRepository('signed-id', 'period-folder');
+
+    expect(driveClient.files.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fileId: 'signed-id',
+        addParents: 'period-folder',
+        removeParents: 'source-folder',
         supportsAllDrives: true,
       }),
     );

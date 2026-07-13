@@ -24,6 +24,10 @@ export interface SignedFileResolution {
   signedFile: DriveFileInfo;
 }
 
+export interface UploadResult extends DriveFileInfo {
+  folder: string;
+}
+
 @Injectable()
 export class UploadService {
   private driveClient: drive_v3.Drive;
@@ -65,6 +69,10 @@ export class UploadService {
         return process.env.GOOGLE_DRIVE_FOLDER_CONSTANCIAS ?? '';
       case 'REPO_CONSTANCIAS':
         return process.env.GOOGLE_DRIVE_FOLDER_CONSTANCIAS_REPOSITORIO ?? '';
+      case 'CERTIFICADOS':
+        return process.env.GOOGLE_DRIVE_FOLDER_CERTIFICADOS ?? '';
+      case 'REPO_CERTIFICADOS':
+        return process.env.GOOGLE_DRIVE_FOLDER_CERTIFICADOS_REPOSITORIO ?? '';
       default:
         throw new BadRequestException(`Carpeta no valida: ${folder}`);
     }
@@ -75,7 +83,7 @@ export class UploadService {
     folder: string,
     nombre: string,
     fileId?: string,
-  ) {
+  ): Promise<UploadResult> {
     try {
       const folderId = this.getFolderId(folder);
       const bufferStream = new stream.PassThrough();
@@ -152,6 +160,7 @@ export class UploadService {
   async findSignedVersion(
     originalFileId: string,
     signedFileId?: string,
+    repositoryFolderId?: string,
   ): Promise<SignedFileResolution> {
     let originalData: drive_v3.Schema$File;
 
@@ -199,8 +208,8 @@ export class UploadService {
       const signedFile = this.mapDriveFile(signedData);
       if (
         !this.isSignedFileName(signedFile.name) ||
-        this.normalizeConstanciaFileName(signedFile.name) !==
-          this.normalizeConstanciaFileName(originalFile.name)
+        this.normalizeSignedFileName(signedFile.name) !==
+          this.normalizeSignedFileName(originalFile.name)
       ) {
         throw new BadRequestException(
           `El archivo firmado ${signedFile.name} no corresponde a ${originalFile.name}`,
@@ -210,9 +219,10 @@ export class UploadService {
       return { originalFile, signedFile };
     }
 
-    const repositoryFolderId = this.getRepositoryFolderId();
+    const resolvedRepositoryFolderId =
+      repositoryFolderId ?? this.getRepositoryFolderId();
     const folderIds = new Set<string>(originalData.parents ?? []);
-    folderIds.add(repositoryFolderId);
+    folderIds.add(resolvedRepositoryFolderId);
 
     let files: drive_v3.Schema$File[] = [];
     try {
@@ -221,11 +231,11 @@ export class UploadService {
       }
     } catch (error) {
       throw new InternalServerErrorException(
-        `Error al buscar la constancia firmada en Google Drive: ${this.getErrorMessage(error)}`,
+        `Error al buscar el archivo firmado en Google Drive: ${this.getErrorMessage(error)}`,
       );
     }
 
-    const normalizedOriginalName = this.normalizeConstanciaFileName(
+    const normalizedOriginalName = this.normalizeSignedFileName(
       originalFile.name,
     );
     const candidatesById = new Map<string, drive_v3.Schema$File>();
@@ -236,7 +246,7 @@ export class UploadService {
         file.id !== originalFile.id &&
         file.name &&
         this.isSignedFileName(file.name) &&
-        this.normalizeConstanciaFileName(file.name) === normalizedOriginalName
+        this.normalizeSignedFileName(file.name) === normalizedOriginalName
       ) {
         candidatesById.set(file.id, file);
       }
@@ -264,9 +274,13 @@ export class UploadService {
     };
   }
 
-  async moveFileToRepository(fileId: string): Promise<DriveFileInfo> {
+  async moveFileToRepository(
+    fileId: string,
+    repositoryFolderId?: string,
+  ): Promise<DriveFileInfo> {
     try {
-      const repositoryFolderId = this.getRepositoryFolderId();
+      const resolvedRepositoryFolderId =
+        repositoryFolderId ?? this.getRepositoryFolderId();
       const file = await this.driveClient.files.get({
         fileId,
         supportsAllDrives: true,
@@ -274,14 +288,14 @@ export class UploadService {
       });
       const parents: string[] = file.data.parents ?? [];
 
-      if (parents.includes(repositoryFolderId)) {
+      if (parents.includes(resolvedRepositoryFolderId)) {
         await this.ensurePublicReaderPermission(fileId);
         return this.mapDriveFile(file.data);
       }
 
       const updateParams: drive_v3.Params$Resource$Files$Update = {
         fileId,
-        addParents: repositoryFolderId,
+        addParents: resolvedRepositoryFolderId,
         supportsAllDrives: true,
         fields: 'id, name, modifiedTime, webViewLink, webContentLink',
       };
@@ -319,6 +333,48 @@ export class UploadService {
     } catch (error) {
       throw new InternalServerErrorException(
         `Error al enviar el archivo original a la papelera: ${this.getErrorMessage(error)}`,
+      );
+    }
+  }
+
+  async getCertificatePeriodFolderId(periodo: string): Promise<string> {
+    const repositoryFolderId = this.getCertificateRepositoryFolderId();
+    const normalizedPeriod = periodo.trim();
+    if (!normalizedPeriod) {
+      throw new BadRequestException(
+        'El certificado no tiene un periodo valido para el repositorio',
+      );
+    }
+
+    try {
+      const response = await this.driveClient.files.list({
+        q:
+          `'${repositoryFolderId}' in parents and ` +
+          `mimeType = 'application/vnd.google-apps.folder' and ` +
+          `name = '${this.escapeDriveQueryValue(normalizedPeriod)}' and ` +
+          'trashed = false',
+        includeItemsFromAllDrives: true,
+        supportsAllDrives: true,
+        fields: 'files(id, name)',
+        pageSize: 100,
+      });
+      const matchingFolder = (response.data.files ?? []).find(
+        (folder) => folder.id && folder.name === normalizedPeriod,
+      );
+
+      if (!matchingFolder?.id) {
+        throw new NotFoundException(
+          `No existe la carpeta del periodo ${normalizedPeriod} en el repositorio de certificados`,
+        );
+      }
+
+      return matchingFolder.id;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        `Error al buscar la carpeta del periodo ${normalizedPeriod}: ${this.getErrorMessage(error)}`,
       );
     }
   }
@@ -372,7 +428,7 @@ export class UploadService {
     return /\[\s*FIRMADO\s*\]/i.test(name);
   }
 
-  private normalizeConstanciaFileName(name: string): string {
+  private normalizeSignedFileName(name: string): string {
     return name
       .normalize('NFKC')
       .replace(/(?:[\s_-]*)\[\s*FIRMADO\s*\](?:[\s_-]*)/gi, '')
@@ -406,6 +462,20 @@ export class UploadService {
       );
     }
     return folderId;
+  }
+
+  private getCertificateRepositoryFolderId(): string {
+    const folderId = this.getFolderId('REPO_CERTIFICADOS');
+    if (!folderId) {
+      throw new InternalServerErrorException(
+        'No se ha configurado GOOGLE_DRIVE_FOLDER_CERTIFICADOS_REPOSITORIO',
+      );
+    }
+    return folderId;
+  }
+
+  private escapeDriveQueryValue(value: string): string {
+    return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   }
 
   private getErrorMessage(error: unknown): string {

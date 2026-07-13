@@ -93,6 +93,15 @@ export class Certificado {
   @Prop({ default: null })
   url: string;
 
+  @Prop({ type: String, default: null })
+  driveId?: string;
+
+  @Prop({ type: String, default: null })
+  driveIdOriginal?: string;
+
+  @Prop({ type: Boolean, default: false })
+  originalTrashed?: boolean;
+
   @Prop({ default: false })
   aceptado: boolean;
 
@@ -104,6 +113,5 @@ export class Certificado {
 }
 
 export const CertificadoSchema = SchemaFactory.createForClass(Certificado);
-
 
 
