@@ -1,13 +1,17 @@
+/* eslint-disable @typescript-eslint/unbound-method */
+import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
 import { PagosBancoController } from './pagos-banco.controller';
 import { PagosBancoService } from './pagos-banco.service';
-import { JwtAuthGuard } from 'src/modules/authentication/auth/guards/jwt-auth.guard';
 
 describe('PagosBancoController', () => {
   let controller: PagosBancoController;
   let service: PagosBancoService;
 
   const mockPagosBancoService = {
+    uploadAndProcess: jest.fn(),
+    reverifyUnverified: jest.fn(),
     create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
@@ -23,6 +27,7 @@ describe('PagosBancoController', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PagosBancoController],
       providers: [
@@ -32,7 +37,7 @@ describe('PagosBancoController', () => {
         },
       ],
     })
-      .overrideGuard(JwtAuthGuard)
+      .overrideGuard(ApiKeyGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
@@ -44,60 +49,92 @@ describe('PagosBancoController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('create', () => {
-    it('should call service.create', async () => {
-      const createDto = { dniCodigo: '12345678', numeroVoucher: 'V001' };
-      mockPagosBancoService.create.mockResolvedValue(mockPago);
+  describe('uploadFile', () => {
+    it('rejects a missing file', async () => {
+      await expect(controller.uploadFile(undefined as never)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
 
-      const result = await controller.create(createDto as any);
+    it('rejects a non-CSV file', async () => {
+      const file = {
+        mimetype: 'application/pdf',
+        originalname: 'pagos.pdf',
+        buffer: Buffer.from('data'),
+      } as Express.Multer.File;
 
-      expect(service.create).toHaveBeenCalledWith(createDto);
-      expect(result).toEqual(mockPago);
+      await expect(controller.uploadFile(file)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('accepts an uppercase CSV extension and delegates processing', async () => {
+      const file = {
+        mimetype: 'application/octet-stream',
+        originalname: 'pagos.CSV',
+        buffer: Buffer.from('csv'),
+      } as Express.Multer.File;
+      const expected = {
+        message: 'Carga completada',
+        resumen: { pagosRegistrados: 1 },
+      };
+      mockPagosBancoService.uploadAndProcess.mockResolvedValue(expected);
+
+      await expect(controller.uploadFile(file)).resolves.toEqual(expected);
+      expect(service.uploadAndProcess).toHaveBeenCalledWith(file.buffer);
     });
   });
 
-  describe('findAll', () => {
-    it('should call service.findAll', async () => {
-      mockPagosBancoService.findAll.mockResolvedValue([mockPago]);
+  it('returns the structured reverification result', async () => {
+    const expected = {
+      message: 'Reverificación completada',
+      resumen: { pagosEvaluados: 2, pagosVerificados: 1 },
+    };
+    mockPagosBancoService.reverifyUnverified.mockResolvedValue(expected);
 
-      const result = await controller.findAll();
-
-      expect(service.findAll).toHaveBeenCalled();
-      expect(result).toEqual([mockPago]);
-    });
+    await expect(controller.reverify()).resolves.toEqual(expected);
   });
 
-  describe('findOne', () => {
-    it('should call service.findOne', async () => {
-      mockPagosBancoService.findOne.mockResolvedValue(mockPago);
+  it('calls service.create', async () => {
+    const createDto = { dniCodigo: '12345678', numeroVoucher: 'V001' };
+    mockPagosBancoService.create.mockResolvedValue(mockPago);
 
-      const result = await controller.findOne('1');
+    const result = await controller.create(createDto);
 
-      expect(service.findOne).toHaveBeenCalledWith(1);
-      expect(result).toEqual(mockPago);
-    });
+    expect(service.create).toHaveBeenCalledWith(createDto);
+    expect(result).toEqual(mockPago);
   });
 
-  describe('update', () => {
-    it('should call service.update', async () => {
-      const updateDto = { alumno: 'Juan Updated' };
-      mockPagosBancoService.update.mockResolvedValue({ ...mockPago, ...updateDto });
+  it('calls service.findAll', async () => {
+    mockPagosBancoService.findAll.mockResolvedValue([mockPago]);
 
-      const result = await controller.update('1', updateDto as any);
-
-      expect(service.update).toHaveBeenCalledWith(1, updateDto);
-      expect(result.alumno).toEqual('Juan Updated');
-    });
+    await expect(controller.findAll()).resolves.toEqual([mockPago]);
   });
 
-  describe('remove', () => {
-    it('should call service.remove', async () => {
-      mockPagosBancoService.remove.mockResolvedValue(undefined);
+  it('calls service.findOne', async () => {
+    mockPagosBancoService.findOne.mockResolvedValue(mockPago);
 
-      const result = await controller.remove('1');
+    await expect(controller.findOne(1)).resolves.toEqual(mockPago);
+    expect(service.findOne).toHaveBeenCalledWith(1);
+  });
 
-      expect(service.remove).toHaveBeenCalledWith(1);
-      expect(result).toBeUndefined();
+  it('calls service.update', async () => {
+    const updateDto = { alumno: 'Juan Updated' };
+    mockPagosBancoService.update.mockResolvedValue({
+      ...mockPago,
+      ...updateDto,
     });
+
+    const result = await controller.update(1, updateDto);
+
+    expect(service.update).toHaveBeenCalledWith(1, updateDto);
+    expect(result.alumno).toBe('Juan Updated');
+  });
+
+  it('calls service.remove', async () => {
+    mockPagosBancoService.remove.mockResolvedValue(undefined);
+
+    await expect(controller.remove(1)).resolves.toBeUndefined();
+    expect(service.remove).toHaveBeenCalledWith(1);
   });
 });

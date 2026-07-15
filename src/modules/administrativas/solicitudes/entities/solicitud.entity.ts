@@ -7,6 +7,7 @@ import {
 	Column,
 	CreateDateColumn,
 	Entity,
+	Index,
 	JoinColumn,
 	ManyToOne,
 	PrimaryGeneratedColumn,
@@ -14,6 +15,7 @@ import {
 } from 'typeorm';
 
 @Entity('solicitudes')
+@Index('IDX_solicitudes_numero_voucher', ['numeroVoucher'])
 export class Solicitud {
 	@PrimaryGeneratedColumn()
 	id!: number;

@@ -1,278 +1,706 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository, DataSource, MoreThanOrEqual } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  In,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { Readable } from 'stream';
-import csvParser = require('csv-parser');
+import csvParser from 'csv-parser';
 import { CreatePagosBancoDto } from './dto/create-pagos-banco.dto';
 import { UpdatePagosBancoDto } from './dto/update-pagos-banco.dto';
 import { PagosBanco } from './entities/pagos-banco.entity';
 import { Solicitud } from '../solicitudes/entities/solicitud.entity';
+import { SolicitudEstadoId } from '../solicitudes/constants/solicitud-estado.constants';
+import {
+  PAGOS_CSV_MAX_FILE_SIZE_BYTES,
+  PAGOS_CSV_MAX_REPORTED_ERRORS,
+  PAGOS_CSV_MAX_ROWS,
+  PAGOS_CSV_REQUIRED_HEADERS,
+} from './pagos-banco.constants';
+import {
+  CsvValidationError,
+  PagosBancoCsvRow,
+  ReverifyPagosBancoResult,
+  ReverifyPagosBancoSummary,
+  UploadPagosBancoResult,
+  UploadPagosBancoSummary,
+} from './interfaces/pagos-banco-processing.interface';
+
+interface ParsedBankDate {
+  date: Date;
+}
+
+interface ValidatedPagosBancoRow {
+  fila: number;
+  dniCodigo?: string;
+  numeroVoucher: string;
+  alumno?: string;
+  monto: number;
+  fechaPago?: Date;
+  fechaEfectiva: Date;
+  voucherRestante?: string;
+  archivo?: string;
+}
+
+type ConciliationOutcome =
+  | 'PAGADO'
+  | 'OBSERVADO'
+  | 'SIN_CAMBIO'
+  | 'ESTADO_DESCONOCIDO';
+
+const ESTADOS_VERIFICABLES_SIN_CAMBIO = new Set<SolicitudEstadoId>([
+  SolicitudEstadoId.ASIGNADO,
+  SolicitudEstadoId.TERMINADO,
+  SolicitudEstadoId.PAGADO,
+  SolicitudEstadoId.RECHAZADO,
+  SolicitudEstadoId.OBSERVADO,
+]);
 
 @Injectable()
 export class PagosBancoService {
-	constructor(
-		@InjectRepository(PagosBanco)
-		private readonly pagosBancoRepository: Repository<PagosBanco>,
-		@InjectRepository(Solicitud)
-		private readonly solicitudRepository: Repository<Solicitud>,
-		private dataSource: DataSource,
-	) {}
+  private readonly logger = new Logger(PagosBancoService.name);
 
-	async uploadAndProcess(fileBuffer: Buffer): Promise<any> {
-		const results: any[] = [];
-		const stream = Readable.from(fileBuffer);
+  constructor(
+    @InjectRepository(PagosBanco)
+    private readonly pagosBancoRepository: Repository<PagosBanco>,
+    private readonly dataSource: DataSource,
+  ) {}
 
-		return new Promise((resolve, reject) => {
-			stream
-				.pipe(
-					csvParser({
-						separator: ';',
-						mapHeaders: ({ header }) =>
-							header
-								.toLowerCase()
-								.trim()
-								.normalize('NFD')
-								.replace(/[\u0300-\u036f]/g, '')
-								.replace(/[^a-z0-9]/g, '_')
-								.replace(/__+/g, '_')
-								.replace(/^_+|_+$/g, ''),
-					}),
-				)
-				.on('data', (data) => results.push(data))
-				.on('end', async () => {
-					const queryRunner = this.dataSource.createQueryRunner();
-					await queryRunner.connect();
-					await queryRunner.startTransaction();
+  async uploadAndProcess(fileBuffer: Buffer): Promise<UploadPagosBancoResult> {
+    const rows = await this.parseAndValidateCsv(fileBuffer);
 
-					try {
-						const pagosToSave: PagosBanco[] = [];
-						const solicitudesToSaveMap = new Map<number, Solicitud>();
+    try {
+      return await this.dataSource.transaction(async (manager) => {
+        const reverifySummary =
+          await this.reverifyUnverifiedWithManager(manager);
+        const resumen = this.createUploadSummary(
+          rows.length,
+          reverifySummary.pagosVerificados,
+        );
 
-						const allVouchers = results
-							.map((row) => row.n_voucher)
-							.filter((voucher) => !!voucher);
-						const uniqueVouchers = [...new Set(allVouchers)];
+        const uniqueVouchers = [
+          ...new Set(rows.map((row) => row.numeroVoucher)),
+        ];
+        const existingPagos = await manager.find(PagosBanco, {
+          where: { numeroVoucher: In(uniqueVouchers) },
+          select: ['numeroVoucher'],
+        });
+        const seenVouchers = new Set(
+          existingPagos
+            .map((pago) => pago.numeroVoucher?.trim())
+            .filter((voucher): voucher is string => !!voucher),
+        );
 
-						// Búsqueda de pagos ya existentes para evitar duplicados
-						let existingPagosVouchers = new Set<string>();
-						if (uniqueVouchers.length > 0) {
-							const existingPagos = await queryRunner.manager.find(PagosBanco, {
-								where: { numeroVoucher: In(uniqueVouchers) },
-								select: ['numeroVoucher']
-							});
-							existingPagosVouchers = new Set(existingPagos.map(p => p.numeroVoucher));
-						}
+        const solicitudes = await manager.find(Solicitud, {
+          where: { numeroVoucher: In(uniqueVouchers) },
+        });
+        const solicitudMap = new Map(
+          solicitudes.map((solicitud) => [
+            solicitud.numeroVoucher.trim(),
+            solicitud,
+          ]),
+        );
+        const solicitudesToSave = new Map<number, Solicitud>();
+        const pagosToInsert: PagosBanco[] = [];
 
-						let matchingSolicitudes: Solicitud[] = [];
-						if (uniqueVouchers.length > 0) {
-							matchingSolicitudes = await queryRunner.manager.find(Solicitud, {
-								where: { numeroVoucher: In(uniqueVouchers) },
-								relations: ['estudiante', 'estudiante.usuario'],
-							});
-						}
+        for (const row of rows) {
+          if (seenVouchers.has(row.numeroVoucher)) {
+            resumen.duplicadosOmitidos++;
+            continue;
+          }
 
-						const solicitudMap = new Map(
-							matchingSolicitudes.map((solicitud) => [
-								solicitud.numeroVoucher,
-								solicitud,
-							]),
-						);
+          seenVouchers.add(row.numeroVoucher);
+          const pagoBanco = manager.create(PagosBanco, {
+            dniCodigo: row.dniCodigo,
+            numeroVoucher: row.numeroVoucher,
+            alumno: row.alumno,
+            monto: row.monto,
+            fechaPago: row.fechaPago,
+            fechaEfectiva: row.fechaEfectiva,
+            voucherRestante: row.voucherRestante,
+            archivo: row.archivo,
+            verificado: false,
+          });
 
-						for (const row of results) {
-							const numeroVoucher = row.n_voucher;
+          const solicitud = solicitudMap.get(row.numeroVoucher);
+          if (!solicitud) {
+            resumen.vouchersSinSolicitud++;
+          } else {
+            const outcome = this.conciliate(solicitud, pagoBanco);
+            this.applyUploadOutcome(resumen, outcome);
+            if (outcome === 'PAGADO' || outcome === 'OBSERVADO') {
+              solicitudesToSave.set(solicitud.id, solicitud);
+            }
+          }
 
-							// Si el voucher ya existe en la BD de pagos, lo ignoramos para no duplicar
-							if (numeroVoucher && existingPagosVouchers.has(numeroVoucher)) {
-								continue;
-							}
+          pagosToInsert.push(pagoBanco);
+        }
 
-							const parseDate = (value: string): Date | null => {
-								if (!value || value.length !== 8) return null;
-								return new Date(
-									`${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`,
-								);
-							};
+        if (solicitudesToSave.size > 0) {
+          await manager.save(
+            Solicitud,
+            Array.from(solicitudesToSave.values()),
+            { chunk: 100 },
+          );
+        }
 
-							const fechaPago = parseDate(row.fecha_pago);
-							const fechaEfectiva = parseDate(row.fecha_efectiva);
-							const monto = parseFloat(row.monto);
+        const insertedCount = await this.insertPaymentsIgnoringConflicts(
+          manager,
+          pagosToInsert,
+        );
+        resumen.pagosRegistrados = insertedCount;
+        resumen.duplicadosOmitidos += pagosToInsert.length - insertedCount;
 
-							const pagoBanco = queryRunner.manager.create(PagosBanco, {
-								dniCodigo: row.dni_codigo,
-								numeroVoucher,
-								alumno: row.alumno,
-								monto,
-								fechaPago: fechaPago as Date,
-								fechaEfectiva: fechaEfectiva as Date,
-								voucherRestante: row.voucher_restante,
-								archivo: row.archivo,
-								verificado: false,
-							});
+        return {
+          message: this.buildUploadMessage(resumen),
+          resumen,
+        };
+      });
+    } catch (error) {
+      this.logger.error(
+        `No se pudo procesar el archivo de pagos: ${this.errorMessage(error)}`,
+      );
+      throw new InternalServerErrorException(
+        'No se pudo procesar el archivo de pagos bancarios.',
+      );
+    }
+  }
 
-							if (numeroVoucher) {
-								const solicitud = solicitudMap.get(numeroVoucher);
-								if (solicitud) {
-									if (solicitud.estadoId === 1) {
-										const isMontoValid = Number(solicitud.pago) === monto;
-										const isFechaValid =
-											solicitud.fechaPago &&
-											fechaPago &&
-											new Date(solicitud.fechaPago).toISOString().split('T')[0] ===
-												fechaPago.toISOString().split('T')[0];
+  async reverifyUnverified(): Promise<ReverifyPagosBancoResult> {
+    try {
+      const resumen = await this.dataSource.transaction((manager) =>
+        this.reverifyUnverifiedWithManager(manager),
+      );
 
-										if (isMontoValid && isFechaValid) {
-											solicitud.estadoId = 4;
-											pagoBanco.verificado = true;
-										} else {
-											solicitud.estadoId = 2;
-										}
+      return {
+        message: this.buildReverifyMessage(resumen),
+        resumen,
+      };
+    } catch (error) {
+      this.logger.error(
+        `No se pudieron reverificar los pagos: ${this.errorMessage(error)}`,
+      );
+      throw new InternalServerErrorException(
+        'No se pudieron reverificar los pagos bancarios.',
+      );
+    }
+  }
 
-										solicitudesToSaveMap.set(solicitud.id, solicitud);
-									} else if ([2, 3, 4, 5].includes(solicitud.estadoId)) {
-										pagoBanco.verificado = true;
-									}
-								}
-							}
+  async create(createPagosBancoDto: CreatePagosBancoDto): Promise<PagosBanco> {
+    const numeroVoucher = createPagosBancoDto.numeroVoucher?.trim();
+    await this.ensureVoucherIsAvailable(numeroVoucher);
 
-							pagosToSave.push(pagoBanco);
-						}
+    const pago = this.pagosBancoRepository.create({
+      ...createPagosBancoDto,
+      numeroVoucher,
+      fechaPago: this.parseDtoDate(createPagosBancoDto.fechaPago),
+      fechaEfectiva: this.parseDtoDate(createPagosBancoDto.fechaEfectiva),
+      verificado: false,
+    });
+    return await this.pagosBancoRepository.save(pago);
+  }
 
-						if (solicitudesToSaveMap.size > 0) {
-							await queryRunner.manager.save(
-								Solicitud,
-								Array.from(solicitudesToSaveMap.values()),
-								{ chunk: 100 },
-							);
-						}
+  async findAll(): Promise<PagosBanco[]> {
+    return await this.pagosBancoRepository.find({
+      order: { creadoEn: 'DESC' },
+    });
+  }
 
-						if (pagosToSave.length > 0) {
-							await queryRunner.manager.save(PagosBanco, pagosToSave, { chunk: 100 });
-						}
+  async findOne(id: number): Promise<PagosBanco> {
+    const pago = await this.pagosBancoRepository.findOne({ where: { id } });
+    if (!pago) {
+      throw new NotFoundException(`Pago con ID ${id} no encontrado`);
+    }
+    return pago;
+  }
 
-						await queryRunner.commitTransaction();
+  async update(
+    id: number,
+    updatePagosBancoDto: UpdatePagosBancoDto,
+  ): Promise<PagosBanco> {
+    const pago = await this.findOne(id);
+    const numeroVoucher = updatePagosBancoDto.numeroVoucher?.trim();
 
-						const { reverifiedCount } = await this.reverifyUnverified();
+    if (numeroVoucher && numeroVoucher !== pago.numeroVoucher) {
+      await this.ensureVoucherIsAvailable(numeroVoucher);
+    }
 
-						resolve({
-							message: `Se procesaron ${results.length} registros del CSV (omitiendo duplicados) y se reverificaron ${reverifiedCount} pagos previos pendientes.`,
-						});
-					} catch (error) {
-						await queryRunner.rollbackTransaction();
-						reject(error);
-					} finally {
-						await queryRunner.release();
-					}
-				})
-				.on('error', (error) => reject(error));
-		});
-	}
+    Object.assign(pago, updatePagosBancoDto, {
+      ...(numeroVoucher !== undefined && { numeroVoucher }),
+      ...(updatePagosBancoDto.fechaPago !== undefined && {
+        fechaPago: this.parseDtoDate(updatePagosBancoDto.fechaPago),
+      }),
+      ...(updatePagosBancoDto.fechaEfectiva !== undefined && {
+        fechaEfectiva: this.parseDtoDate(updatePagosBancoDto.fechaEfectiva),
+      }),
+    });
+    return await this.pagosBancoRepository.save(pago);
+  }
 
-	async reverifyUnverified(): Promise<{
-		reverifiedCount: number;
-	}> {
-		const tresMesesAtras = new Date();
-		tresMesesAtras.setMonth(tresMesesAtras.getMonth() - 3);
+  async remove(id: number): Promise<void> {
+    const pago = await this.findOne(id);
+    await this.pagosBancoRepository.remove(pago);
+  }
 
-		const unverified = await this.pagosBancoRepository.find({
-			where: { 
-				verificado: false,
-				creadoEn: MoreThanOrEqual(tresMesesAtras)
-			},
-		});
+  private async parseAndValidateCsv(
+    fileBuffer: Buffer,
+  ): Promise<ValidatedPagosBancoRow[]> {
+    if (fileBuffer.length > PAGOS_CSV_MAX_FILE_SIZE_BYTES) {
+      throw new BadRequestException({
+        statusCode: 400,
+        message: 'El archivo CSV supera el límite permitido de 10 MB.',
+        totalErrores: 1,
+        errores: [
+          {
+            fila: 0,
+            campo: 'file',
+            mensaje: 'El archivo no puede superar los 10 MB.',
+          },
+        ],
+      });
+    }
 
-		if (unverified.length === 0) return { reverifiedCount: 0 };
+    const rawRows: PagosBancoCsvRow[] = [];
+    let headers: string[] = [];
+    const parser = csvParser({
+      separator: ';',
+      mapHeaders: ({ header }) => this.normalizeHeader(header),
+    });
+    parser.on('headers', (parsedHeaders: string[]) => {
+      headers = parsedHeaders;
+    });
 
-		const vouchers = unverified
-			.map((pago) => pago.numeroVoucher)
-			.filter((voucher) => !!voucher);
-		const uniqueVouchers = [...new Set(vouchers)];
+    try {
+      const stream = Readable.from(fileBuffer).pipe(parser);
+      for await (const rawRow of stream) {
+        if (rawRows.length >= PAGOS_CSV_MAX_ROWS) {
+          throw new BadRequestException({
+            statusCode: 400,
+            message: 'El archivo CSV supera el límite de 50 000 filas.',
+            totalErrores: 1,
+            errores: [
+              {
+                fila: PAGOS_CSV_MAX_ROWS + 2,
+                campo: 'file',
+                mensaje: 'El archivo no puede superar las 50 000 filas.',
+              },
+            ],
+          });
+        }
+        rawRows.push(rawRow as PagosBancoCsvRow);
+      }
+    } catch (error) {
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException({
+        statusCode: 400,
+        message: 'No se pudo leer el archivo CSV.',
+        totalErrores: 1,
+        errores: [
+          {
+            fila: 0,
+            campo: 'file',
+            mensaje: 'El archivo está dañado o no tiene un formato CSV válido.',
+          },
+        ],
+      });
+    }
 
-		if (uniqueVouchers.length === 0) return { reverifiedCount: 0 };
+    const missingHeaders = PAGOS_CSV_REQUIRED_HEADERS.filter(
+      (header) => !headers.includes(header),
+    );
+    if (missingHeaders.length > 0) {
+      this.throwCsvValidationErrors(
+        missingHeaders.map((header) => ({
+          fila: 1,
+          campo: header,
+          mensaje: `Falta el encabezado obligatorio ${header}.`,
+        })),
+        missingHeaders.length,
+      );
+    }
 
-		const solicitudes = await this.solicitudRepository.find({
-			where: { numeroVoucher: In(uniqueVouchers) },
-			relations: ['estudiante', 'estudiante.usuario'],
-		});
+    if (rawRows.length === 0) {
+      this.throwCsvValidationErrors(
+        [
+          {
+            fila: 2,
+            campo: 'file',
+            mensaje: 'El archivo CSV no contiene registros.',
+          },
+        ],
+        1,
+      );
+    }
 
-		if (solicitudes.length === 0) return { reverifiedCount: 0 };
+    return this.validateRows(rawRows);
+  }
 
-		const solicitudMap = new Map(
-			solicitudes.map((solicitud) => [solicitud.numeroVoucher, solicitud]),
-		);
-		const solicitudesToSaveMap = new Map<number, Solicitud>();
-		const pagosToSave: PagosBanco[] = [];
+  private validateRows(rawRows: PagosBancoCsvRow[]): ValidatedPagosBancoRow[] {
+    const errors: CsvValidationError[] = [];
+    const validRows: ValidatedPagosBancoRow[] = [];
+    let totalErrors = 0;
 
-		for (const pago of unverified) {
-			const solicitud = solicitudMap.get(pago.numeroVoucher);
-			if (solicitud) {
-				if (solicitud.estadoId === 1) {
-					const isMontoValid = Number(solicitud.pago) === Number(pago.monto);
-					const isFechaValid =
-						solicitud.fechaPago &&
-						pago.fechaPago &&
-						new Date(solicitud.fechaPago).toISOString().split('T')[0] ===
-							new Date(pago.fechaPago).toISOString().split('T')[0];
+    const addError = (error: CsvValidationError): void => {
+      totalErrors++;
+      if (errors.length < PAGOS_CSV_MAX_REPORTED_ERRORS) {
+        errors.push(error);
+      }
+    };
 
-					if (isMontoValid && isFechaValid) {
-						solicitud.estadoId = 4;
-						pago.verificado = true;
-						pagosToSave.push(pago);
-					} else {
-						solicitud.estadoId = 2;
-					}
+    rawRows.forEach((rawRow, index) => {
+      const fila = index + 2;
+      const rowErrorsBefore = totalErrors;
+      const numeroVoucher = rawRow.n_voucher?.trim() ?? '';
+      const montoText = rawRow.monto?.trim() ?? '';
+      const fechaEfectivaText = rawRow.fecha_efectiva?.trim() ?? '';
+      const fechaPagoText = rawRow.fecha_pago?.trim() ?? '';
 
-					solicitudesToSaveMap.set(solicitud.id, solicitud);
-				} else if ([2, 3, 4, 5].includes(solicitud.estadoId)) {
-					pago.verificado = true;
-					pagosToSave.push(pago);
-				}
-			}
-		}
+      if (!numeroVoucher) {
+        addError({
+          fila,
+          campo: 'n_voucher',
+          mensaje: 'El voucher es obligatorio.',
+        });
+      }
 
-		if (solicitudesToSaveMap.size > 0) {
-			await this.solicitudRepository.save(
-				Array.from(solicitudesToSaveMap.values()),
-				{ chunk: 100 },
-			);
-		}
+      const monto = this.parseAmount(montoText);
+      if (monto === null || monto <= 0) {
+        addError({
+          fila,
+          campo: 'monto',
+          mensaje:
+            'El monto debe ser un número positivo con máximo dos decimales.',
+        });
+      }
 
-		if (pagosToSave.length > 0) {
-			await this.pagosBancoRepository.save(pagosToSave, { chunk: 100 });
-		}
+      const fechaEfectiva = this.parseBankDate(fechaEfectivaText);
+      if (!fechaEfectiva) {
+        addError({
+          fila,
+          campo: 'fecha_efectiva',
+          mensaje:
+            'La fecha efectiva debe ser una fecha real con formato YYYYMMDD.',
+        });
+      }
 
-		return { reverifiedCount: pagosToSave.length };
-	}
+      const fechaPago = fechaPagoText
+        ? this.parseBankDate(fechaPagoText)
+        : null;
+      if (fechaPagoText && !fechaPago) {
+        addError({
+          fila,
+          campo: 'fecha_pago',
+          mensaje:
+            'La fecha de pago debe ser una fecha real con formato YYYYMMDD.',
+        });
+      }
 
-	async create(createPagosBancoDto: CreatePagosBancoDto): Promise<PagosBanco> {
-		const pago = this.pagosBancoRepository.create(createPagosBancoDto);
-		return await this.pagosBancoRepository.save(pago);
-	}
+      if (rowErrorsBefore === totalErrors && monto !== null && fechaEfectiva) {
+        validRows.push({
+          fila,
+          dniCodigo: this.trimOptional(rawRow.dni_codigo),
+          numeroVoucher,
+          alumno: this.trimOptional(rawRow.alumno),
+          monto,
+          fechaPago: fechaPago?.date,
+          fechaEfectiva: fechaEfectiva.date,
+          voucherRestante: this.trimOptional(rawRow.voucher_restante),
+          archivo: this.trimOptional(rawRow.archivo),
+        });
+      }
+    });
 
-	async findAll(): Promise<PagosBanco[]> {
-		return await this.pagosBancoRepository.find({
-			order: { creadoEn: 'DESC' },
-		});
-	}
+    if (totalErrors > 0) {
+      this.throwCsvValidationErrors(errors, totalErrors);
+    }
 
-	async findOne(id: number): Promise<PagosBanco> {
-		const pago = await this.pagosBancoRepository.findOne({ where: { id } });
-		if (!pago) {
-			throw new NotFoundException(`Pago con ID ${id} no encontrado`);
-		}
-		return pago;
-	}
+    return validRows;
+  }
 
-	async update(
-		id: number,
-		updatePagosBancoDto: UpdatePagosBancoDto,
-	): Promise<PagosBanco> {
-		const pago = await this.findOne(id);
-		const updated = Object.assign(pago, updatePagosBancoDto);
-		return await this.pagosBancoRepository.save(updated);
-	}
+  private async reverifyUnverifiedWithManager(
+    manager: EntityManager,
+  ): Promise<ReverifyPagosBancoSummary> {
+    const summary = this.createReverifySummary();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-	async remove(id: number): Promise<void> {
-		const pago = await this.findOne(id);
-		await this.pagosBancoRepository.remove(pago);
-	}
+    const unverified = await manager.find(PagosBanco, {
+      where: {
+        verificado: false,
+        creadoEn: MoreThanOrEqual(threeMonthsAgo),
+      },
+    });
+    summary.pagosEvaluados = unverified.length;
+
+    if (unverified.length === 0) return summary;
+
+    const vouchers = [
+      ...new Set(
+        unverified
+          .map((pago) => pago.numeroVoucher?.trim())
+          .filter((voucher): voucher is string => !!voucher),
+      ),
+    ];
+    const solicitudes =
+      vouchers.length > 0
+        ? await manager.find(Solicitud, {
+            where: { numeroVoucher: In(vouchers) },
+          })
+        : [];
+    const solicitudMap = new Map(
+      solicitudes.map((solicitud) => [
+        solicitud.numeroVoucher.trim(),
+        solicitud,
+      ]),
+    );
+    const solicitudesToSave = new Map<number, Solicitud>();
+    const pagosToSave: PagosBanco[] = [];
+
+    for (const pago of unverified) {
+      const voucher = pago.numeroVoucher?.trim();
+      const solicitud = voucher ? solicitudMap.get(voucher) : undefined;
+
+      if (!solicitud) {
+        summary.vouchersSinSolicitud++;
+        continue;
+      }
+
+      const outcome = this.conciliate(solicitud, pago);
+      this.applyReverifyOutcome(summary, outcome);
+      if (outcome === 'PAGADO' || outcome === 'OBSERVADO') {
+        solicitudesToSave.set(solicitud.id, solicitud);
+      }
+      if (pago.verificado) {
+        pagosToSave.push(pago);
+      }
+    }
+
+    if (solicitudesToSave.size > 0) {
+      await manager.save(Solicitud, Array.from(solicitudesToSave.values()), {
+        chunk: 100,
+      });
+    }
+    if (pagosToSave.length > 0) {
+      await manager.save(PagosBanco, pagosToSave, { chunk: 100 });
+    }
+
+    return summary;
+  }
+
+  private conciliate(
+    solicitud: Solicitud,
+    pagoBanco: PagosBanco,
+  ): ConciliationOutcome {
+    const estadoId = solicitud.estadoId as SolicitudEstadoId;
+    if (estadoId === SolicitudEstadoId.NUEVO) {
+      const amountMatches =
+        this.toCents(solicitud.pago) === this.toCents(pagoBanco.monto);
+      const effectiveDateMatches =
+        this.toDateOnly(solicitud.fechaPago) ===
+        this.toDateOnly(pagoBanco.fechaEfectiva);
+
+      pagoBanco.verificado = true;
+      if (amountMatches && effectiveDateMatches) {
+        solicitud.estadoId = SolicitudEstadoId.PAGADO;
+        return 'PAGADO';
+      }
+
+      solicitud.estadoId = SolicitudEstadoId.OBSERVADO;
+      return 'OBSERVADO';
+    }
+
+    if (
+      ESTADOS_VERIFICABLES_SIN_CAMBIO.has(
+        solicitud.estadoId as SolicitudEstadoId,
+      )
+    ) {
+      pagoBanco.verificado = true;
+      return 'SIN_CAMBIO';
+    }
+
+    return 'ESTADO_DESCONOCIDO';
+  }
+
+  private async insertPaymentsIgnoringConflicts(
+    manager: EntityManager,
+    payments: PagosBanco[],
+  ): Promise<number> {
+    if (payments.length === 0) return 0;
+
+    const result = await manager
+      .createQueryBuilder()
+      .insert()
+      .into(PagosBanco)
+      .values(payments)
+      .orIgnore()
+      .execute();
+
+    return result.identifiers.length;
+  }
+
+  private createUploadSummary(
+    registrosLeidos: number,
+    pagosPreviosReverificados: number,
+  ): UploadPagosBancoSummary {
+    return {
+      registrosLeidos,
+      pagosRegistrados: 0,
+      duplicadosOmitidos: 0,
+      vouchersSinSolicitud: 0,
+      solicitudesPagadas: 0,
+      solicitudesObservadas: 0,
+      vouchersVerificadosSinCambio: 0,
+      estadosDesconocidos: 0,
+      pagosPreviosReverificados,
+    };
+  }
+
+  private createReverifySummary(): ReverifyPagosBancoSummary {
+    return {
+      pagosEvaluados: 0,
+      pagosVerificados: 0,
+      solicitudesPagadas: 0,
+      solicitudesObservadas: 0,
+      vouchersSinSolicitud: 0,
+      estadosSinCambio: 0,
+      estadosDesconocidos: 0,
+    };
+  }
+
+  private applyUploadOutcome(
+    summary: UploadPagosBancoSummary,
+    outcome: ConciliationOutcome,
+  ): void {
+    if (outcome === 'PAGADO') summary.solicitudesPagadas++;
+    if (outcome === 'OBSERVADO') summary.solicitudesObservadas++;
+    if (outcome === 'SIN_CAMBIO') summary.vouchersVerificadosSinCambio++;
+    if (outcome === 'ESTADO_DESCONOCIDO') summary.estadosDesconocidos++;
+  }
+
+  private applyReverifyOutcome(
+    summary: ReverifyPagosBancoSummary,
+    outcome: ConciliationOutcome,
+  ): void {
+    if (outcome !== 'ESTADO_DESCONOCIDO') summary.pagosVerificados++;
+    if (outcome === 'PAGADO') summary.solicitudesPagadas++;
+    if (outcome === 'OBSERVADO') summary.solicitudesObservadas++;
+    if (outcome === 'SIN_CAMBIO') summary.estadosSinCambio++;
+    if (outcome === 'ESTADO_DESCONOCIDO') summary.estadosDesconocidos++;
+  }
+
+  private buildUploadMessage(summary: UploadPagosBancoSummary): string {
+    return `Carga completada: ${this.formatCount(summary.pagosRegistrados, 'pago registrado', 'pagos registrados')} y ${this.formatCount(summary.duplicadosOmitidos, 'duplicado omitido', 'duplicados omitidos')}. Resultado: ${this.formatCount(summary.solicitudesPagadas, 'solicitud pagada', 'solicitudes pagadas')}, ${this.formatCount(summary.solicitudesObservadas, 'solicitud observada', 'solicitudes observadas')} y ${this.formatCount(summary.pagosPreviosReverificados, 'pago pendiente reverificado', 'pagos pendientes reverificados')}.`;
+  }
+
+  private buildReverifyMessage(summary: ReverifyPagosBancoSummary): string {
+    return `Reverificación completada: ${this.formatCount(summary.pagosEvaluados, 'pago evaluado', 'pagos evaluados')}, ${this.formatCount(summary.pagosVerificados, 'pago verificado', 'pagos verificados')}, ${this.formatCount(summary.solicitudesPagadas, 'solicitud pagada', 'solicitudes pagadas')} y ${this.formatCount(summary.solicitudesObservadas, 'solicitud observada', 'solicitudes observadas')}.`;
+  }
+
+  private formatCount(count: number, singular: string, plural: string): string {
+    return `${count} ${count === 1 ? singular : plural}`;
+  }
+
+  private normalizeHeader(header: string): string {
+    return header
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '_')
+      .replace(/__+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  private parseBankDate(value: string): ParsedBankDate | null {
+    if (!/^\d{8}$/.test(value)) return null;
+
+    const year = Number(value.slice(0, 4));
+    const month = Number(value.slice(4, 6));
+    const day = Number(value.slice(6, 8));
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+      date.getUTCFullYear() !== year ||
+      date.getUTCMonth() !== month - 1 ||
+      date.getUTCDate() !== day
+    ) {
+      return null;
+    }
+
+    return { date };
+  }
+
+  private parseAmount(value: string): number | null {
+    if (!/^\d+(?:[.,]\d{1,2})?$/.test(value)) return null;
+    const amount = Number(value.replace(',', '.'));
+    return Number.isFinite(amount) ? amount : null;
+  }
+
+  private toCents(value: number | string): number | null {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? Math.round(numberValue * 100) : null;
+  }
+
+  private toDateOnly(value: Date | string | null | undefined): string | null {
+    if (!value) return null;
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+      return value.slice(0, 10);
+    }
+
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.getTime())
+      ? null
+      : date.toISOString().slice(0, 10);
+  }
+
+  private parseDtoDate(value?: string): Date | undefined {
+    return value ? new Date(value) : undefined;
+  }
+
+  private trimOptional(value?: string): string | undefined {
+    const trimmed = value?.trim();
+    return trimmed || undefined;
+  }
+
+  private throwCsvValidationErrors(
+    errors: CsvValidationError[],
+    totalErrors: number,
+  ): never {
+    throw new BadRequestException({
+      statusCode: 400,
+      message: 'El archivo CSV contiene datos inválidos.',
+      totalErrores: totalErrors,
+      erroresOmitidos: Math.max(0, totalErrors - errors.length),
+      errores: errors,
+    });
+  }
+
+  private async ensureVoucherIsAvailable(
+    numeroVoucher?: string,
+  ): Promise<void> {
+    if (!numeroVoucher) return;
+
+    const existing = await this.pagosBancoRepository.findOne({
+      where: { numeroVoucher },
+    });
+    if (existing) {
+      throw new ConflictException(
+        `Ya existe un pago con el voucher ${numeroVoucher}.`,
+      );
+    }
+  }
+
+  private errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
 }

@@ -258,7 +258,7 @@ export class ConstanciasService {
       const updatedSolicitud = await this.solicitudesService.update(
         persistedSolicitudId,
         {
-          estadoId: SolicitudEstadoId.FIRMADA,
+          estadoId: SolicitudEstadoId.TERMINADO,
         },
       );
       if (!updatedSolicitud) {

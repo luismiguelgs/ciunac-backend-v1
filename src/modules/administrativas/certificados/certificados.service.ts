@@ -280,7 +280,7 @@ export class CertificadosService {
     try {
       const updatedSolicitud = await this.solicitudesService.update(
         persistedSolicitudId,
-        { estadoId: SolicitudEstadoId.FIRMADA },
+        { estadoId: SolicitudEstadoId.TERMINADO },
       );
       if (!updatedSolicitud) {
         throw new NotFoundException(
