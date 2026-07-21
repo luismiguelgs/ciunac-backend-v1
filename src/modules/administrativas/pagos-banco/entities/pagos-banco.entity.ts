@@ -29,6 +29,9 @@ export class PagosBanco {
   @Column({ name: 'fecha_efectiva', type: 'date', nullable: true })
   fechaEfectiva: Date;
 
+  @Column({ type: 'varchar', length: 7, nullable: true })
+  periodo: string | null;
+
   @Column({ name: 'voucher_restante', nullable: true })
   voucherRestante: string;
 

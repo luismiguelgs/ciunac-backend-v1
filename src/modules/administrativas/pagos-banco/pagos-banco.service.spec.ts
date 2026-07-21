@@ -1,16 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/unbound-method */
 import {
   BadRequestException,
+  ConflictException,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { validate } from 'class-validator';
+import { DataSource, EntityManager, QueryRunner, Repository } from 'typeorm';
 import { PagosBancoService } from './pagos-banco.service';
 import { PagosBanco } from './entities/pagos-banco.entity';
+import { CreatePagosBancoDto } from './dto/create-pagos-banco.dto';
+import { UpdatePagosBancoDto } from './dto/update-pagos-banco.dto';
 import { Solicitud } from '../solicitudes/entities/solicitud.entity';
 import { SolicitudEstadoId } from '../solicitudes/constants/solicitud-estado.constants';
+import { AddPeriodoToPagosBanco1784592000000 } from '../../../migrations/1784592000000-add-periodo-to-pagos-banco';
 
 describe('PagosBancoService', () => {
   let service: PagosBancoService;
@@ -61,6 +66,7 @@ describe('PagosBancoService', () => {
     monto: 100.5,
     fechaPago: new Date('2026-07-10T00:00:00.000Z'),
     fechaEfectiva: new Date('2026-07-11T00:00:00.000Z'),
+    periodo: '2026-07',
     voucherRestante: null,
     archivo: 'voucher.pdf',
     verificado: false,
@@ -160,8 +166,16 @@ describe('PagosBancoService', () => {
       expect(result.resumen.solicitudesObservadas).toBe(0);
       expect(result.resumen.pagosRegistrados).toBe(1);
       expect(result.message).toBe(
-        'Carga completada: 1 pago registrado y 0 duplicados omitidos. Resultado: 1 solicitud pagada, 0 solicitudes observadas y 0 pagos pendientes reverificados.',
+        'Carga completada: 1 pago registrado y 0 duplicados exactos omitidos (voucher + fecha efectiva). Resultado: 1 solicitud pagada, 0 solicitudes observadas y 0 pagos pendientes reverificados.',
       );
+    });
+
+    it('derives period from the effective date', async () => {
+      await service.uploadAndProcess(
+        csvBuffer(['V001;100.50;20260101;20260105;Juan Perez']),
+      );
+
+      expect(insertedPayments[0].periodo).toBe('2026-01');
     });
 
     it.each([
@@ -220,8 +234,13 @@ describe('PagosBancoService', () => {
       expect(result.resumen.estadosDesconocidos).toBe(1);
     });
 
-    it('omits database and in-file duplicate vouchers', async () => {
-      existingPayments = [{ numeroVoucher: 'V002' } as PagosBanco];
+    it('omits exact database and in-file payment keys', async () => {
+      existingPayments = [
+        {
+          numeroVoucher: 'V002',
+          fechaEfectiva: new Date('2026-07-11T00:00:00.000Z'),
+        } as PagosBanco,
+      ];
 
       const result = await service.uploadAndProcess(
         csvBuffer([
@@ -234,6 +253,62 @@ describe('PagosBancoService', () => {
       expect(insertedPayments).toHaveLength(1);
       expect(result.resumen.pagosRegistrados).toBe(1);
       expect(result.resumen.duplicadosOmitidos).toBe(2);
+    });
+
+    it('registers the same voucher with different effective dates', async () => {
+      const result = await service.uploadAndProcess(
+        csvBuffer([
+          'V001;100.50;20260710;20260711;Juan Perez',
+          'V001;100.50;20260710;20260712;Juan Perez',
+        ]),
+      );
+
+      expect(insertedPayments).toHaveLength(2);
+      expect(result.resumen.pagosRegistrados).toBe(2);
+      expect(result.resumen.duplicadosOmitidos).toBe(0);
+    });
+
+    it('registers a voucher when only another effective date exists', async () => {
+      existingPayments = [
+        {
+          numeroVoucher: 'V001',
+          fechaEfectiva: new Date('2026-07-11T00:00:00.000Z'),
+        } as PagosBanco,
+      ];
+
+      const result = await service.uploadAndProcess(
+        csvBuffer(['V001;100.50;20260710;20260712;Juan Perez']),
+      );
+
+      expect(insertedPayments).toHaveLength(1);
+      expect(result.resumen.pagosRegistrados).toBe(1);
+      expect(result.resumen.duplicadosOmitidos).toBe(0);
+    });
+
+    it('registers different vouchers with the same effective date', async () => {
+      const result = await service.uploadAndProcess(
+        csvBuffer([
+          'V001;100.50;20260710;20260711;Juan Perez',
+          'V002;100.50;20260710;20260711;Juan Perez',
+        ]),
+      );
+
+      expect(insertedPayments).toHaveLength(2);
+      expect(result.resumen.pagosRegistrados).toBe(2);
+      expect(result.resumen.duplicadosOmitidos).toBe(0);
+    });
+
+    it('omits the same voucher and effective date regardless of other fields', async () => {
+      const result = await service.uploadAndProcess(
+        csvBuffer([
+          'V001;100.50;20260710;20260711;Juan Perez',
+          'V001;999.99;20260101;20260711;Otro Alumno',
+        ]),
+      );
+
+      expect(insertedPayments).toHaveLength(1);
+      expect(result.resumen.pagosRegistrados).toBe(1);
+      expect(result.resumen.duplicadosOmitidos).toBe(1);
     });
 
     it('counts a concurrent unique collision as an omitted duplicate', async () => {
@@ -339,7 +414,11 @@ describe('PagosBancoService', () => {
 
   describe('CRUD', () => {
     it('creates an unverified payment', async () => {
-      const createDto = { dniCodigo: '12345678', numeroVoucher: ' V001 ' };
+      const createDto = {
+        dniCodigo: '12345678',
+        numeroVoucher: ' V001 ',
+        fechaEfectiva: '2026-01-05',
+      };
       mockPagosBancoRepository.create.mockReturnValue(mockPago);
       mockPagosBancoRepository.save.mockResolvedValue(mockPago);
 
@@ -348,10 +427,47 @@ describe('PagosBancoService', () => {
       expect(repository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           numeroVoucher: 'V001',
+          periodo: '2026-01',
           verificado: false,
         }),
       );
       expect(result).toEqual(mockPago);
+    });
+
+    it('checks manual creation using voucher and effective date', async () => {
+      mockPagosBancoRepository.create.mockReturnValue(mockPago);
+      mockPagosBancoRepository.save.mockResolvedValue(mockPago);
+
+      await service.create({
+        numeroVoucher: ' V001 ',
+        fechaEfectiva: '2026-07-12',
+      });
+
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: {
+          numeroVoucher: 'V001',
+          fechaEfectiva: new Date('2026-07-12T00:00:00.000Z'),
+        },
+      });
+      expect(repository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ periodo: '2026-07' }),
+      );
+      expect(repository.save).toHaveBeenCalled();
+    });
+
+    it('rejects manual creation with an existing exact payment key', async () => {
+      mockPagosBancoRepository.findOne.mockResolvedValue({
+        ...mockPago,
+        id: 2,
+      });
+
+      await expect(
+        service.create({
+          numeroVoucher: 'V001',
+          fechaEfectiva: '2026-07-11',
+        }),
+      ).rejects.toThrow(ConflictException);
+      expect(repository.save).not.toHaveBeenCalled();
     });
 
     it('returns all payments ordered by creation date', async () => {
@@ -378,9 +494,10 @@ describe('PagosBancoService', () => {
     });
 
     it('updates an existing payment', async () => {
-      mockPagosBancoRepository.findOne.mockResolvedValue(mockPago);
+      const existingPago = { ...mockPago } as PagosBanco;
+      mockPagosBancoRepository.findOne.mockResolvedValue(existingPago);
       mockPagosBancoRepository.save.mockResolvedValue({
-        ...mockPago,
+        ...existingPago,
         alumno: 'Juan Updated',
       });
 
@@ -388,6 +505,60 @@ describe('PagosBancoService', () => {
 
       expect(repository.save).toHaveBeenCalled();
       expect(result.alumno).toBe('Juan Updated');
+    });
+
+    it('allows changing to a different effective date for the same voucher', async () => {
+      const existingPago = { ...mockPago } as PagosBanco;
+      mockPagosBancoRepository.findOne
+        .mockResolvedValueOnce(existingPago)
+        .mockResolvedValueOnce(null);
+      mockPagosBancoRepository.save.mockImplementation((pago) =>
+        Promise.resolve(pago),
+      );
+
+      const result = await service.update(1, {
+        fechaEfectiva: '2026-07-12',
+      });
+
+      expect(repository.findOne).toHaveBeenLastCalledWith({
+        where: {
+          numeroVoucher: 'V001',
+          fechaEfectiva: new Date('2026-07-12T00:00:00.000Z'),
+        },
+      });
+      expect(result.fechaEfectiva).toEqual(
+        new Date('2026-07-12T00:00:00.000Z'),
+      );
+      expect(result.periodo).toBe('2026-07');
+    });
+
+    it('repairs the period when updating a historical payment', async () => {
+      const existingPago = { ...mockPago, periodo: null } as PagosBanco;
+      mockPagosBancoRepository.findOne.mockResolvedValue(existingPago);
+      mockPagosBancoRepository.save.mockImplementation((pago) =>
+        Promise.resolve(pago),
+      );
+
+      const result = await service.update(1, { alumno: 'Juan Updated' });
+
+      expect(result.periodo).toBe('2026-07');
+    });
+
+    it('rejects changing to an existing exact payment key', async () => {
+      const existingPago = { ...mockPago } as PagosBanco;
+      const conflictingPago = {
+        ...mockPago,
+        id: 2,
+        fechaEfectiva: new Date('2026-07-12T00:00:00.000Z'),
+      } as PagosBanco;
+      mockPagosBancoRepository.findOne
+        .mockResolvedValueOnce(existingPago)
+        .mockResolvedValueOnce(conflictingPago);
+
+      await expect(
+        service.update(1, { fechaEfectiva: '2026-07-12' }),
+      ).rejects.toThrow(ConflictException);
+      expect(repository.save).not.toHaveBeenCalled();
     });
 
     it('removes an existing payment', async () => {
@@ -420,4 +591,45 @@ describe('PagosBancoService', () => {
       '\n',
     );
   }
+});
+
+describe('CreatePagosBancoDto', () => {
+  it('requires an effective date for manual creation', async () => {
+    const dto = Object.assign(new CreatePagosBancoDto(), {
+      numeroVoucher: 'V001',
+    });
+
+    const errors = await validate(dto);
+
+    expect(errors.some((error) => error.property === 'fechaEfectiva')).toBe(
+      true,
+    );
+  });
+
+  it('keeps the effective date optional for manual updates', async () => {
+    const errors = await validate(new UpdatePagosBancoDto());
+
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe('AddPeriodoToPagosBanco1784592000000', () => {
+  it('adds, backfills and constrains the period column', async () => {
+    const query = jest.fn().mockResolvedValue(undefined);
+    const queryRunner = { query } as unknown as QueryRunner;
+    const migration = new AddPeriodoToPagosBanco1784592000000();
+
+    await migration.up(queryRunner);
+
+    const statements = query.mock.calls
+      .map(([statement]: [string]) => statement)
+      .join('\n');
+    expect(statements).toContain('ADD COLUMN periodo varchar(7)');
+    expect(statements).toContain(
+      "SET periodo = to_char(fecha_efectiva, 'YYYY-MM')",
+    );
+    expect(statements).toContain('CK_pagos_banco_periodo_fecha_efectiva');
+    expect(statements).toContain('fecha_efectiva IS NULL AND periodo IS NULL');
+    expect(statements).toContain('AND periodo IS NOT NULL');
+  });
 });

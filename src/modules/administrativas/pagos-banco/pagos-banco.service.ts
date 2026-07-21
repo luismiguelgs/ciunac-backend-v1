@@ -93,12 +93,14 @@ export class PagosBancoService {
         ];
         const existingPagos = await manager.find(PagosBanco, {
           where: { numeroVoucher: In(uniqueVouchers) },
-          select: ['numeroVoucher'],
+          select: ['numeroVoucher', 'fechaEfectiva'],
         });
-        const seenVouchers = new Set(
+        const seenPaymentKeys = new Set(
           existingPagos
-            .map((pago) => pago.numeroVoucher?.trim())
-            .filter((voucher): voucher is string => !!voucher),
+            .map((pago) =>
+              this.buildPaymentKey(pago.numeroVoucher, pago.fechaEfectiva),
+            )
+            .filter((key): key is string => !!key),
         );
 
         const solicitudes = await manager.find(Solicitud, {
@@ -114,12 +116,17 @@ export class PagosBancoService {
         const pagosToInsert: PagosBanco[] = [];
 
         for (const row of rows) {
-          if (seenVouchers.has(row.numeroVoucher)) {
+          const paymentKey = this.buildPaymentKey(
+            row.numeroVoucher,
+            row.fechaEfectiva,
+          );
+
+          if (paymentKey && seenPaymentKeys.has(paymentKey)) {
             resumen.duplicadosOmitidos++;
             continue;
           }
 
-          seenVouchers.add(row.numeroVoucher);
+          if (paymentKey) seenPaymentKeys.add(paymentKey);
           const pagoBanco = manager.create(PagosBanco, {
             dniCodigo: row.dniCodigo,
             numeroVoucher: row.numeroVoucher,
@@ -127,6 +134,7 @@ export class PagosBancoService {
             monto: row.monto,
             fechaPago: row.fechaPago,
             fechaEfectiva: row.fechaEfectiva,
+            periodo: this.toPeriod(row.fechaEfectiva),
             voucherRestante: row.voucherRestante,
             archivo: row.archivo,
             verificado: false,
@@ -198,13 +206,16 @@ export class PagosBancoService {
 
   async create(createPagosBancoDto: CreatePagosBancoDto): Promise<PagosBanco> {
     const numeroVoucher = createPagosBancoDto.numeroVoucher?.trim();
-    await this.ensureVoucherIsAvailable(numeroVoucher);
+    const fechaPago = this.parseDtoDate(createPagosBancoDto.fechaPago);
+    const fechaEfectiva = this.parseDtoDate(createPagosBancoDto.fechaEfectiva);
+    await this.ensurePaymentKeyIsAvailable(numeroVoucher, fechaEfectiva);
 
     const pago = this.pagosBancoRepository.create({
       ...createPagosBancoDto,
       numeroVoucher,
-      fechaPago: this.parseDtoDate(createPagosBancoDto.fechaPago),
-      fechaEfectiva: this.parseDtoDate(createPagosBancoDto.fechaEfectiva),
+      fechaPago,
+      fechaEfectiva,
+      periodo: this.toPeriod(fechaEfectiva),
       verificado: false,
     });
     return await this.pagosBancoRepository.save(pago);
@@ -230,9 +241,26 @@ export class PagosBancoService {
   ): Promise<PagosBanco> {
     const pago = await this.findOne(id);
     const numeroVoucher = updatePagosBancoDto.numeroVoucher?.trim();
+    const fechaEfectiva =
+      updatePagosBancoDto.fechaEfectiva !== undefined
+        ? this.parseDtoDate(updatePagosBancoDto.fechaEfectiva)
+        : pago.fechaEfectiva;
+    const finalNumeroVoucher = numeroVoucher ?? pago.numeroVoucher?.trim();
+    const currentPaymentKey = this.buildPaymentKey(
+      pago.numeroVoucher,
+      pago.fechaEfectiva,
+    );
+    const finalPaymentKey = this.buildPaymentKey(
+      finalNumeroVoucher,
+      fechaEfectiva,
+    );
 
-    if (numeroVoucher && numeroVoucher !== pago.numeroVoucher) {
-      await this.ensureVoucherIsAvailable(numeroVoucher);
+    if (finalPaymentKey && finalPaymentKey !== currentPaymentKey) {
+      await this.ensurePaymentKeyIsAvailable(
+        finalNumeroVoucher,
+        fechaEfectiva,
+        id,
+      );
     }
 
     Object.assign(pago, updatePagosBancoDto, {
@@ -241,8 +269,9 @@ export class PagosBancoService {
         fechaPago: this.parseDtoDate(updatePagosBancoDto.fechaPago),
       }),
       ...(updatePagosBancoDto.fechaEfectiva !== undefined && {
-        fechaEfectiva: this.parseDtoDate(updatePagosBancoDto.fechaEfectiva),
+        fechaEfectiva,
       }),
+      periodo: this.toPeriod(fechaEfectiva),
     });
     return await this.pagosBancoRepository.save(pago);
   }
@@ -599,7 +628,7 @@ export class PagosBancoService {
   }
 
   private buildUploadMessage(summary: UploadPagosBancoSummary): string {
-    return `Carga completada: ${this.formatCount(summary.pagosRegistrados, 'pago registrado', 'pagos registrados')} y ${this.formatCount(summary.duplicadosOmitidos, 'duplicado omitido', 'duplicados omitidos')}. Resultado: ${this.formatCount(summary.solicitudesPagadas, 'solicitud pagada', 'solicitudes pagadas')}, ${this.formatCount(summary.solicitudesObservadas, 'solicitud observada', 'solicitudes observadas')} y ${this.formatCount(summary.pagosPreviosReverificados, 'pago pendiente reverificado', 'pagos pendientes reverificados')}.`;
+    return `Carga completada: ${this.formatCount(summary.pagosRegistrados, 'pago registrado', 'pagos registrados')} y ${this.formatCount(summary.duplicadosOmitidos, 'duplicado exacto omitido (voucher + fecha efectiva)', 'duplicados exactos omitidos (voucher + fecha efectiva)')}. Resultado: ${this.formatCount(summary.solicitudesPagadas, 'solicitud pagada', 'solicitudes pagadas')}, ${this.formatCount(summary.solicitudesObservadas, 'solicitud observada', 'solicitudes observadas')} y ${this.formatCount(summary.pagosPreviosReverificados, 'pago pendiente reverificado', 'pagos pendientes reverificados')}.`;
   }
 
   private buildReverifyMessage(summary: ReverifyPagosBancoSummary): string {
@@ -663,6 +692,23 @@ export class PagosBancoService {
       : date.toISOString().slice(0, 10);
   }
 
+  private buildPaymentKey(
+    numeroVoucher: string | null | undefined,
+    fechaEfectiva: Date | string | null | undefined,
+  ): string | null {
+    const voucher = numeroVoucher?.trim();
+    const effectiveDate = this.toDateOnly(fechaEfectiva);
+    return voucher && effectiveDate
+      ? JSON.stringify([voucher, effectiveDate])
+      : null;
+  }
+
+  private toPeriod(
+    fechaEfectiva: Date | string | null | undefined,
+  ): string | null {
+    return this.toDateOnly(fechaEfectiva)?.slice(0, 7) ?? null;
+  }
+
   private parseDtoDate(value?: string): Date | undefined {
     return value ? new Date(value) : undefined;
   }
@@ -685,17 +731,19 @@ export class PagosBancoService {
     });
   }
 
-  private async ensureVoucherIsAvailable(
+  private async ensurePaymentKeyIsAvailable(
     numeroVoucher?: string,
+    fechaEfectiva?: Date,
+    excludedId?: number,
   ): Promise<void> {
-    if (!numeroVoucher) return;
+    if (!numeroVoucher || !fechaEfectiva) return;
 
     const existing = await this.pagosBancoRepository.findOne({
-      where: { numeroVoucher },
+      where: { numeroVoucher, fechaEfectiva },
     });
-    if (existing) {
+    if (existing && existing.id !== excludedId) {
       throw new ConflictException(
-        `Ya existe un pago con el voucher ${numeroVoucher}.`,
+        `Ya existe un pago con el voucher ${numeroVoucher} y fecha efectiva ${this.toDateOnly(fechaEfectiva)}.`,
       );
     }
   }

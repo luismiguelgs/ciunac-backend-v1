@@ -1,4 +1,10 @@
-import { IsDateString, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsDefined,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreatePagosBancoDto {
   @IsOptional()
@@ -21,9 +27,9 @@ export class CreatePagosBancoDto {
   @IsDateString()
   fechaPago?: string;
 
-  @IsOptional()
+  @IsDefined()
   @IsDateString()
-  fechaEfectiva?: string;
+  fechaEfectiva: string;
 
   @IsOptional()
   @IsString()

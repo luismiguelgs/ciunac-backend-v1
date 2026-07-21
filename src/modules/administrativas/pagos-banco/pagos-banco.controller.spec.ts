@@ -96,7 +96,11 @@ describe('PagosBancoController', () => {
   });
 
   it('calls service.create', async () => {
-    const createDto = { dniCodigo: '12345678', numeroVoucher: 'V001' };
+    const createDto = {
+      dniCodigo: '12345678',
+      numeroVoucher: 'V001',
+      fechaEfectiva: '2026-01-05',
+    };
     mockPagosBancoService.create.mockResolvedValue(mockPago);
 
     const result = await controller.create(createDto);
