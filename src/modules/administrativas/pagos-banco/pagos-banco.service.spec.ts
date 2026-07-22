@@ -12,6 +12,7 @@ import { DataSource, EntityManager, QueryRunner, Repository } from 'typeorm';
 import { PagosBancoService } from './pagos-banco.service';
 import { PagosBanco } from './entities/pagos-banco.entity';
 import { CreatePagosBancoDto } from './dto/create-pagos-banco.dto';
+import { FilterPagosBancoDto } from './dto/filter-pagos-banco.dto';
 import { UpdatePagosBancoDto } from './dto/update-pagos-banco.dto';
 import { Solicitud } from '../solicitudes/entities/solicitud.entity';
 import { SolicitudEstadoId } from '../solicitudes/constants/solicitud-estado.constants';
@@ -470,15 +471,22 @@ describe('PagosBancoService', () => {
       expect(repository.save).not.toHaveBeenCalled();
     });
 
-    it('returns all payments ordered by creation date', async () => {
+    it('filters payments by period and orders them by creation date', async () => {
       mockPagosBancoRepository.find.mockResolvedValue([mockPago]);
 
-      const result = await service.findAll();
+      const result = await service.findAll('2026-01');
 
       expect(repository.find).toHaveBeenCalledWith({
+        where: { periodo: '2026-01' },
         order: { creadoEn: 'DESC' },
       });
       expect(result).toEqual([mockPago]);
+    });
+
+    it('returns an empty list when the period has no payments', async () => {
+      mockPagosBancoRepository.find.mockResolvedValue([]);
+
+      await expect(service.findAll('2026-02')).resolves.toEqual([]);
     });
 
     it('returns one payment', async () => {
@@ -611,6 +619,27 @@ describe('CreatePagosBancoDto', () => {
 
     expect(errors).toHaveLength(0);
   });
+});
+
+describe('FilterPagosBancoDto', () => {
+  it('accepts a valid period', async () => {
+    const dto = Object.assign(new FilterPagosBancoDto(), {
+      periodo: '2026-01',
+    });
+
+    await expect(validate(dto)).resolves.toHaveLength(0);
+  });
+
+  it.each([undefined, '2026-1', '2026-00', '2026-13'])(
+    'rejects invalid period %s',
+    async (periodo) => {
+      const dto = Object.assign(new FilterPagosBancoDto(), { periodo });
+
+      const errors = await validate(dto);
+
+      expect(errors.some((error) => error.property === 'periodo')).toBe(true);
+    },
+  );
 });
 
 describe('AddPeriodoToPagosBanco1784592000000', () => {

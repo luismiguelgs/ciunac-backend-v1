@@ -221,8 +221,9 @@ export class PagosBancoService {
     return await this.pagosBancoRepository.save(pago);
   }
 
-  async findAll(): Promise<PagosBanco[]> {
+  async findAll(periodo: string): Promise<PagosBanco[]> {
     return await this.pagosBancoRepository.find({
+      where: { periodo },
       order: { creadoEn: 'DESC' },
     });
   }

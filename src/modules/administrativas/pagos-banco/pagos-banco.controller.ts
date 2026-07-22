@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -17,6 +18,7 @@ import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guar
 import { PagosBancoService } from './pagos-banco.service';
 import { CreatePagosBancoDto } from './dto/create-pagos-banco.dto';
 import { UpdatePagosBancoDto } from './dto/update-pagos-banco.dto';
+import { FilterPagosBancoDto } from './dto/filter-pagos-banco.dto';
 import { PagosBanco } from './entities/pagos-banco.entity';
 import { PAGOS_CSV_MAX_FILE_SIZE_BYTES } from './pagos-banco.constants';
 import {
@@ -62,8 +64,8 @@ export class PagosBancoController {
   }
 
   @Get()
-  findAll(): Promise<PagosBanco[]> {
-    return this.pagosBancoService.findAll();
+  findAll(@Query() filters: FilterPagosBancoDto): Promise<PagosBanco[]> {
+    return this.pagosBancoService.findAll(filters.periodo);
   }
 
   @Get(':id')

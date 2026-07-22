@@ -109,10 +109,13 @@ describe('PagosBancoController', () => {
     expect(result).toEqual(mockPago);
   });
 
-  it('calls service.findAll', async () => {
+  it('calls service.findAll with the requested period', async () => {
     mockPagosBancoService.findAll.mockResolvedValue([mockPago]);
 
-    await expect(controller.findAll()).resolves.toEqual([mockPago]);
+    await expect(controller.findAll({ periodo: '2026-01' })).resolves.toEqual([
+      mockPago,
+    ]);
+    expect(service.findAll).toHaveBeenCalledWith('2026-01');
   });
 
   it('calls service.findOne', async () => {
