@@ -126,7 +126,7 @@ describe('PagosBancoController', () => {
   });
 
   it('calls service.update', async () => {
-    const updateDto = { alumno: 'Juan Updated' };
+    const updateDto = { alumno: 'Juan Updated', verificado: true };
     mockPagosBancoService.update.mockResolvedValue({
       ...mockPago,
       ...updateDto,
@@ -136,6 +136,7 @@ describe('PagosBancoController', () => {
 
     expect(service.update).toHaveBeenCalledWith(1, updateDto);
     expect(result.alumno).toBe('Juan Updated');
+    expect(result.verificado).toBe(true);
   });
 
   it('calls service.remove', async () => {

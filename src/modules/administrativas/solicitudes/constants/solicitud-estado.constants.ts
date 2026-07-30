@@ -6,3 +6,9 @@ export enum SolicitudEstadoId {
   RECHAZADO = 5,
   OBSERVADO = 12,
 }
+
+export const SOLICITUD_ESTADOS_PENDIENTES = [
+  SolicitudEstadoId.NUEVO,
+  SolicitudEstadoId.ASIGNADO,
+  SolicitudEstadoId.PAGADO,
+] as const;

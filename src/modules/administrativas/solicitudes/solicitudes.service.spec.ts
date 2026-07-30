@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   InternalServerErrorException,
   Logger,
   NotFoundException,
@@ -9,9 +10,11 @@ import {
   Estado,
   EstadoReferencia,
 } from 'src/modules/auxiliares/estados/entities/estado.entity';
+import { Estudiante } from 'src/modules/principales/estudiantes/entities/estudiante.entity';
 import { MailerService } from 'src/shared/mailer/mailer.service';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { SolicitudEstadoId } from './constants/solicitud-estado.constants';
+import { CreateSolicitudDto } from './dto/create-solicitud.dto';
 import { Solicitud } from './entities/solicitud.entity';
 import { SolicitudesService } from './solicitudes.service';
 
@@ -20,6 +23,12 @@ describe('SolicitudesService', () => {
   let solicitudRepository: jest.Mocked<Repository<Solicitud>>;
   let estadoRepository: jest.Mocked<Repository<Estado>>;
   let mailerService: jest.Mocked<MailerService>;
+  let dataSource: { transaction: jest.Mock };
+  let transactionManager: {
+    findOne: jest.Mock;
+    create: jest.Mock;
+    save: jest.Mock;
+  };
 
   const estadoRechazado = {
     id: SolicitudEstadoId.RECHAZADO,
@@ -40,12 +49,25 @@ describe('SolicitudesService', () => {
     }) as Solicitud;
 
   beforeEach(async () => {
+    transactionManager = {
+      findOne: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
+    };
+    dataSource = {
+      transaction: jest.fn(
+        async (callback: (manager: EntityManager) => Promise<unknown>) =>
+          callback(transactionManager as unknown as EntityManager),
+      ),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SolicitudesService,
         {
           provide: getRepositoryToken(Solicitud),
           useValue: {
+            create: jest.fn(),
             findOne: jest.fn(),
             save: jest.fn(),
           },
@@ -62,6 +84,10 @@ describe('SolicitudesService', () => {
             sendMail: jest.fn(),
           },
         },
+        {
+          provide: DataSource,
+          useValue: dataSource,
+        },
       ],
     }).compile();
 
@@ -74,6 +100,158 @@ describe('SolicitudesService', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  describe('create', () => {
+    const createDto = {
+      estudianteId: 'student-1',
+      tipoSolicitudId: 1,
+      idiomaId: 3,
+      nivelId: 2,
+      estadoId: SolicitudEstadoId.NUEVO,
+      periodo: '202607',
+      manual: true,
+    } as CreateSolicitudDto;
+
+    it('returns 409 and does not create a duplicated manual solicitud', async () => {
+      transactionManager.findOne
+        .mockResolvedValueOnce({
+          id: 'student-1',
+          numeroDocumento: ' 12345678 ',
+        } as Estudiante)
+        .mockResolvedValueOnce(buildSolicitud({ id: 456 }));
+
+      let conflict: ConflictException | undefined;
+      try {
+        await service.create(createDto);
+      } catch (error) {
+        conflict = error as ConflictException;
+      }
+
+      expect(conflict).toBeInstanceOf(ConflictException);
+      expect(conflict?.getStatus()).toBe(409);
+      expect(conflict?.getResponse()).toEqual({
+        statusCode: 409,
+        error: 'Conflict',
+        code: 'SOLICITUD_MANUAL_DUPLICADA',
+        message:
+          'El estudiante ya tiene una solicitud pendiente para el mismo idioma y nivel',
+        solicitudId: 456,
+      });
+      expect(transactionManager.findOne).toHaveBeenNthCalledWith(
+        1,
+        Estudiante,
+        {
+          where: { id: 'student-1' },
+          lock: { mode: 'pessimistic_write' },
+        },
+      );
+      expect(transactionManager.findOne).toHaveBeenNthCalledWith(
+        2,
+        Solicitud,
+        {
+          where: {
+            estadoId: expect.objectContaining({
+              _type: 'in',
+              _value: [1, 2, 4],
+            }),
+            idiomaId: 3,
+            nivelId: 2,
+            estudiante: {
+              numeroDocumento: '12345678',
+            },
+          },
+        },
+      );
+      expect(transactionManager.create).not.toHaveBeenCalled();
+      expect(transactionManager.save).not.toHaveBeenCalled();
+      expect(solicitudRepository.create).not.toHaveBeenCalled();
+      expect(solicitudRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('creates a manual solicitud when no pending duplicate exists', async () => {
+      const solicitud = buildSolicitud({
+        estudianteId: 'student-1',
+        idiomaId: 3,
+        nivelId: 2,
+        manual: true,
+      });
+      transactionManager.findOne
+        .mockResolvedValueOnce({
+          id: 'student-1',
+          numeroDocumento: '12345678',
+        } as Estudiante)
+        .mockResolvedValueOnce(null);
+      transactionManager.create.mockReturnValue(solicitud);
+      transactionManager.save.mockResolvedValue(solicitud);
+
+      await expect(service.create(createDto)).resolves.toBe(solicitud);
+
+      expect(dataSource.transaction).toHaveBeenCalledTimes(1);
+      expect(transactionManager.create).toHaveBeenCalledWith(
+        Solicitud,
+        createDto,
+      );
+      expect(transactionManager.save).toHaveBeenCalledWith(
+        Solicitud,
+        solicitud,
+      );
+    });
+
+    it('uses the incoming language and level in the duplicate lookup', async () => {
+      const differentCombinationDto = {
+        ...createDto,
+        idiomaId: 5,
+        nivelId: 7,
+      };
+      const solicitud = buildSolicitud({ idiomaId: 5, nivelId: 7 });
+      transactionManager.findOne
+        .mockResolvedValueOnce({
+          id: 'student-1',
+          numeroDocumento: '12345678',
+        } as Estudiante)
+        .mockResolvedValueOnce(null);
+      transactionManager.create.mockReturnValue(solicitud);
+      transactionManager.save.mockResolvedValue(solicitud);
+
+      await service.create(differentCombinationDto);
+
+      expect(transactionManager.findOne).toHaveBeenNthCalledWith(
+        2,
+        Solicitud,
+        expect.objectContaining({
+          where: expect.objectContaining({
+            idiomaId: 5,
+            nivelId: 7,
+          }),
+        }),
+      );
+    });
+
+    it('does not validate duplicates for a non-manual solicitud', async () => {
+      const automaticDto = { ...createDto, manual: false };
+      const solicitud = buildSolicitud({ manual: false });
+      solicitudRepository.create.mockReturnValue(solicitud);
+      solicitudRepository.save.mockResolvedValue(solicitud);
+
+      await expect(service.create(automaticDto)).resolves.toBe(solicitud);
+
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      expect(solicitudRepository.create).toHaveBeenCalledWith(automaticDto);
+      expect(solicitudRepository.save).toHaveBeenCalledWith(solicitud);
+    });
+
+    it('returns 404 when the manual solicitud student does not exist', async () => {
+      transactionManager.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.create(createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(transactionManager.findOne).toHaveBeenCalledTimes(1);
+      expect(transactionManager.create).not.toHaveBeenCalled();
+      expect(transactionManager.save).not.toHaveBeenCalled();
+    });
   });
 
   it('should reject a solicitud and send the notification', async () => {

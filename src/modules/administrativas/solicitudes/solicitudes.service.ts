@@ -1,14 +1,24 @@
-import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import {
+	ConflictException,
+	Injectable,
+	InternalServerErrorException,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { CreateSolicitudDto } from './dto/create-solicitud.dto';
 import { UpdateSolicitudDto } from './dto/update-solicitud.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Solicitud } from './entities/solicitud.entity';
-import { Repository, Between, Not } from 'typeorm';
+import { DataSource, Repository, Between, In, Not } from 'typeorm';
 import { Estado, EstadoReferencia } from 'src/modules/auxiliares/estados/entities/estado.entity';
 import { MailerService } from 'src/shared/mailer/mailer.service';
 import { RejectSolicitudDto } from './dto/reject-solicitud.dto';
-import { SolicitudEstadoId } from './constants/solicitud-estado.constants';
+import {
+	SOLICITUD_ESTADOS_PENDIENTES,
+	SolicitudEstadoId,
+} from './constants/solicitud-estado.constants';
 import { RejectSolicitudResult } from './interfaces/reject-solicitud-result.interface';
+import { Estudiante } from 'src/modules/principales/estudiantes/entities/estudiante.entity';
 
 @Injectable()
 export class SolicitudesService {
@@ -20,11 +30,57 @@ export class SolicitudesService {
 		@InjectRepository(Estado)
 		private readonly estadoRepository: Repository<Estado>,
 		private readonly mailerService: MailerService,
+		private readonly dataSource: DataSource,
 	) {}
 
 	async create(createSolicitudDto: CreateSolicitudDto) : Promise<Solicitud> {
+		if (createSolicitudDto.manual === true) {
+			return this.createManualSolicitud(createSolicitudDto);
+		}
+
 		const item = this.solicitudRepository.create(createSolicitudDto);
 		return await this.solicitudRepository.save(item);
+	}
+
+	private async createManualSolicitud(
+		createSolicitudDto: CreateSolicitudDto,
+	): Promise<Solicitud> {
+		return this.dataSource.transaction(async (manager) => {
+			const estudiante = await manager.findOne(Estudiante, {
+				where: { id: createSolicitudDto.estudianteId },
+				lock: { mode: 'pessimistic_write' },
+			});
+			if (!estudiante) {
+				throw new NotFoundException(
+					`Estudiante ${createSolicitudDto.estudianteId} no encontrado`,
+				);
+			}
+
+			const duplicatedSolicitud = await manager.findOne(Solicitud, {
+				where: {
+					estadoId: In([...SOLICITUD_ESTADOS_PENDIENTES]),
+					idiomaId: createSolicitudDto.idiomaId,
+					nivelId: createSolicitudDto.nivelId,
+					estudiante: {
+						numeroDocumento: estudiante.numeroDocumento.trim(),
+					},
+				},
+			});
+
+			if (duplicatedSolicitud) {
+				throw new ConflictException({
+					statusCode: 409,
+					error: 'Conflict',
+					code: 'SOLICITUD_MANUAL_DUPLICADA',
+					message:
+						'El estudiante ya tiene una solicitud pendiente para el mismo idioma y nivel',
+					solicitudId: duplicatedSolicitud.id,
+				});
+			}
+
+			const item = manager.create(Solicitud, createSolicitudDto);
+			return manager.save(Solicitud, item);
+		});
 	}
 
 	async findAll() : Promise<Solicitud[]> {
@@ -81,9 +137,14 @@ export class SolicitudesService {
 			// console.log('🟢 Encontrados', certificados.length, 'certificados');
 			return certificados;
 		} catch (error) {
-			console.error('❌ Error al buscar certificados:', error.message);
-  			console.error(error.stack);
-  			throw new Error(`Error interno: ${error.message}`);
+			const message = error instanceof Error ? error.message : String(error);
+			const stack = error instanceof Error ? error.stack : undefined;
+
+			console.error('❌ Error al buscar certificados:', message);
+			if (stack) {
+				console.error(stack);
+			}
+			throw new Error(`Error interno: ${message}`);
 		}
 	}
 

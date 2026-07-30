@@ -20,6 +20,7 @@ export interface ReverifyPagosBancoSummary {
   pagosVerificados: number;
   solicitudesPagadas: number;
   solicitudesObservadas: number;
+  solicitudesObservadasPorVoucherReutilizado: number;
   vouchersSinSolicitud: number;
   estadosSinCambio: number;
   estadosDesconocidos: number;
@@ -37,6 +38,7 @@ export interface UploadPagosBancoSummary {
   vouchersSinSolicitud: number;
   solicitudesPagadas: number;
   solicitudesObservadas: number;
+  solicitudesObservadasPorVoucherReutilizado: number;
   vouchersVerificadosSinCambio: number;
   estadosDesconocidos: number;
   pagosPreviosReverificados: number;

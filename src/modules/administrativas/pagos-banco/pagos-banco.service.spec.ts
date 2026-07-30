@@ -24,6 +24,7 @@ describe('PagosBancoService', () => {
   let insertedPayments: PagosBanco[];
   let insertedCount: number | undefined;
   let historicalPayments: PagosBanco[];
+  let verifiedPayments: PagosBanco[];
   let existingPayments: PagosBanco[];
   let matchingSolicitudes: Solicitud[];
 
@@ -80,6 +81,7 @@ describe('PagosBancoService', () => {
     insertedPayments = [];
     insertedCount = undefined;
     historicalPayments = [];
+    verifiedPayments = [];
     existingPayments = [];
     matchingSolicitudes = [];
 
@@ -112,6 +114,9 @@ describe('PagosBancoService', () => {
       (entity: unknown, options: { where?: { verificado?: boolean } }) => {
         if (entity === PagosBanco && options.where?.verificado === false) {
           return Promise.resolve(historicalPayments);
+        }
+        if (entity === PagosBanco && options.where?.verificado === true) {
+          return Promise.resolve(verifiedPayments);
         }
         if (entity === PagosBanco) return Promise.resolve(existingPayments);
         if (entity === Solicitud) return Promise.resolve(matchingSolicitudes);
@@ -233,6 +238,37 @@ describe('PagosBancoService', () => {
       expect(solicitud.estadoId).toBe(99);
       expect(insertedPayments[0].verificado).toBe(false);
       expect(result.resumen.estadosDesconocidos).toBe(1);
+    });
+
+    it('observes a NEW request that reuses an already verified payment', async () => {
+      const solicitud = createSolicitud({
+        observaciones: 'Observación previa.',
+      });
+      const verifiedPayment = {
+        ...mockPago,
+        verificado: true,
+      } as PagosBanco;
+      matchingSolicitudes = [solicitud];
+      verifiedPayments = [verifiedPayment];
+      existingPayments = [verifiedPayment];
+
+      const result = await service.uploadAndProcess(
+        csvBuffer(['V001;100.50;20260710;20260711;Juan Perez']),
+      );
+
+      expect(solicitud.estadoId).toBe(SolicitudEstadoId.OBSERVADO);
+      expect(solicitud.observaciones).toContain('Observación previa.');
+      expect(solicitud.observaciones).toContain(
+        'El voucher V001 con fecha efectiva 2026-07-11 corresponde a un pago bancario ya verificado',
+      );
+      expect(verifiedPayment.verificado).toBe(true);
+      expect(result.resumen.pagosRegistrados).toBe(0);
+      expect(result.resumen.duplicadosOmitidos).toBe(1);
+      expect(result.resumen.solicitudesObservadas).toBe(1);
+      expect(result.resumen.solicitudesObservadasPorVoucherReutilizado).toBe(1);
+      expect(result.message).toContain(
+        '1 solicitud que reutiliza un voucher ya verificado',
+      );
     });
 
     it('omits exact database and in-file payment keys', async () => {
@@ -411,6 +447,99 @@ describe('PagosBancoService', () => {
       };
       expect(options.where.creadoEn._type).toBe('moreThanOrEqual');
     });
+
+    it('observes reused verified payments even without loading the old CSV again', async () => {
+      const solicitud = createSolicitud();
+      const verifiedPayment = {
+        ...mockPago,
+        verificado: true,
+      } as PagosBanco;
+      matchingSolicitudes = [solicitud];
+      verifiedPayments = [verifiedPayment];
+
+      const result = await service.reverifyUnverified();
+
+      expect(solicitud.estadoId).toBe(SolicitudEstadoId.OBSERVADO);
+      expect(verifiedPayment.verificado).toBe(true);
+      expect(result.resumen.pagosEvaluados).toBe(0);
+      expect(result.resumen.pagosVerificados).toBe(0);
+      expect(result.resumen.solicitudesObservadas).toBe(1);
+      expect(result.resumen.solicitudesObservadasPorVoucherReutilizado).toBe(1);
+    });
+
+    it('does not observe the request when the effective date is different', async () => {
+      const solicitud = createSolicitud({
+        fechaPago: new Date('2026-07-12T00:00:00.000Z'),
+      });
+      matchingSolicitudes = [solicitud];
+      verifiedPayments = [
+        {
+          ...mockPago,
+          verificado: true,
+          fechaEfectiva: new Date('2026-07-11T00:00:00.000Z'),
+        } as PagosBanco,
+      ];
+
+      const result = await service.reverifyUnverified();
+
+      expect(solicitud.estadoId).toBe(SolicitudEstadoId.NUEVO);
+      expect(solicitud.observaciones).toBeUndefined();
+      expect(result.resumen.solicitudesObservadasPorVoucherReutilizado).toBe(0);
+    });
+
+    it('does not duplicate the observation on repeated reverification', async () => {
+      const solicitud = createSolicitud();
+      verifiedPayments = [{ ...mockPago, verificado: true } as PagosBanco];
+      matchingSolicitudes = [solicitud];
+
+      await service.reverifyUnverified();
+      const firstObservation = solicitud.observaciones;
+      await service.reverifyUnverified();
+
+      expect(solicitud.estadoId).toBe(SolicitudEstadoId.OBSERVADO);
+      expect(solicitud.observaciones).toBe(firstObservation);
+    });
+
+    it('observes every NEW request that reuses the same verified payment', async () => {
+      const firstRequest = createSolicitud({ id: 10 });
+      const secondRequest = createSolicitud({ id: 11 });
+      matchingSolicitudes = [firstRequest, secondRequest];
+      verifiedPayments = [{ ...mockPago, verificado: true } as PagosBanco];
+
+      const result = await service.reverifyUnverified();
+
+      expect(firstRequest.estadoId).toBe(SolicitudEstadoId.OBSERVADO);
+      expect(secondRequest.estadoId).toBe(SolicitudEstadoId.OBSERVADO);
+      expect(result.resumen.solicitudesObservadas).toBe(2);
+      expect(result.resumen.solicitudesObservadasPorVoucherReutilizado).toBe(2);
+    });
+
+    it.each([
+      SolicitudEstadoId.ASIGNADO,
+      SolicitudEstadoId.TERMINADO,
+      SolicitudEstadoId.PAGADO,
+      SolicitudEstadoId.RECHAZADO,
+      SolicitudEstadoId.OBSERVADO,
+    ])('does not change state %s for a reused voucher', async (estadoId) => {
+      const solicitud = createSolicitud({ estadoId });
+      matchingSolicitudes = [solicitud];
+      verifiedPayments = [{ ...mockPago, verificado: true } as PagosBanco];
+
+      const result = await service.reverifyUnverified();
+
+      expect(solicitud.estadoId).toBe(estadoId);
+      expect(result.resumen.solicitudesObservadasPorVoucherReutilizado).toBe(0);
+    });
+
+    it('returns a safe error when saving reused voucher observations fails', async () => {
+      matchingSolicitudes = [createSolicitud()];
+      verifiedPayments = [{ ...mockPago, verificado: true } as PagosBanco];
+      mockManager.save.mockRejectedValueOnce(new Error('database detail'));
+
+      await expect(service.reverifyUnverified()).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
   });
 
   describe('CRUD', () => {
@@ -515,6 +644,24 @@ describe('PagosBancoService', () => {
       expect(result.alumno).toBe('Juan Updated');
     });
 
+    it.each([true, false])(
+      'updates the manual verification status to %s',
+      async (verificado) => {
+        const existingPago = { ...mockPago } as PagosBanco;
+        mockPagosBancoRepository.findOne.mockResolvedValue(existingPago);
+        mockPagosBancoRepository.save.mockImplementation((pago) =>
+          Promise.resolve(pago),
+        );
+
+        const result = await service.update(1, { verificado });
+
+        expect(result.verificado).toBe(verificado);
+        expect(repository.save).toHaveBeenCalledWith(
+          expect.objectContaining({ verificado }),
+        );
+      },
+    );
+
     it('allows changing to a different effective date for the same voucher', async () => {
       const existingPago = { ...mockPago } as PagosBanco;
       mockPagosBancoRepository.findOne
@@ -618,6 +765,25 @@ describe('CreatePagosBancoDto', () => {
     const errors = await validate(new UpdatePagosBancoDto());
 
     expect(errors).toHaveLength(0);
+  });
+
+  it.each([true, false])(
+    'accepts verification status %s in manual updates',
+    async (verificado) => {
+      const dto = Object.assign(new UpdatePagosBancoDto(), { verificado });
+
+      await expect(validate(dto)).resolves.toHaveLength(0);
+    },
+  );
+
+  it('rejects a non-boolean verification status', async () => {
+    const dto = Object.assign(new UpdatePagosBancoDto(), {
+      verificado: 'true',
+    });
+
+    const errors = await validate(dto);
+
+    expect(errors.some((error) => error.property === 'verificado')).toBe(true);
   });
 });
 

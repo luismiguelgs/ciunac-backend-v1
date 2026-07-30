@@ -83,9 +83,12 @@ export class PagosBancoService {
       return await this.dataSource.transaction(async (manager) => {
         const reverifySummary =
           await this.reverifyUnverifiedWithManager(manager);
+        const reusedVouchersObserved =
+          await this.observeReusedVerifiedPaymentsWithManager(manager);
         const resumen = this.createUploadSummary(
           rows.length,
           reverifySummary.pagosVerificados,
+          reusedVouchersObserved,
         );
 
         const uniqueVouchers = [
@@ -186,9 +189,15 @@ export class PagosBancoService {
 
   async reverifyUnverified(): Promise<ReverifyPagosBancoResult> {
     try {
-      const resumen = await this.dataSource.transaction((manager) =>
-        this.reverifyUnverifiedWithManager(manager),
-      );
+      const resumen = await this.dataSource.transaction(async (manager) => {
+        const summary = await this.reverifyUnverifiedWithManager(manager);
+        const reusedVouchersObserved =
+          await this.observeReusedVerifiedPaymentsWithManager(manager);
+        summary.solicitudesObservadas += reusedVouchersObserved;
+        summary.solicitudesObservadasPorVoucherReutilizado =
+          reusedVouchersObserved;
+        return summary;
+      });
 
       return {
         message: this.buildReverifyMessage(resumen),
@@ -527,6 +536,68 @@ export class PagosBancoService {
     return summary;
   }
 
+  private async observeReusedVerifiedPaymentsWithManager(
+    manager: EntityManager,
+  ): Promise<number> {
+    const newRequests = await manager.find(Solicitud, {
+      where: { estadoId: SolicitudEstadoId.NUEVO },
+    });
+    const candidates = newRequests.filter(
+      (request) =>
+        !!request.numeroVoucher?.trim() && !!this.toDateOnly(request.fechaPago),
+    );
+
+    if (candidates.length === 0) return 0;
+
+    const vouchers = [
+      ...new Set(candidates.map((request) => request.numeroVoucher.trim())),
+    ];
+    const verifiedPayments = await manager.find(PagosBanco, {
+      where: {
+        verificado: true,
+        numeroVoucher: In(vouchers),
+      },
+      select: ['numeroVoucher', 'fechaEfectiva', 'verificado'],
+    });
+    const verifiedPaymentKeys = new Set(
+      verifiedPayments
+        .map((payment) =>
+          this.buildPaymentKey(payment.numeroVoucher, payment.fechaEfectiva),
+        )
+        .filter((key): key is string => !!key),
+    );
+    const requestsToObserve: Solicitud[] = [];
+
+    for (const request of candidates) {
+      if ((request.estadoId as SolicitudEstadoId) !== SolicitudEstadoId.NUEVO) {
+        continue;
+      }
+
+      const key = this.buildPaymentKey(
+        request.numeroVoucher,
+        request.fechaPago,
+      );
+      if (!key || !verifiedPaymentKeys.has(key)) continue;
+
+      request.estadoId = SolicitudEstadoId.OBSERVADO;
+      const observation = this.buildReusedVoucherObservation(
+        request.numeroVoucher.trim(),
+        request.fechaPago,
+      );
+      request.observaciones = this.appendObservation(
+        request.observaciones,
+        observation,
+      );
+      requestsToObserve.push(request);
+    }
+
+    if (requestsToObserve.length > 0) {
+      await manager.save(Solicitud, requestsToObserve, { chunk: 100 });
+    }
+
+    return requestsToObserve.length;
+  }
+
   private conciliate(
     solicitud: Solicitud,
     pagoBanco: PagosBanco,
@@ -581,6 +652,7 @@ export class PagosBancoService {
   private createUploadSummary(
     registrosLeidos: number,
     pagosPreviosReverificados: number,
+    solicitudesObservadasPorVoucherReutilizado: number,
   ): UploadPagosBancoSummary {
     return {
       registrosLeidos,
@@ -588,7 +660,8 @@ export class PagosBancoService {
       duplicadosOmitidos: 0,
       vouchersSinSolicitud: 0,
       solicitudesPagadas: 0,
-      solicitudesObservadas: 0,
+      solicitudesObservadas: solicitudesObservadasPorVoucherReutilizado,
+      solicitudesObservadasPorVoucherReutilizado,
       vouchersVerificadosSinCambio: 0,
       estadosDesconocidos: 0,
       pagosPreviosReverificados,
@@ -601,6 +674,7 @@ export class PagosBancoService {
       pagosVerificados: 0,
       solicitudesPagadas: 0,
       solicitudesObservadas: 0,
+      solicitudesObservadasPorVoucherReutilizado: 0,
       vouchersSinSolicitud: 0,
       estadosSinCambio: 0,
       estadosDesconocidos: 0,
@@ -629,11 +703,17 @@ export class PagosBancoService {
   }
 
   private buildUploadMessage(summary: UploadPagosBancoSummary): string {
-    return `Carga completada: ${this.formatCount(summary.pagosRegistrados, 'pago registrado', 'pagos registrados')} y ${this.formatCount(summary.duplicadosOmitidos, 'duplicado exacto omitido (voucher + fecha efectiva)', 'duplicados exactos omitidos (voucher + fecha efectiva)')}. Resultado: ${this.formatCount(summary.solicitudesPagadas, 'solicitud pagada', 'solicitudes pagadas')}, ${this.formatCount(summary.solicitudesObservadas, 'solicitud observada', 'solicitudes observadas')} y ${this.formatCount(summary.pagosPreviosReverificados, 'pago pendiente reverificado', 'pagos pendientes reverificados')}.`;
+    return `Carga completada: ${this.formatCount(summary.pagosRegistrados, 'pago registrado', 'pagos registrados')} y ${this.formatCount(summary.duplicadosOmitidos, 'duplicado exacto omitido (voucher + fecha efectiva)', 'duplicados exactos omitidos (voucher + fecha efectiva)')}. Resultado: ${this.formatCount(summary.solicitudesPagadas, 'solicitud pagada', 'solicitudes pagadas')}, ${this.formatCount(summary.solicitudesObservadas, 'solicitud observada', 'solicitudes observadas')} y ${this.formatCount(summary.pagosPreviosReverificados, 'pago pendiente reverificado', 'pagos pendientes reverificados')}.${this.buildReusedVoucherMessage(summary.solicitudesObservadasPorVoucherReutilizado)}`;
   }
 
   private buildReverifyMessage(summary: ReverifyPagosBancoSummary): string {
-    return `Reverificación completada: ${this.formatCount(summary.pagosEvaluados, 'pago evaluado', 'pagos evaluados')}, ${this.formatCount(summary.pagosVerificados, 'pago verificado', 'pagos verificados')}, ${this.formatCount(summary.solicitudesPagadas, 'solicitud pagada', 'solicitudes pagadas')} y ${this.formatCount(summary.solicitudesObservadas, 'solicitud observada', 'solicitudes observadas')}.`;
+    return `Reverificación completada: ${this.formatCount(summary.pagosEvaluados, 'pago evaluado', 'pagos evaluados')}, ${this.formatCount(summary.pagosVerificados, 'pago verificado', 'pagos verificados')}, ${this.formatCount(summary.solicitudesPagadas, 'solicitud pagada', 'solicitudes pagadas')} y ${this.formatCount(summary.solicitudesObservadas, 'solicitud observada', 'solicitudes observadas')}.${this.buildReusedVoucherMessage(summary.solicitudesObservadasPorVoucherReutilizado)}`;
+  }
+
+  private buildReusedVoucherMessage(count: number): string {
+    return count > 0
+      ? ` Se ${count === 1 ? 'detectó' : 'detectaron'} ${this.formatCount(count, 'solicitud que reutiliza un voucher ya verificado', 'solicitudes que reutilizan vouchers ya verificados')}.`
+      : '';
   }
 
   private formatCount(count: number, singular: string, plural: string): string {
@@ -708,6 +788,23 @@ export class PagosBancoService {
     fechaEfectiva: Date | string | null | undefined,
   ): string | null {
     return this.toDateOnly(fechaEfectiva)?.slice(0, 7) ?? null;
+  }
+
+  private buildReusedVoucherObservation(
+    numeroVoucher: string,
+    fechaEfectiva: Date | string,
+  ): string {
+    return `El voucher ${numeroVoucher} con fecha efectiva ${this.toDateOnly(fechaEfectiva)} corresponde a un pago bancario ya verificado y no puede utilizarse nuevamente. Requiere revisión administrativa.`;
+  }
+
+  private appendObservation(
+    currentObservation: string | null | undefined,
+    newObservation: string,
+  ): string {
+    const current = currentObservation?.trim();
+    if (!current) return newObservation;
+    if (current.includes(newObservation)) return current;
+    return `${current}\n${newObservation}`;
   }
 
   private parseDtoDate(value?: string): Date | undefined {
