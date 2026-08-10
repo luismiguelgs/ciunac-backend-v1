@@ -168,6 +168,8 @@ export class PerfilDocenteResultadosService {
 			docenteId,
 			promediosGrupos: formateadoPromedios,
 			cumplimiento: cumplimientos.map(c => ({
+				cumplimientoId: c.id,
+				rubroId: c.academicoAdministrativoId,
 				rubro: c.academicoAdministrativo?.nombre,
 				puntaje: c.puntaje,
 				peso: c.academicoAdministrativo?.peso,
