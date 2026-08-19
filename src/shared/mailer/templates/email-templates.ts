@@ -98,3 +98,28 @@ export function getTemplate(body: SendMailDto) {
 
   return templates[body.type];
 }
+
+export function getPasswordResetTemplate(
+  resetUrl: string,
+  expiresInMinutes: number,
+) {
+  const safeResetUrl = resetUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+  return {
+    subject: 'CIUNAC - RECUPERACIÓN DE CONTRASEÑA',
+    text:
+      `Recibimos una solicitud para restablecer su contraseña. ` +
+      `Abra este enlace dentro de los próximos ${expiresInMinutes} minutos: ${resetUrl}. ` +
+      'Si no solicitó este cambio, ignore este mensaje.',
+    html: `
+      <!DOCTYPE html><html>${HEAD}<body>
+        <img src="https://ciunac.unac.edu.pe/wp-content/uploads/2024/04/cropped-WhatsApp-Image-2024-04-19-at-2.48.00-PM-2.jpeg" alt="logo" width="200px"/>
+        <h1>RECUPERACIÓN DE CONTRASEÑA</h1>
+        <p>Recibimos una solicitud para restablecer la contraseña de su cuenta CIUNAC.</p>
+        <p><a href="${safeResetUrl}">Restablecer contraseña</a></p>
+        <p>Este enlace es de un solo uso y expirará en ${expiresInMinutes} minutos.</p>
+        <p>Si no solicitó este cambio, ignore este mensaje.</p>
+        <hr>${FOOTER}
+      </body></html>`,
+  };
+}

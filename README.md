@@ -72,3 +72,15 @@ $ npm run format
 # Pruebas Unitarias
 $ npm run test
 ```
+
+## Recuperación de Contraseña
+
+El backend requiere estas variables para emitir enlaces temporales de recuperación:
+
+```env
+PASSWORD_RESET_FRONTEND_URL=https://admin.ciunac.site/restablecer-contrasena
+PASSWORD_RESET_TOKEN_TTL_MINUTES=30
+PASSWORD_RESET_COOLDOWN_SECONDS=60
+```
+
+`PASSWORD_RESET_FRONTEND_URL` debe incluir la ruta pública del frontend. El envío usa las credenciales generales `ALUMNOS_EMAIL_USER` y `ALUMNOS_EMAIL_PASSWORD`.

@@ -604,11 +604,18 @@ export class PagosBancoService {
   ): ConciliationOutcome {
     const estadoId = solicitud.estadoId as SolicitudEstadoId;
     if (estadoId === SolicitudEstadoId.NUEVO) {
+      const solicitudAmount = this.toCents(solicitud.pago);
+      const bankAmount = this.toCents(pagoBanco.monto);
+      const solicitudDate = this.toDateOnly(solicitud.fechaPago);
+      const bankEffectiveDate = this.toDateOnly(pagoBanco.fechaEfectiva);
       const amountMatches =
-        this.toCents(solicitud.pago) === this.toCents(pagoBanco.monto);
+        solicitudAmount !== null &&
+        bankAmount !== null &&
+        solicitudAmount === bankAmount;
       const effectiveDateMatches =
-        this.toDateOnly(solicitud.fechaPago) ===
-        this.toDateOnly(pagoBanco.fechaEfectiva);
+        solicitudDate !== null &&
+        bankEffectiveDate !== null &&
+        solicitudDate === bankEffectiveDate;
 
       pagoBanco.verificado = true;
       if (amountMatches && effectiveDateMatches) {
@@ -616,6 +623,12 @@ export class PagosBancoService {
         return 'PAGADO';
       }
 
+      this.appendConciliationMismatchObservations(
+        solicitud,
+        pagoBanco,
+        amountMatches,
+        effectiveDateMatches,
+      );
       solicitud.estadoId = SolicitudEstadoId.OBSERVADO;
       return 'OBSERVADO';
     }
@@ -756,9 +769,17 @@ export class PagosBancoService {
     return Number.isFinite(amount) ? amount : null;
   }
 
-  private toCents(value: number | string): number | null {
+  private toCents(
+    value: number | string | null | undefined,
+  ): number | null {
+    if (value === null || value === undefined || value === '') return null;
     const numberValue = Number(value);
     return Number.isFinite(numberValue) ? Math.round(numberValue * 100) : null;
+  }
+
+  private formatAmount(value: number | string | null | undefined): string {
+    const cents = this.toCents(value);
+    return cents === null ? 'no disponible' : (cents / 100).toFixed(2);
   }
 
   private toDateOnly(value: Date | string | null | undefined): string | null {
@@ -795,6 +816,38 @@ export class PagosBancoService {
     fechaEfectiva: Date | string,
   ): string {
     return `El voucher ${numeroVoucher} con fecha efectiva ${this.toDateOnly(fechaEfectiva)} corresponde a un pago bancario ya verificado y no puede utilizarse nuevamente. Requiere revisión administrativa.`;
+  }
+
+  private appendConciliationMismatchObservations(
+    solicitud: Solicitud,
+    pagoBanco: PagosBanco,
+    amountMatches: boolean,
+    effectiveDateMatches: boolean,
+  ): void {
+    const voucher = pagoBanco.numeroVoucher?.trim() || 'no disponible';
+
+    if (!amountMatches) {
+      const amountObservation =
+        `Conciliación bancaria: el monto no coincide ` +
+        `(solicitud: ${this.formatAmount(solicitud.pago)}; ` +
+        `banco: ${this.formatAmount(pagoBanco.monto)}; voucher: ${voucher}).`;
+      solicitud.observaciones = this.appendObservation(
+        solicitud.observaciones,
+        amountObservation,
+      );
+    }
+
+    if (!effectiveDateMatches) {
+      const dateObservation =
+        `Conciliación bancaria: la fecha efectiva no coincide ` +
+        `(solicitud: ${this.toDateOnly(solicitud.fechaPago) ?? 'no disponible'}; ` +
+        `banco: ${this.toDateOnly(pagoBanco.fechaEfectiva) ?? 'no disponible'}; ` +
+        `voucher: ${voucher}).`;
+      solicitud.observaciones = this.appendObservation(
+        solicitud.observaciones,
+        dateObservation,
+      );
+    }
   }
 
   private appendObservation(

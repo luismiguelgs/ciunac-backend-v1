@@ -167,6 +167,7 @@ describe('PagosBancoService', () => {
       );
 
       expect(solicitud.estadoId).toBe(SolicitudEstadoId.PAGADO);
+      expect(solicitud.observaciones).toBeUndefined();
       expect(insertedPayments[0].verificado).toBe(true);
       expect(result.resumen.solicitudesPagadas).toBe(1);
       expect(result.resumen.solicitudesObservadas).toBe(0);
@@ -197,6 +198,62 @@ describe('PagosBancoService', () => {
       expect(solicitud.estadoId).toBe(SolicitudEstadoId.OBSERVADO);
       expect(insertedPayments[0].verificado).toBe(true);
       expect(result.resumen.solicitudesObservadas).toBe(1);
+    });
+
+    it('records the compared amounts when the amount does not match', async () => {
+      const solicitud = createSolicitud();
+      matchingSolicitudes = [solicitud];
+
+      await service.uploadAndProcess(
+        csvBuffer(['V001;99.50;20260710;20260711;Juan Perez']),
+      );
+
+      expect(solicitud.observaciones).toBe(
+        'Conciliación bancaria: el monto no coincide (solicitud: 100.50; banco: 99.50; voucher: V001).',
+      );
+    });
+
+    it('records the compared dates when the effective date does not match', async () => {
+      const solicitud = createSolicitud();
+      matchingSolicitudes = [solicitud];
+
+      await service.uploadAndProcess(
+        csvBuffer(['V001;100.50;20260710;20260712;Juan Perez']),
+      );
+
+      expect(solicitud.observaciones).toBe(
+        'Conciliación bancaria: la fecha efectiva no coincide (solicitud: 2026-07-11; banco: 2026-07-12; voucher: V001).',
+      );
+    });
+
+    it('preserves previous observations and records both mismatch reasons', async () => {
+      const solicitud = createSolicitud({ observaciones: 'Observación previa.' });
+      matchingSolicitudes = [solicitud];
+
+      await service.uploadAndProcess(
+        csvBuffer(['V001;99.50;20260710;20260712;Juan Perez']),
+      );
+
+      expect(solicitud.observaciones).toBe(
+        [
+          'Observación previa.',
+          'Conciliación bancaria: el monto no coincide (solicitud: 100.50; banco: 99.50; voucher: V001).',
+          'Conciliación bancaria: la fecha efectiva no coincide (solicitud: 2026-07-11; banco: 2026-07-12; voucher: V001).',
+        ].join('\n'),
+      );
+    });
+
+    it('does not duplicate an existing mismatch observation', async () => {
+      const observation =
+        'Conciliación bancaria: el monto no coincide (solicitud: 100.50; banco: 99.50; voucher: V001).';
+      const solicitud = createSolicitud({ observaciones: observation });
+      matchingSolicitudes = [solicitud];
+
+      await service.uploadAndProcess(
+        csvBuffer(['V001;99.50;20260710;20260711;Juan Perez']),
+      );
+
+      expect(solicitud.observaciones).toBe(observation);
     });
 
     it.each([
@@ -436,6 +493,45 @@ describe('PagosBancoService', () => {
       expect(result.resumen.pagosVerificados).toBe(1);
       expect(result.message).toBe(
         'Reverificación completada: 1 pago evaluado, 1 pago verificado, 1 solicitud pagada y 0 solicitudes observadas.',
+      );
+    });
+
+    it('records mismatch reasons when reverifying a pending payment', async () => {
+      const solicitud = createSolicitud();
+      const pago = {
+        ...mockPago,
+        monto: 99.5,
+        verificado: false,
+      } as PagosBanco;
+      historicalPayments = [pago];
+      matchingSolicitudes = [solicitud];
+
+      await service.reverifyUnverified();
+
+      expect(solicitud.estadoId).toBe(SolicitudEstadoId.OBSERVADO);
+      expect(solicitud.observaciones).toBe(
+        'Conciliación bancaria: el monto no coincide (solicitud: 100.50; banco: 99.50; voucher: V001).',
+      );
+    });
+
+    it('uses no disponible for missing historical payment values', async () => {
+      const solicitud = createSolicitud();
+      const pago = {
+        ...mockPago,
+        monto: undefined,
+        fechaEfectiva: undefined,
+        verificado: false,
+      } as unknown as PagosBanco;
+      historicalPayments = [pago];
+      matchingSolicitudes = [solicitud];
+
+      await service.reverifyUnverified();
+
+      expect(solicitud.observaciones).toBe(
+        [
+          'Conciliación bancaria: el monto no coincide (solicitud: 100.50; banco: no disponible; voucher: V001).',
+          'Conciliación bancaria: la fecha efectiva no coincide (solicitud: 2026-07-11; banco: no disponible; voucher: V001).',
+        ].join('\n'),
       );
     });
 
