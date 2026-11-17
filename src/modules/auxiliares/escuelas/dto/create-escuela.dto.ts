@@ -1,4 +1,7 @@
-import { IsString, IsNumber, IsNotEmpty } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsIn } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { TIPOS_ESCUELA } from 'src/shared/types/tipo-academico';
+import type { TipoEscuela } from 'src/shared/types/tipo-academico';
 
 export class CreateEscuelaDto {
   @IsString()
@@ -8,4 +11,8 @@ export class CreateEscuelaDto {
   @IsNumber()
   @IsNotEmpty()
   facultadId: number;
+
+  @ApiProperty({ type: String, enum: [...TIPOS_ESCUELA], example: 'PRE' })
+  @IsIn(TIPOS_ESCUELA)
+  tipo: TipoEscuela;
 }

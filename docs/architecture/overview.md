@@ -33,5 +33,9 @@ CIUNAC Backend es un monolito modular construido con NestJS. El sistema organiza
 
 - Hay modulos importados dos veces en `AppModule` (`EscuelasModule`, `CumplimientoDocenteModule`), lo que conviene revisar.
 - Algunos controllers de `seguimiento_docente` no muestran guards a nivel de clase; deben revisarse antes de exponer endpoints sensibles.
-- La documentacion OpenAPI no esta implementada aun; este repositorio documenta el backlog para incorporarla de forma progresiva.
+- OpenAPI esta implementado y exportado reproduciblemente; [paridad y contratos](../api/openapi.md) comprueban su correspondencia con controllers y guards.
 - Existen errores lanzados como `Error` generico en varios servicios; conviene migrar a excepciones HTTP NestJS para respuestas consistentes.
+
+## Documentacion y verificacion
+
+El [inventario generado](module-inventory.md) descubre modulos y operaciones sin fijar los conteos en scripts. Los [casos de uso](../specs/use-cases-index.md) cubren todos los dominios, incluidos reportes y recuperacion de contrasena. [Workflow SDD](../specs/workflow.md) define estados, evidencia y mantenimiento. Las propuestas funcionales estan separadas en el backlog.

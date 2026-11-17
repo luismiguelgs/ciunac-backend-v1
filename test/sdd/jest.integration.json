@@ -1,0 +1,9 @@
+{
+  "rootDir": "../..",
+  "testEnvironment": "node",
+  "testMatch": ["<rootDir>/test/sdd/*.integration-spec.cjs"],
+  "moduleNameMapper": { "^src/(.*)$": "<rootDir>/src/$1" },
+  "transform": { "^.+\\.ts$": "ts-jest" },
+  "testTimeout": 30000,
+  "clearMocks": true
+}

@@ -1,0 +1,53 @@
+# Inventario de Modulos
+
+Generado desde decoradores NestJS: 47 modulos funcionales, sin contar AppModule. Incluye certificadosr y tiempos.
+
+| Modulo | Implementacion |
+| --- | --- |
+| AcademicoAdministrativoModule | `src/modules/seguimiento_docente/academico_administrativo/academico_administrativo.module.ts` |
+| ActanotasModule | `src/modules/calificaciones/actanotas/actanotas.module.ts` |
+| ActasexamenubicacionModule | `src/modules/examen_ubicacion/actasexamenubicacion/actasexamenubicacion.module.ts` |
+| AulasModule | `src/modules/estructura/aulas/aulas.module.ts` |
+| AuthModule | `src/modules/authentication/auth/auth.module.ts` |
+| CalificacionesubicacionModule | `src/modules/examen_ubicacion/calificacionesubicacion/calificacionesubicacion.module.ts` |
+| CertificadosModule | `src/modules/administrativas/certificados/certificados.module.ts` |
+| CertificadosrModule | `src/shared/reportes/certificadosr/certificadosr.module.ts` |
+| CiclosModule | `src/modules/estructura/ciclos/ciclos.module.ts` |
+| ConstanciasModule | `src/modules/administrativas/constancias/constancias.module.ts` |
+| CronogramaubicacionModule | `src/modules/examen_ubicacion/cronogramaubicacion/cronogramaubicacion.module.ts` |
+| CumplimientoDocenteModule | `src/modules/seguimiento_docente/cumplimiento_docente/cumplimiento_docente.module.ts` |
+| DashboardDocentesModule | `src/modules/seguimiento_docente/dashboard_docentes/dashboard_docentes.module.ts` |
+| DetallesubicacionModule | `src/modules/examen_ubicacion/detallesubicacion/detallesubicacion.module.ts` |
+| DocentesModule | `src/modules/principales/docentes/docentes.module.ts` |
+| DocumentosDocenteModule | `src/modules/seguimiento_docente/documentos_docente/documentos_docente.module.ts` |
+| EncuestaMetricasDocenteModule | `src/modules/seguimiento_docente/encuesta_metricas_docente/encuesta_metricas_docente.module.ts` |
+| EncuestaPreguntasModule | `src/modules/seguimiento_docente/encuesta_preguntas/encuesta_preguntas.module.ts` |
+| EncuestaRespuestasDetalleModule | `src/modules/seguimiento_docente/encuesta_respuestas_detalle/encuesta_respuestas_detalle.module.ts` |
+| EncuestaRespuestasModule | `src/modules/seguimiento_docente/encuesta_respuestas/encuesta_respuestas.module.ts` |
+| EscuelasModule | `src/modules/auxiliares/escuelas/escuelas.module.ts` |
+| EstadosModule | `src/modules/auxiliares/estados/estados.module.ts` |
+| EstudiantesModule | `src/modules/principales/estudiantes/estudiantes.module.ts` |
+| EvaluacionesModule | `src/modules/calificaciones/evaluaciones/evaluaciones.module.ts` |
+| ExamenesubicacionModule | `src/modules/examen_ubicacion/examenesubicacion/examenesubicacion.module.ts` |
+| FacultadesModule | `src/modules/auxiliares/facultades/facultades.module.ts` |
+| GruposModule | `src/modules/estructura/grupos/grupos.module.ts` |
+| IdiomasModule | `src/modules/estructura/idiomas/idiomas.module.ts` |
+| MailerModule | `src/shared/mailer/mailer.module.ts` |
+| ModulosModule | `src/modules/estructura/modulos/modulos.module.ts` |
+| NivelesModule | `src/modules/estructura/niveles/niveles.module.ts` |
+| NotasfinalModule | `src/modules/calificaciones/notasfinal/notasfinal.module.ts` |
+| NotasModule | `src/modules/calificaciones/notas/notas.module.ts` |
+| PagosBancoModule | `src/modules/administrativas/pagos-banco/pagos-banco.module.ts` |
+| PerfilDocenteModule | `src/modules/seguimiento_docente/perfil_docente/perfil_docente.module.ts` |
+| PerfilDocenteResultadosModule | `src/modules/seguimiento_docente/perfil_docente_resultados/perfil_docente_resultados.module.ts` |
+| PuntajeAcademicoAdministrativoModule | `src/modules/seguimiento_docente/puntaje_academico_administrativo/puntaje_academico_administrativo.module.ts` |
+| Q10Module | `src/q10/q10.module.ts` |
+| RolPermisosModule | `src/modules/authentication/rol_permisos/rol_permisos.module.ts` |
+| SolicitudbecasModule | `src/modules/administrativas/solicitudbecas/solicitudbecas.module.ts` |
+| SolicitudesModule | `src/modules/administrativas/solicitudes/solicitudes.module.ts` |
+| TextosModule | `src/modules/auxiliares/textos/textos.module.ts` |
+| TiemposModule | `src/shared/reportes/tiempos/tiempos.module.ts` |
+| TipoDocumentoPerfilModule | `src/modules/seguimiento_docente/tipo_documento_perfil/tipo_documento_perfil.module.ts` |
+| TipossolicitudModule | `src/modules/administrativas/tipossolicitud/tipossolicitud.module.ts` |
+| UploadModule | `src/shared/upload/upload.module.ts` |
+| UsuariosModule | `src/modules/authentication/usuarios/usuarios.module.ts` |

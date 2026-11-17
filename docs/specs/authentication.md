@@ -1,88 +1,41 @@
-# Spec: Authentication
+# Spec: Autenticacion, Usuarios y Permisos
 
-## Objetivo funcional
+Version 1.0. Responsable: equipo tecnico CIUNAC. Estado: Implementado (AS-IS).
 
-Permitir registro, login, perfil autenticado, logout y gestion de permisos para usuarios del sistema CIUNAC.
+## Actores, objetivo y precondiciones
 
-## Actores
+Usuario local, docente que vincula su cuenta y operador de usuarios/permisos. Se requiere PostgreSQL, JWT_ACCESS_SECRET y los catalogos correspondientes. La recuperacion usa MailerService.
 
-- Administrador CIUNAC.
-- Usuario autenticado.
-- Frontend CIUNAC.
+## Flujos y contratos actuales
 
-## Precondiciones
+| Operacion | Seguridad | Resultado |
+| --- | --- | --- |
+| POST /auth/register | Publica | 201, token JWT como texto |
+| POST /auth/login | Publica | 200, access_token y user |
+| POST /auth/forgot-password | Publica | 200, mensaje generico |
+| POST /auth/reset-password | Publica | 200, mensaje de actualizacion |
+| POST /auth/logout | API key + JWT | 201, ok y message |
+| GET /auth/profile | API key + JWT | 200, message y user |
 
-- `JWT_ACCESS_SECRET` configurado.
-- `API_KEY` configurado para endpoints protegidos.
-- Roles y permisos disponibles para operaciones de gestion.
-- Para registrar docentes, debe existir un docente asociado cuando el rol lo exija.
+Usuarios y rol-permisos requieren API key, JWT y el permiso de cada operacion. EXCEPTION_ROLE permite la excepcion implementada por PermissionsGuard. Los nombres de permisos y DTOs se enumeran en [OpenAPI](../api/openapi.json) y [historias](use-cases-index.md).
 
-## Flujo principal
+## Reglas y alternativas
 
-1. El usuario envia credenciales a `POST /auth/login`.
-2. El backend valida email y password.
-3. El backend genera token JWT.
-4. El frontend usa el token en `Authorization: Bearer`.
-5. Endpoints protegidos validan JWT, API key y permisos cuando aplique.
+- Registro es transaccional. Email duplicado produce 409. Para rol DOCENTE se exige documento, docente existente y ausencia de vinculacion previa; 400/404/409 segun causa.
+- Login valida email/password con bcrypt; credenciales invalidas producen 401. El JWT se emite con la configuracion de expiracion vigente, normalmente 60 minutos.
+- JwtStrategy comprueba ademas que el usuario del sub exista. JWT invalido, expirado o usuario inexistente produce 401.
+- Logout confirma la accion pero no revoca tokens de acceso ya emitidos. No debe documentarse como una lista de revocacion.
+- Recuperacion normaliza email y mantiene la misma respuesta para cuenta inexistente, OAuth o envio omitido por cooldown. No expone el token en la respuesta HTTP.
+- PASSWORD_RESET_TOKEN_TTL_MINUTES tiene fallback 30; PASSWORD_RESET_COOLDOWN_SECONDS tiene fallback 60.
+- El token aleatorio se envia en un enlace construido con PASSWORD_RESET_FRONTEND_URL y solo se persiste SHA-256. Un fallo SMTP invalida el token pendiente y conserva la respuesta generica.
+- Reset exige confirmacion coincidente, token vigente/no usado y provider local; bloquea el token en transaccion, guarda bcrypt, limpia refreshTokenHash y marca usedAt. Un segundo uso produce 400.
 
-## Flujos alternos y errores
+## Datos e integracion
 
-| Caso | Resultado |
-| --- | --- |
-| Usuario inexistente | `401 Unauthorized`. |
-| Password invalido | `401 Unauthorized`. |
-| Usuario duplicado en registro | `409 Conflict`. |
-| Docente requerido no existe | `404 Not Found`. |
-| Falta API key | `401 Unauthorized`. |
-| Falta permiso | `403 Forbidden`. |
+Usuario, Docente y PasswordResetToken en PostgreSQL; MailerService.sendPasswordReset usa SMTP ALUMNOS. Roles y permisos se resuelven desde RolPermiso. Los providers google/facebook registrados en la entidad no implican endpoints OAuth activos.
 
-## Reglas de negocio
+## Frontend y aceptacion
 
-- `usuarios` y `rol-permisos` requieren API key, JWT y permisos.
-- El rol definido en `EXCEPTION_ROLE` puede saltar validacion especifica de permisos segun `PermissionsGuard`.
-- El token JWT expira en 60 minutos segun configuracion actual.
+El frontend debe leer register como texto y login como objeto, enviar los headers exigidos y mostrar el mensaje generico de recuperacion. El enlace lleva token por query; el formulario de reset envia token, newPassword y confirmPassword.
 
-## Contratos API
-
-| Metodo | Endpoint | Auth | Request | Response |
-| --- | --- | --- | --- | --- |
-| `POST` | `/auth/register` | Publico | `RegisterDto` | Usuario creado o error de validacion |
-| `POST` | `/auth/login` | Publico | `LoginDto` | Token y datos del usuario |
-| `POST` | `/auth/logout` | Publico actual | Token o payload segun implementacion | Confirmacion de logout |
-| `GET` | `/auth/profile` | JWT + ApiKey | Bearer token | Perfil autenticado |
-| `POST` | `/usuarios` | ApiKey + JWT + Permisos | `CreateUsuarioDto` | Usuario creado |
-| `GET` | `/usuarios` | ApiKey + JWT + Permisos | N/A | Lista de usuarios |
-| `GET` | `/usuarios/buscar/:email` | ApiKey + JWT + Permisos | Email | Usuario encontrado |
-| `GET` | `/rol-permisos/rol/:rol` | ApiKey + JWT + Permisos | Rol | Permisos del rol |
-
-## Datos involucrados
-
-- Entidades: `Usuario`, `RolPermiso`, `Estudiante`, `Docente`.
-- DTOs: `RegisterDto`, `LoginDto`, `CreateUsuarioDto`, `UpdateUsuarioDto`, `CreateRolPermisoDto`.
-
-## Integraciones externas
-
-- No hay integracion externa obligatoria en login local.
-- El codigo contempla providers OAuth como `google` y `facebook` en usuario.
-
-## Criterios de aceptacion
-
-- Dado un usuario valido, cuando hace login, entonces recibe token JWT.
-- Dado un token invalido, cuando consulta perfil, entonces recibe `401`.
-- Dado un usuario sin permiso, cuando invoca una accion restringida, entonces recibe `403`.
-- Dado un docente ya vinculado, cuando se intenta registrar otro usuario docente para el mismo documento, entonces se rechaza.
-
-## Casos de prueba sugeridos
-
-- Unit: `AuthService.validateUser`, `AuthService.login`, `PermissionsGuard`.
-- Integration: registro de usuario y busqueda por email.
-- E2E: login -> profile -> accion con permisos.
-
-## Trazabilidad
-
-| Elemento | Referencia |
-| --- | --- |
-| Controllers | `src/modules/authentication/auth/auth.controller.ts`, `src/modules/authentication/usuarios/usuarios.controller.ts`, `src/modules/authentication/rol_permisos/rol_permisos.controller.ts` |
-| Services | `AuthService`, `UsuariosService`, `RolPermisosService`, `RolesService` |
-| Guards | `ApiKeyGuard`, `JwtAuthGuard`, `PermissionsGuard` |
-| Entities | `Usuario`, `RolPermiso` |
+HU-AUTH-001 a 006, HU-USR-001 y HU-ROL-001 enlazan sus CA y pruebas. La integracion prueba persistencia del hash, cambio de password y consumo unico; no envia correo real.

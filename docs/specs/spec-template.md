@@ -1,82 +1,54 @@
 # Plantilla Spec-Driven
 
-Usar esta plantilla para todo caso de uso nuevo o modificado.
+## Identificacion
 
-## Objetivo funcional
+- ID / version:
+- Responsable por rol:
+- Estado: Borrador / Especificado / Implementado. Verificado solo con evidencia de ejecucion.
+- Alcance: AS-IS o propuesta TO-BE enlazada al backlog.
+- Historia HU / caso CU / requisito RF:
+- Implementacion y contratos afectados:
 
-Describir el resultado de negocio esperado en una o dos frases.
+## Objetivo funcional y actores
 
-## Actores
-
-- Actor principal:
-- Actores secundarios:
-- Sistemas externos:
+Como [actor] quiero [accion] para [resultado]. Identificar al usuario, frontend y sistemas secundarios.
 
 ## Precondiciones
 
-- Estado previo requerido.
-- Datos minimos existentes.
-- Permisos o autenticacion requerida.
+Catalogos, datos, estado inicial, autenticacion y permisos que realmente exige el backend.
 
 ## Flujo principal
 
-1. El actor inicia la accion.
-2. El sistema valida entrada y permisos.
-3. El sistema ejecuta la regla de negocio.
-4. El sistema persiste o consulta datos.
-5. El sistema responde con resultado esperado.
+1. Accion del usuario y datos recogidos por frontend.
+2. Operacion HTTP y validaciones del backend.
+3. Regla del servicio, consultas/persistencia y efectos externos.
+4. Respuesta, estado final y actualizacion del frontend.
 
-## Flujos alternos y errores
+## Alternativas, errores y reglas
 
-| Caso | Comportamiento esperado |
-| --- | --- |
-| Entrada invalida | Responder `400 Bad Request`. |
-| No autenticado | Responder `401 Unauthorized`. |
-| Sin permisos | Responder `403 Forbidden`. |
-| Recurso inexistente | Responder `404 Not Found`. |
-| Error externo | Responder error controlado y registrar contexto seguro. |
-
-## Reglas de negocio
-
-- Regla 1:
-- Regla 2:
-- Regla 3:
+Documentar reglas con RF identificados, idempotencia, concurrencia, recursos inexistentes, compensacion y efectos parciales. No presuponer 404 ni normalizaciones ausentes del codigo.
 
 ## Contratos API
 
-| Metodo | Endpoint | Auth | Request | Response |
+| operationId | Metodo / ruta | Seguridad / permiso | Request / multipart / query | Response / codigos |
 | --- | --- | --- | --- | --- |
-| `GET` | `/recurso` | `ApiKey/JWT` | Query params | Lista de recursos |
 
-## Datos involucrados
+Incluir ejemplos representativos, tipos reales, opcionalidad, null, identificadores y decimales como texto cuando corresponda.
 
-- Entidades TypeORM:
-- Schemas Mongoose:
-- DTOs:
+## Datos e integraciones
 
-## Integraciones externas
+Entidades/schemas, relaciones, indices, estados y su referencia. CSV: columnas, separador, limites y politica de filas invalidas/duplicadas. Integraciones: entradas, salidas y fallos parciales.
 
-- Sistema:
-- Entrada:
-- Salida:
-- Manejo de error:
+## Criterios de aceptacion y pruebas
 
-## Criterios de aceptacion
+| CA | Dado / cuando / entonces | Tipo de evidencia | Archivo y nombre de prueba | Estado |
+| --- | --- | --- | --- | --- |
+| CA-DOM-001-01 | Contexto, accion y resultado medible | Contrato / integracion / unitaria | Referencia ejecutable | Implementado / pendiente |
 
-- Dado..., cuando..., entonces...
-- Dado..., cuando..., entonces...
+## Trazabilidad y propuestas
 
-## Casos de prueba sugeridos
+Relacionar HU -> CU -> RF -> CA -> operationId -> controller/service -> entity/schema -> prueba en traceability.json. Separar limitaciones y propuestas en backlog.md. Identificar cambios que requieran despliegue o migracion.
 
-- Unit:
-- Integration:
-- E2E:
+## Integracion frontend
 
-## Trazabilidad
-
-| Elemento | Referencia |
-| --- | --- |
-| Controller | `src/.../*.controller.ts` |
-| Service | `src/.../*.service.ts` |
-| DTO | `src/.../dto/*.dto.ts` |
-| Entity/Schema | `src/.../entities/*.entity.ts` o `src/.../schemas/*.schema.ts` |
+Datos capturados, confirmaciones, loading, errores y actualizacion de vistas. Indicar comportamiento requerido sin afirmar que el frontend ya fue implementado.

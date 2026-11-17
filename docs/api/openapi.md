@@ -1,65 +1,36 @@
 # Swagger / OpenAPI
 
-## Objetivo
+## Contrato reproducible
 
-El backend expone una documentacion OpenAPI generada desde los controllers y DTOs NestJS. Esta documentacion sirve como contrato tecnico para frontend, QA y futuras integraciones.
+- UI: /api/docs; JSON vivo: /api/docs-json; solo fuera de produccion.
+- No hay prefijo global /api/ciunac en main.ts; verificar el proxy del despliegue.
+- [Snapshot versionado](openapi.json), [inventario](endpoints.md), [matriz SDD](../specs/traceability.json).
+- Generar: npm run build y npm run api:export. Sin .env ni conexiones externas; controllers compilados y proveedores simulados.
+- Verificar: npm run api:check. Compara snapshot, rutas, metodos, operationId, guards, bodies y multipart.
+- npm run docs:update regenera inventario, modulos, historias y matriz desde codigo y flows.json.
 
-## Rutas
+## Metadata
 
-| Recurso | Ruta | Ambiente |
-| --- | --- | --- |
-| Swagger UI | `/api/docs` | Solo cuando `NODE_ENV !== "production"` |
-| OpenAPI JSON | `/api/docs-json` | Solo cuando `NODE_ENV !== "production"` |
+src/config/swagger.config.ts usa el plugin Nest. openapi-metadata.ts completa seguridad, tags, parametros y contratos inline. openapi-contracts.ts concreta respuestas genericas de TypeScript. Sufijos: .dto.ts, .entity.ts y .schema.ts. No se cambian validaciones de ejecucion para hacer coincidir Swagger.
 
-En produccion no se monta Swagger para evitar exponer contratos internos sin control adicional.
+API key y JWT en el mismo requisito significan AND; endpoints publicos llevan security vacio. Permisos enumerados en inventario y comprobados por guards reales.
 
-## Seguridad documentada
+Multipart: upload, pagos, encuestas y POST /certificados/{id}/archivo (file PDF, fileId opcional). Generacion docente documenta body moduloId/docenteId, sin introducir validaciones nuevas.
 
-El contrato define dos esquemas:
+## Respuestas reales
 
-- `api-key`: header `x-api-key`, usado por `ApiKeyGuard`.
-- `jwt`: Bearer token, usado por `JwtAuthGuard` o `AuthGuard('jwt')`.
+Archivos/firma, resumen CSV, detalle/dashboard, reportes y Q10 tienen schemas concretos. Decimales SQL sin transformador son texto; dates SQL son fechas, timestamps ISO. Relaciones son opcionales cuando no se cargan.
 
-La metadata de OpenAPI marca por ruta si el endpoint requiere API key, JWT, ambos o ningun esquema visible en el codigo actual. Los endpoints sin guard visible quedan sin seguridad en Swagger y deben revisarse como parte del hardening.
+GET nullable conserva el 200 del controlador; si el servicio devuelve null, Nest responde sin cuerpo y no necesariamente con JSON null. El cliente no debe llamar response.json() incondicionalmente. No se inventa 404. Borrados void no documentan objetos ficticios. PATCH/DELETE actas documentan 409, ademas de errores de seguridad.
 
-## Generacion de schemas
+Las pruebas con servicios simulados no sustituyen [integracion](../testing/strategy.md). Limitaciones observadas en [backlog](../specs/backlog.md).
 
-La configuracion usa el plugin `@nestjs/swagger` en `nest-cli.json` con:
+## Mantenimiento
 
-- `classValidatorShim: true`, para reflejar validaciones de `class-validator`.
-- `introspectComments: true`, para usar comentarios en DTOs cuando existan.
-- `dtoFileNameSuffix: [".dto.ts", ".entity.ts"]`, para incluir DTOs y entidades en metadata.
+### Alumno nuevo: correccion 2026-11-06
 
-Los DTOs basados en `PartialType` deben importarlo desde `@nestjs/swagger` para heredar metadata OpenAPI correctamente.
+Swagger refleja los cinco campos Q10 opcionales y tipoEstudiante nullable (null incluido en el enum). El upload solo exige file y expone viewLink/downloadLink para enviarlo como imgDoc, sin vincular automaticamente al alumno. El 502 Q10 documenta Q10_UNAVAILABLE y los tres errores posteriores al alta, con message y retryAllowed.
 
-## Multipart y archivos
+En POST /estudiantes fechaNacimiento es obligatoria, real y de formato date (YYYY-MM-DD); en PATCH es opcional, pero no nullable. La entrada no se convierte implicitamente a Date. Pruebas comparan requests minimos/nulos, ejemplos completos y errores 502 con sus schemas, ademas de persistencia real aislada en UTC/America-Lima. Ver [feature](../specs/estudiante-nuevo.md) y [principales](../specs/principales.md).
 
-El contrato documenta como `multipart/form-data`:
-
-- `POST /upload/{folder}` para cargas hacia Google Drive.
-- `POST /pagos-banco/upload` para CSV bancario.
-- `POST /encuesta-respuestas/upload` para CSV de respuestas docentes.
-
-## Reglas de mantenimiento
-
-- Todo controller nuevo debe quedar visible en `/api/docs-json`.
-- Todo endpoint con body debe recibir un DTO validado.
-- Todo endpoint protegido debe tener su seguridad reflejada en `src/config/openapi-metadata.ts`.
-- Todo upload debe tener `multipart/form-data` definido en `src/config/openapi-metadata.ts`.
-- Todo endpoint legado debe marcarse como `deprecated`.
-- Si un endpoint cambia de ruta, actualizar tambien `docs/api/endpoints.md` y el spec de caso de uso afectado.
-
-## Verificacion recomendada
-
-```bash
-npm run build
-npx jest src/config/openapi-metadata.spec.ts src/config/swagger.config.spec.ts --runInBand
-```
-
-Para revisar manualmente en desarrollo:
-
-```bash
-npm run start:dev
-```
-
-Luego abrir `http://localhost:3000/api/docs` o consumir `http://localhost:3000/api/docs-json`.
+No editar JSON generado a mano. Actualizar DTO/decorador de documentacion, compilar, exportar, regenerar y verificar. Operaciones nuevas requieren flow; las eliminadas deben desaparecer de inventario y matriz. CI publica el diff.

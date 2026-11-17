@@ -1,12 +1,12 @@
 import {
-	BadRequestException,
-	Controller,
-	Param,
-	Post,
-	Body,
-	UploadedFile,
-	UseInterceptors,
-	UseGuards
+  BadRequestException,
+  Controller,
+  Param,
+  Post,
+  Body,
+  UploadedFile,
+  UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { UploadService } from './upload.service';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -15,30 +15,36 @@ import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guar
 @UseGuards(ApiKeyGuard)
 @Controller('upload')
 export class UploadController {
-	constructor(private readonly uploadService: UploadService) { }
+  constructor(private readonly uploadService: UploadService) {}
 
-	@Post(':folder')
-	@UseInterceptors(FileInterceptor('file'))
-	async uploadFile(
-		@UploadedFile() file: Express.Multer.File,
-		@Param('folder') folder: string,
-		@Body('nombre') nombre: string,
-		@Body('fileId') fileId?: string,
-	) {
+  @Post(':folder')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('folder') folder: string,
+    @Body('nombre') nombre?: string,
+    @Body('fileId') fileId?: string,
+  ) {
+    if (!file) throw new Error('No se ha enviado ningún archivo');
+    if (
+      !folder ||
+      !['DNIS', 'VOUCHERS', 'BECAS', 'CVS', 'CONSTANCIAS'].includes(
+        folder.toUpperCase(),
+      )
+    )
+      throw new BadRequestException(
+        'Debes especificar una carpeta válida: DNIS, BECAS, VOUCHERS, CVS o CONSTANCIAS',
+      );
 
-		if (!file) throw new Error('No se ha enviado ningún archivo')
-		if (!folder || !['DNIS', 'VOUCHERS', 'BECAS', 'CVS', 'CONSTANCIAS'].includes(folder.toUpperCase()))
-			throw new BadRequestException('Debes especificar una carpeta válida: DNIS, BECAS, VOUCHERS, CVS o CONSTANCIAS');
-
-		const result = await this.uploadService.uploadToDrive(
-			file,
-			folder.toUpperCase(),
-			nombre,
-			fileId,
-		);
-		return {
-			success: true,
-			...result,
-		};
-	}
+    const result = await this.uploadService.uploadToDrive(
+      file,
+      folder.toUpperCase(),
+      nombre,
+      fileId,
+    );
+    return {
+      success: true,
+      ...result,
+    };
+  }
 }

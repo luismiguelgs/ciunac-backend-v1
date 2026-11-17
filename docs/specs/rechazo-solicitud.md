@@ -97,17 +97,17 @@ sequenceDiagram
 
 ## Interaccion con pagos
 
-`PagosBancoService` cambia solicitudes de estado `1` a `4` si monto y fecha coinciden, o a `2` si no coinciden. Para solicitudes con estado `2`, `3`, `4` o `5`, el pago puede marcarse como verificado sin volver a validar monto y fecha.
+`PagosBancoService` cambia solicitudes de estado `1` a `4` si monto y fecha coinciden, o a `12` (OBSERVADO) si no coinciden. `2` corresponde a ASIGNADO. Para solicitudes en estados ya gestionados, el pago puede marcarse como verificado sin volver a validar monto y fecha segun el servicio actual. El detalle vigente esta en [Pagos banco](pagos-banco.md).
 
 Por tanto, una solicitud rechazada con estado `5` puede hacer que un pago pendiente pase a `verificado = true` durante una carga o reverificacion. Esta regla debe confirmarse con negocio porque "pago verificado" y "solicitud rechazada" son conceptos distintos.
 
-## Problemas corregidos por el nuevo endpoint
+## Problemas abordados y limites que permanecen
 
 1. `DELETE` comunica eliminacion, pero ejecuta una transicion de estado.
 2. El estado rechazado depende del numero magico `5`.
 3. El service asigna `estado`, pero no actualiza explicitamente `estadoId`; la respuesta puede conservar valores inconsistentes en memoria.
 4. Una solicitud inexistente devuelve `200 null` en vez de `404`.
-5. `PATCH /solicitudes/:id` permite cambiar libremente cualquier campo de creacion, incluido `estadoId`, sin reglas de negocio.
+5. Permanece pendiente: `PATCH /solicitudes/:id` permite cambiar campos de creacion, incluido `estadoId`, sin maquina de estados; BL-SOL-001.
 6. El rechazo no exige motivo aunque la entidad ya contiene `observaciones`.
 7. No existian pruebas utiles de controller/service para esta transicion.
 
@@ -127,7 +127,7 @@ Content-Type: application/json
 }
 ```
 
-### Response propuesta
+### Response implementada
 
 ```json
 {

@@ -231,6 +231,46 @@ describe('UploadService', () => {
     });
   });
 
+  it('uploads a DNI without nombre using the original filename and returns its links', async () => {
+    const previous = process.env.GOOGLE_DRIVE_FOLDER_DNIS;
+    process.env.GOOGLE_DRIVE_FOLDER_DNIS = 'sdd-dnis-folder';
+    driveClient.files.create.mockResolvedValue({
+      data: {
+        id: 'dni-id',
+        name: 'dni-original.pdf',
+        webViewLink: 'https://example.invalid/dni/view',
+        webContentLink: 'https://example.invalid/dni/download',
+      },
+    });
+    try {
+      const result = await service.uploadToDrive(
+        {
+          originalname: 'dni-original.pdf',
+          mimetype: 'application/pdf',
+          buffer: Buffer.from('pdf'),
+        } as Express.Multer.File,
+        'DNIS',
+      );
+      expect(driveClient.files.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requestBody: {
+            name: 'dni-original.pdf',
+            parents: ['sdd-dnis-folder'],
+          },
+        }),
+      );
+      expect(result).toMatchObject({
+        id: 'dni-id',
+        viewLink: 'https://example.invalid/dni/view',
+        downloadLink: 'https://example.invalid/dni/download',
+        folder: 'DNIS',
+      });
+    } finally {
+      if (previous === undefined) delete process.env.GOOGLE_DRIVE_FOLDER_DNIS;
+      else process.env.GOOGLE_DRIVE_FOLDER_DNIS = previous;
+    }
+  });
+
   it('finds the exact certificate period folder', async () => {
     driveClient.files.list.mockResolvedValue({
       data: {
@@ -241,9 +281,9 @@ describe('UploadService', () => {
       },
     });
 
-    await expect(
-      service.getCertificatePeriodFolderId('202607'),
-    ).resolves.toBe('period-folder');
+    await expect(service.getCertificatePeriodFolderId('202607')).resolves.toBe(
+      'period-folder',
+    );
     expect(driveClient.files.list).toHaveBeenCalledWith(
       expect.objectContaining({
         q: expect.stringContaining("name = '202607'"),

@@ -1,0 +1,9 @@
+{
+  "rootDir": "../..",
+  "testEnvironment": "node",
+  "testMatch": ["<rootDir>/test/sdd/*.contract-spec.cjs"],
+  "moduleNameMapper": { "^src/(.*)$": "<rootDir>/dist/$1" },
+  "transform": {},
+  "testTimeout": 30000,
+  "clearMocks": true
+}

@@ -57,19 +57,18 @@ const createDocument = (): OpenAPIObject =>
 describe('decorateOpenApiDocument', () => {
   it('agrega tags, seguridad y respuestas estandar por dominio', () => {
     const document = decorateOpenApiDocument(createDocument());
-    const operation = document.paths['/solicitudes/{id}/rechazo'].patch as any;
+    const operation = document.paths['/solicitudes/{id}/rechazo'].patch!;
 
     expect(operation.tags).toEqual(['Administrativas']);
     expect(operation.security).toEqual([{ 'api-key': [] }]);
-    expect(operation.responses['400']).toBeDefined();
     expect(operation.responses['401']).toBeDefined();
-    expect(operation.responses['403']).toBeDefined();
-    expect(operation.responses['404']).toBeDefined();
+    expect(operation.responses['200']).toBeUndefined();
+    expect(operation.responses['404']).toBeUndefined();
   });
 
   it('mantiene endpoints publicos sin seguridad', () => {
     const document = decorateOpenApiDocument(createDocument());
-    const operation = document.paths['/auth/login'].post as any;
+    const operation = document.paths['/auth/login'].post!;
 
     expect(operation.tags).toEqual(['Authentication']);
     expect(operation.security).toEqual([]);
@@ -77,14 +76,14 @@ describe('decorateOpenApiDocument', () => {
 
   it('documenta endpoints con API key y JWT cuando aplica', () => {
     const document = decorateOpenApiDocument(createDocument());
-    const operation = document.paths['/auth/profile'].get as any;
+    const operation = document.paths['/auth/profile'].get!;
 
     expect(operation.security).toEqual([{ 'api-key': [], jwt: [] }]);
   });
 
   it('marca el rechazo legado por DELETE como deprecado', () => {
     const document = decorateOpenApiDocument(createDocument());
-    const operation = document.paths['/solicitudes/{id}'].delete as any;
+    const operation = document.paths['/solicitudes/{id}'].delete!;
 
     expect(operation.deprecated).toBe(true);
     expect(operation.description).toContain('PATCH /solicitudes/{id}/rechazo');
@@ -92,11 +91,10 @@ describe('decorateOpenApiDocument', () => {
 
   it('protege la escritura de actas y depreca su mutacion', () => {
     const document = decorateOpenApiDocument(createDocument());
-    const postOperation = document.paths['/actasexamenubicacion'].post as any;
-    const patchOperation = document.paths['/actasexamenubicacion/{id}']
-      .patch as any;
-    const deleteOperation = document.paths['/actasexamenubicacion/{id}']
-      .delete as any;
+    const postOperation = document.paths['/actasexamenubicacion'].post!;
+    const patchOperation = document.paths['/actasexamenubicacion/{id}'].patch!;
+    const deleteOperation =
+      document.paths['/actasexamenubicacion/{id}'].delete!;
 
     expect(postOperation.security).toEqual([{ 'api-key': [], jwt: [] }]);
     expect(patchOperation.security).toEqual([{ 'api-key': [], jwt: [] }]);
@@ -108,12 +106,14 @@ describe('decorateOpenApiDocument', () => {
 
   it('documenta cargas multipart para CSV', () => {
     const document = decorateOpenApiDocument(createDocument());
-    const operation = document.paths['/pagos-banco/upload'].post as any;
+    const operation = document.paths['/pagos-banco/upload'].post!;
 
-    expect(operation.requestBody.content['multipart/form-data']).toBeDefined();
-    expect(
-      operation.requestBody.content['multipart/form-data'].schema.properties
-        .file.format,
-    ).toBe('binary');
+    expect(operation.requestBody).toMatchObject({
+      content: {
+        'multipart/form-data': {
+          schema: { properties: { file: { format: 'binary' } } },
+        },
+      },
+    });
   });
 });

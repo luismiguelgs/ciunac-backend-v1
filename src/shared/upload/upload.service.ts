@@ -81,7 +81,7 @@ export class UploadService {
   async uploadToDrive(
     file: Express.Multer.File,
     folder: string,
-    nombre: string,
+    nombre?: string,
     fileId?: string,
   ): Promise<UploadResult> {
     try {

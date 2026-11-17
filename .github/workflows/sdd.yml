@@ -1,0 +1,30 @@
+name: SDD contracts and integration
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run sdd:check
+      - name: Export generated contract for comparison
+        if: always()
+        run: |
+          mkdir -p artifacts/sdd
+          cp docs/api/openapi.json artifacts/sdd/openapi-committed.json
+          node scripts/sdd/export-api.cjs
+          cp docs/api/openapi.json artifacts/sdd/openapi-generated.json
+          git diff -- docs/api/openapi.json > artifacts/sdd/openapi.diff
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sdd-evidence
+          path: artifacts/sdd/

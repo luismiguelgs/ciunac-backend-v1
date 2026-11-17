@@ -1,4 +1,5 @@
 import { OpenAPIObject } from '@nestjs/swagger';
+import { completeResponseContracts } from './openapi-contracts';
 
 type SwaggerOperation = {
   tags?: string[];
@@ -8,9 +9,11 @@ type SwaggerOperation = {
   security?: Record<string, string[]>[];
   responses?: Record<string, unknown>;
   requestBody?: unknown;
+  operationId?: string;
+  'x-permissions'?: string[];
 };
 
-type SwaggerPathItem = Record<string, SwaggerOperation | unknown>;
+type SwaggerPathItem = Record<string, unknown>;
 
 const HTTP_METHODS = new Set([
   'get',
@@ -118,9 +121,13 @@ const PATH_TAGS: Record<string, string> = {
   q10: 'Q10',
   upload: 'Servicios compartidos',
   mailer: 'Servicios compartidos',
+  certificadosr: 'Administrativas',
+  tiempos: 'Administrativas',
 };
 
 const API_KEY_PREFIXES = new Set([
+  'certificadosr',
+  'tiempos',
   'upload',
   'mailer',
   'q10',
@@ -164,9 +171,6 @@ const API_KEY_AND_JWT_PREFIXES = new Set(['usuarios', 'rol-permisos']);
 const API_KEY_AND_JWT_OPERATIONS = new Set([
   'post /auth/logout',
   'get /auth/profile',
-  'delete /actanotas/{id}',
-  'delete /certificados/{id}',
-  'delete /constancias/{id}',
   'post /actasexamenubicacion',
   'patch /actasexamenubicacion/{id}',
   'delete /actasexamenubicacion/{id}',
@@ -190,13 +194,31 @@ const DEPRECATED_OPERATIONS = new Map([
 ]);
 
 const MULTIPART_REQUEST_BODIES: Record<string, unknown> = {
+  'post /certificados/{id}/archivo': {
+    required: true,
+    content: {
+      'multipart/form-data': {
+        schema: {
+          type: 'object',
+          required: ['file'],
+          properties: {
+            file: { type: 'string', format: 'binary' },
+            fileId: {
+              type: 'string',
+              description: 'Identificador opcional de Drive.',
+            },
+          },
+        },
+      },
+    },
+  },
   'post /upload/{folder}': {
     required: true,
     content: {
       'multipart/form-data': {
         schema: {
           type: 'object',
-          required: ['file', 'nombre'],
+          required: ['file'],
           properties: {
             file: {
               type: 'string',
@@ -205,7 +227,8 @@ const MULTIPART_REQUEST_BODIES: Record<string, unknown> = {
             },
             nombre: {
               type: 'string',
-              description: 'Nombre logico con el que se guardara el archivo.',
+              description:
+                'Nombre opcional sin extension. Si se omite, se conserva el nombre original del archivo.',
             },
             fileId: {
               type: 'string',
@@ -312,23 +335,12 @@ const ensureResponse = (
 
 const addStandardResponses = (
   operation: SwaggerOperation,
-  path: string,
   security: Record<string, string[]>[] | undefined,
 ): void => {
-  ensureResponse(operation, '200', 'Operacion realizada correctamente.');
-  ensureResponse(operation, '400', 'Solicitud invalida o datos no validos.');
-
-  if (path.includes('{id}')) {
-    ensureResponse(operation, '404', 'Recurso no encontrado.');
-  }
-
   if (security?.length) {
     ensureResponse(operation, '401', 'Credenciales ausentes o invalidas.');
-    ensureResponse(
-      operation,
-      '403',
-      'Acceso denegado por permisos o API key invalida.',
-    );
+    if (operation['x-permissions']?.length)
+      ensureResponse(operation, '403', 'Acceso denegado por PermissionsGuard.');
   }
 };
 
@@ -353,8 +365,52 @@ const decorateOperation = (
   if (MULTIPART_REQUEST_BODIES[key]) {
     operation.requestBody = MULTIPART_REQUEST_BODIES[key];
   }
+  if (key === 'post /upload/{folder}') {
+    operation.summary = 'Subir archivo a Google Drive';
+    operation.description =
+      'Para DNI usar folder=DNIS y multipart file. nombre y fileId son opcionales. La respuesta contiene viewLink y downloadLink, no un campo url; comprobar viewLink no vacio y enviarlo como imgDoc al crear/actualizar el estudiante. El upload no vincula automaticamente al estudiante. Los permisos de lectura actuales del archivo son publicos por enlace.';
+  }
 
-  addStandardResponses(operation, path, security);
+  if (key === 'post /perfil-docente-resultados/generar') {
+    operation.requestBody = {
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['moduloId', 'docenteId'],
+            properties: {
+              moduloId: { type: 'number' },
+              docenteId: { type: 'string' },
+            },
+            description:
+              'Tipo inline actual; no existe validacion DTO en esta ruta.',
+          },
+        },
+      },
+    };
+  }
+  if (key === 'post /auth/logout') {
+    operation.requestBody = {
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: { userId: { type: 'string' } },
+          },
+        },
+      },
+    };
+  }
+
+  addStandardResponses(operation, security);
+  if (operation.requestBody)
+    ensureResponse(
+      operation,
+      '400',
+      'Entrada rechazada por parser, DTO o controles del controller; no implica validaciones de negocio adicionales.',
+    );
 };
 
 export const decorateOpenApiDocument = (
@@ -374,5 +430,5 @@ export const decorateOpenApiDocument = (
     }
   }
 
-  return document;
+  return completeResponseContracts(document);
 };

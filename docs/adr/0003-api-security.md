@@ -22,4 +22,4 @@ Mantener seguridad por capas:
 - Todo endpoint nuevo debe declarar explicitamente su modelo de auth.
 - Operaciones administrativas deben usar API key y, cuando aplique, JWT + permisos.
 - Endpoints sin guard visible deben revisarse antes de considerarse productivos.
-- La futura documentacion OpenAPI debe incluir `@ApiBearerAuth` y `@ApiHeader` para reflejar seguridad real.
+- OpenAPI vigente refleja API key, JWT y permisos reales; la paridad detecta diferencias con guards. Esto no implica que todos los endpoints esten protegidos: ver seguridad e inventario actuales.

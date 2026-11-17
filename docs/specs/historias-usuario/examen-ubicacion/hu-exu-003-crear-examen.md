@@ -1,35 +1,71 @@
-# HU-EXU-003: Crear examen de ubicación
+# HU-EXU-003: Crear y gestionar examen
 
-## Historia
+<!-- Generado desde flows.json. Mantener la narracion de negocio en el spec enlazado. -->
 
-**Como** administrativo autorizado, **quiero** crear un examen asociado a un cronograma, docente, aula e idioma, **para** disponer de una sesión evaluativa identificable y controlada.
+## Identificacion y estado
 
-## Precondiciones
+- Caso: CU-EXU-003. Requisito: RF-EXU-003. Version: 1.0. Responsable: Equipo tecnico CIUNAC.
+- Estado: Implementado (AS-IS). La verificacion se acredita exclusivamente en el reporte de `npm run sdd:check`.
+- Especificacion: [examen-ubicacion.md](../../examen-ubicacion.md).
 
-- El cronograma existe; puede estar activo o inactivo.
-- El docente, aula, idioma y estado existen.
-- El código del examen no está registrado.
+## Historia y objetivo
 
-## Criterios de aceptación
+Como administrativo de examenes, quiero crear y gestionar examen, para mantener examen con docente, aula, idioma y estado; impedir borrado si hay detalles vinculados.
 
-- Dados datos válidos, cuando se ejecuta `POST /examenesubicacion`, entonces se crea el examen en estado `PROGRAMADO`.
-- La fecha del examen debe coincidir con el mismo día calendario del cronograma asociado.
-- Dado un código repetido, cuando se intenta crear, entonces responde `409 Conflict`.
-- Dado un cronograma inexistente, cuando se intenta crear, entonces responde `404 Not Found`.
-- Dado un cronograma inactivo existente, cuando se crea el examen, entonces la asociación es válida.
-- Dado un examen existente, cuando se consulta, entonces devuelve cronograma, estado, idioma, docente y aula.
-- Dada una transición no permitida, cuando se usa `PATCH /examenesubicacion/:id`, entonces responde `409 Conflict`.
+Mantener examen con docente, aula, idioma y estado; impedir borrado si hay detalles vinculados.
 
-## Rutas existentes
+## Actores y precondiciones
 
-- `POST /examenesubicacion`
-- `GET /examenesubicacion`
-- `GET /examenesubicacion/:id`
-- `PATCH /examenesubicacion/:id`
-- `DELETE /examenesubicacion/:id`
+- Actor: administrativo de examenes; frontend CIUNAC como cliente HTTP.
+- Persistencia y catalogos relacionados disponibles cuando el servicio los utiliza.
+- Autenticacion: api-key. Los permisos por operacion se detallan en la tabla.
 
-## Reglas y dependencias
+## Flujo principal
 
-- El contrato objetivo agrega `cronogramaId` al DTO de creación y a la entidad.
-- Los estados válidos son `PROGRAMADO`, `EN_CURSO`, `CERRADO`, `ACTA_GENERADA` y `CANCELADO`.
-- Un examen con acta no puede modificarse ni eliminarse.
+1. El frontend recoge los datos del proceso y aplica las validaciones de presentacion.
+2. Invoca una de las operaciones del contrato siguiente; el backend aplica sus guards, pipes e interceptores reales.
+3. Ejecuta `create`, `findAll`, `findOne`, `remove` y devuelve el resultado actual.
+4. El frontend interpreta el codigo y body documentados, actualiza la vista y evita duplicar acciones con efectos externos.
+
+## Contratos API
+
+| Metodo / Ruta | operationId | Entrada | Seguridad / permiso | Respuestas |
+| --- | --- | --- | --- | --- |
+| `POST /examenesubicacion` | `ExamenesubicacionController_create` | Body: CreateExamenesubicacionDto | api-key  | 201, 400, 401 |
+| `GET /examenesubicacion` | `ExamenesubicacionController_findAll` | Sin body | api-key  | 200, 401 |
+| `GET /examenesubicacion/:id` | `ExamenesubicacionController_findOne` | Param: id | api-key  | 200, 401 |
+| `DELETE /examenesubicacion/:id` | `ExamenesubicacionController_remove` | Param: id | api-key  | 200, 401 |
+
+Los schemas completos y tipos opcionales/nulos estan en [OpenAPI](../../../api/openapi.json).
+
+## Alternativas, errores y reglas
+
+- API key/JWT ausente o invalido devuelve 401 cuando el guard correspondiente existe. Un permiso denegado devuelve 403 cuando se exige.
+- Las validaciones de DTO existentes producen 400; un tipo inline no implica validacion de negocio.
+- No se presupone 404: algunos CRUD actuales devuelven 200 con null o respuesta vacia para recursos inexistentes. Verificar el spec y el servicio asociado.
+- Los efectos, errores de integracion, estados y limitaciones particulares estan definidos en la especificacion del dominio.
+- Las propuestas no implementadas se mantienen en [Backlog](../../backlog.md).
+
+## Datos e integraciones
+
+- [src/modules/examen_ubicacion/examenesubicacion/entities/examenesubicacion.entity.ts](../../../../src/modules/examen_ubicacion/examenesubicacion/entities/examenesubicacion.entity.ts).
+- [src/modules/examen_ubicacion/detallesubicacion/entities/detallesubicacion.entity.ts](../../../../src/modules/examen_ubicacion/detallesubicacion/entities/detallesubicacion.entity.ts).
+
+## Criterios de aceptacion y evidencia
+
+- **CA-EXU-003-01**: La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual. Evidencia: [test/sdd/contracts.contract-spec.cjs](../../../../test/sdd/contracts.contract-spec.cjs), `HTTP ExamenesubicacionController_create`, `HTTP ExamenesubicacionController_findAll`, `HTTP ExamenesubicacionController_findOne`, `HTTP ExamenesubicacionController_remove`.
+- **CA-EXU-003-02**: Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente. Evidencia: [test/sdd/contracts.contract-spec.cjs](../../../../test/sdd/contracts.contract-spec.cjs), `SEC ExamenesubicacionController_create`, `SEC ExamenesubicacionController_findAll`, `SEC ExamenesubicacionController_findOne`, `SEC ExamenesubicacionController_remove`.
+
+Limite de evidencia: Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados.
+
+## Responsabilidades frontend/backend
+
+- Frontend: enviar los nombres, tipos y contenido del contrato; manejar estados de carga, confirmacion y error del proceso.
+- Backend: ejecutar las validaciones, permisos, consultas y persistencia implementadas. La UI no reemplaza estos controles.
+- La guia frontend es un contrato de integracion; no acredita la implementacion visual del frontend.
+
+## Trazabilidad tecnica
+
+- [src/modules/examen_ubicacion/examenesubicacion/examenesubicacion.controller.ts](../../../../src/modules/examen_ubicacion/examenesubicacion/examenesubicacion.controller.ts).
+- [src/modules/examen_ubicacion/examenesubicacion/examenesubicacion.service.ts](../../../../src/modules/examen_ubicacion/examenesubicacion/examenesubicacion.service.ts).
+- [src/modules/examen_ubicacion/examenesubicacion/dto/create-examenesubicacion.dto.ts](../../../../src/modules/examen_ubicacion/examenesubicacion/dto/create-examenesubicacion.dto.ts).

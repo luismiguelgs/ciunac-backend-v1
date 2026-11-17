@@ -7,7 +7,7 @@ El sistema se organiza por dominios bajo `src/modules`, mas integraciones en `sr
 | Dominio | Modulos | Proposito |
 | --- | --- | --- |
 | Administrativas | `solicitudes`, `constancias`, `certificados`, `solicitudbecas`, `pagos-banco`, `tipossolicitud` | Tramites, documentos, pagos y clasificacion de solicitudes. |
-| Authentication | `auth`, `usuarios`, `rol_permisos` | Login, registro, perfil, roles y permisos. |
+| Authentication | `auth`, `usuarios`, `rol_permisos` | Login, registro, recuperacion de contrasena, perfil, roles y permisos. |
 | Auxiliares | `escuelas`, `facultades`, `estados`, `textos` | Catalogos y contenido auxiliar. |
 | Calificaciones | `evaluaciones`, `notas`, `notasfinal`, `actanotas` | Registro academico de evaluaciones, notas y actas. |
 | Estructura | `idiomas`, `niveles`, `ciclos`, `modulos`, `grupos`, `aulas` | Organizacion academica y operativa. |
@@ -15,7 +15,7 @@ El sistema se organiza por dominios bajo `src/modules`, mas integraciones en `sr
 | Principales | `estudiantes`, `docentes` | Actores academicos base. |
 | Seguimiento docente | `perfil_docente`, `tipo_documento_perfil`, `documentos_docente`, `academico_administrativo`, `puntaje_academico_administrativo`, `cumplimiento_docente`, `encuesta_preguntas`, `encuesta_respuestas`, `encuesta_respuestas_detalle`, `encuesta_metricas_docente`, `perfil_docente_resultados`, `dashboard_docentes` | Evaluacion, documentacion, metricas y dashboard docente. |
 | Integracion Q10 | `q10` | Sincronizacion con sistema academico externo. |
-| Shared | `upload`, `mailer` | Archivos Google Drive y correos. |
+| Shared | `upload`, `mailer`, `reportes/certificadosr`, `reportes/tiempos` | Archivos Drive, correo y reportes de certificados/tiempos. |
 
 ## Dominios core
 
@@ -40,3 +40,7 @@ Gestiona examenes, cronogramas, detalles por examen o documento, calificaciones 
 - `UploadModule`: subida y movimiento de archivos en Google Drive.
 - `MailerModule`: envio de correos por tipo.
 - `Q10Module`: horarios, cursos y creacion de estudiantes en Q10.
+
+## Cobertura completa
+
+El [inventario de modulos](module-inventory.md) enumera automaticamente cada clase @Module y su archivo, incluidos los reportes. La [matriz SDD](../specs/traceability.json) relaciona esos modulos con specs y operaciones. No se mantienen conteos fijos que puedan ocultar modulos nuevos.

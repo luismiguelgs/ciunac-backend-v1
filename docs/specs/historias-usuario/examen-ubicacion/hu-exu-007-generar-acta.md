@@ -1,53 +1,74 @@
-# HU-EXU-007: Generar acta de examen de ubicación
+# HU-EXU-007: Generar y preservar acta inmutable
 
-Plan técnico: [Implementación SDD de actas](../../implementacion-actas-examen-ubicacion.md).
+<!-- Generado desde flows.json. Mantener la narracion de negocio en el spec enlazado. -->
 
-## Historia
+## Identificacion y estado
 
-**Como** administrativo autorizado, **quiero** generar el acta definitiva enviando únicamente el identificador del examen, **para** conservar una evidencia íntegra y trazable de sus resultados y pagos.
+- Caso: CU-EXU-007. Requisito: RF-EXU-007. Version: 1.0. Responsable: Equipo tecnico CIUNAC.
+- Estado: Implementado (AS-IS). La verificacion se acredita exclusivamente en el reporte de `npm run sdd:check`.
+- Especificacion: [examen-ubicacion.md](../../examen-ubicacion.md).
 
-## Entrada
+## Historia y objetivo
 
-```http
-POST /actasexamenubicacion
-```
+Como administrativo de examenes, quiero generar un acta inmutable, para preservar los resultados y su trazabilidad.
 
-```json
-{
-  "examenId": 123
-}
-```
+Consolidar una fotografia unica del examen terminado y rechazar cambios o eliminaciones posteriores.
 
-## Precondiciones
+## Actores y precondiciones
 
-- El examen existe y está `CERRADO`.
-- Tiene al menos un participante activo.
-- Todos los participantes tienen nota, nivel, ciclo y `terminado=true`.
-- Cada participante tiene `solicitudId` y `numeroVoucher` válidos.
-- No existe un acta para el mismo `examenId`.
+- Actor: administrativo de examenes; frontend CIUNAC como cliente HTTP.
+- Persistencia y catalogos relacionados disponibles cuando el servicio los utiliza.
+- Autenticacion: api-key + jwt. Los permisos por operacion se detallan en la tabla.
 
-## Criterios de aceptación
+## Flujo principal
 
-- Dado un examen completo, cuando se envía su `examenId`, entonces el backend obtiene todos los datos desde PostgreSQL y crea el acta en `actas_examen_ubicacion`.
-- El documento incluye examen, cronograma, aula, docente, idioma y participantes con estudiante, nota, nivel, ciclo, solicitud y voucher.
-- Dado un participante sin solicitud o voucher, cuando se intenta generar, entonces responde `409 Conflict` y no guarda un documento parcial.
-- Dado un examen inexistente, cuando se intenta generar, entonces responde `404 Not Found`.
-- Dada un acta ya existente, cuando se repite la petición, entonces responde `409 ACTA_YA_EXISTE` con referencia al acta.
-- Dada una generación exitosa, el examen cambia a `ACTA_GENERADA` y el acta queda inmutable.
+1. El frontend recoge los datos del proceso y aplica las validaciones de presentacion.
+2. Invoca una de las operaciones del contrato siguiente; el backend aplica sus guards, pipes e interceptores reales.
+3. Ejecuta `create`, `remove`, `update` y devuelve el resultado actual.
+4. El frontend interpreta el codigo y body documentados, actualiza la vista y evita duplicar acciones con efectos externos.
 
-## Rutas existentes
+## Contratos API
 
-- `POST /actasexamenubicacion`
-- `GET /actasexamenubicacion`
-- `GET /actasexamenubicacion/:id`
-- `PATCH /actasexamenubicacion/:id` — legado y deprecado.
-- `DELETE /actasexamenubicacion/:id` — legado y deprecado.
+| Metodo / Ruta | operationId | Entrada | Seguridad / permiso | Respuestas |
+| --- | --- | --- | --- | --- |
+| `POST /actasexamenubicacion` | `ActasexamenubicacionController_create` | Body: CreateActasexamenubicacionDto | api-key + jwt gestionar_examen_ubicacion | 201, 400, 401, 403, 404, 409, 500 |
+| `DELETE /actasexamenubicacion/:id` | `ActasexamenubicacionController_remove` | Param: id | api-key + jwt gestionar_examen_ubicacion | 401, 403, 409 |
+| `PATCH /actasexamenubicacion/:id` | `ActasexamenubicacionController_update` | Param: id; Body: UpdateActasexamenubicacionDto | api-key + jwt gestionar_examen_ubicacion | 400, 401, 403, 409 |
 
-## Reglas y dependencias
+Los schemas completos y tipos opcionales/nulos estan en [OpenAPI](../../../api/openapi.json).
 
-- El backend obtiene desde la tabla `estados` el ID numérico de `ACTA_GENERADA` con referencia `EXAMEN_UBICACION` y lo guarda en `examenes_ubicacion.estado_id`; no usa un ID fijo.
-- El DTO público solo acepta `examenId`; cualquier otro campo es rechazado por `forbidNonWhitelisted`.
-- MongoDB aplica un índice único sobre `examenId`.
-- `PATCH` y `DELETE` responden `409 ACTA_INMUTABLE` para actas publicadas.
-- Si falla el cambio de estado PostgreSQL después de insertar, se compensa el documento todavía no publicado.
-- La creación y consulta permanecen en las rutas existentes del controller de actas.
+## Alternativas, errores y reglas
+
+- API key/JWT ausente o invalido devuelve 401 cuando el guard correspondiente existe. Un permiso denegado devuelve 403 cuando se exige.
+- Las validaciones de DTO existentes producen 400; un tipo inline no implica validacion de negocio.
+- No se presupone 404: algunos CRUD actuales devuelven 200 con null o respuesta vacia para recursos inexistentes. Verificar el spec y el servicio asociado.
+- Los efectos, errores de integracion, estados y limitaciones particulares estan definidos en la especificacion del dominio.
+- Las propuestas no implementadas se mantienen en [Backlog](../../backlog.md).
+
+## Datos e integraciones
+
+- [src/modules/administrativas/solicitudes/entities/solicitud.entity.ts](../../../../src/modules/administrativas/solicitudes/entities/solicitud.entity.ts).
+- [src/modules/examen_ubicacion/detallesubicacion/entities/detallesubicacion.entity.ts](../../../../src/modules/examen_ubicacion/detallesubicacion/entities/detallesubicacion.entity.ts).
+- [src/modules/examen_ubicacion/examenesubicacion/entities/examenesubicacion.entity.ts](../../../../src/modules/examen_ubicacion/examenesubicacion/entities/examenesubicacion.entity.ts).
+- [src/modules/examen_ubicacion/actasexamenubicacion/schemas/actasexamenubicacion.schema.ts](../../../../src/modules/examen_ubicacion/actasexamenubicacion/schemas/actasexamenubicacion.schema.ts).
+
+## Criterios de aceptacion y evidencia
+
+- **CA-EXU-007-01**: La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual. Evidencia: [test/sdd/contracts.contract-spec.cjs](../../../../test/sdd/contracts.contract-spec.cjs), `HTTP ActasexamenubicacionController_create`, `HTTP ActasexamenubicacionController_remove`, `HTTP ActasexamenubicacionController_update`.
+- **CA-EXU-007-02**: Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente. Evidencia: [test/sdd/contracts.contract-spec.cjs](../../../../test/sdd/contracts.contract-spec.cjs), `SEC ActasexamenubicacionController_create`, `SEC ActasexamenubicacionController_remove`, `SEC ActasexamenubicacionController_update`.
+- **CA-EXU-007-03**: Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan. Evidencia: [test/sdd/critical.integration-spec.cjs](../../../../test/sdd/critical.integration-spec.cjs), `INT acta unica inmutable actualiza examen y conserva snapshot`, `INT acta elimina insercion Mongo si falla actualizacion PostgreSQL`.
+
+Limite de evidencia: Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend.
+
+## Responsabilidades frontend/backend
+
+- Frontend: enviar los nombres, tipos y contenido del contrato; manejar estados de carga, confirmacion y error del proceso.
+- Backend: ejecutar las validaciones, permisos, consultas y persistencia implementadas. La UI no reemplaza estos controles.
+- La guia frontend es un contrato de integracion; no acredita la implementacion visual del frontend.
+
+## Trazabilidad tecnica
+
+- [src/modules/examen_ubicacion/actasexamenubicacion/actasexamenubicacion.controller.ts](../../../../src/modules/examen_ubicacion/actasexamenubicacion/actasexamenubicacion.controller.ts).
+- [src/modules/examen_ubicacion/actasexamenubicacion/actasexamenubicacion.service.ts](../../../../src/modules/examen_ubicacion/actasexamenubicacion/actasexamenubicacion.service.ts).
+- [src/modules/examen_ubicacion/actasexamenubicacion/dto/create-actasexamenubicacion.dto.ts](../../../../src/modules/examen_ubicacion/actasexamenubicacion/dto/create-actasexamenubicacion.dto.ts).
+- [src/modules/examen_ubicacion/actasexamenubicacion/dto/update-actasexamenubicacion.dto.ts](../../../../src/modules/examen_ubicacion/actasexamenubicacion/dto/update-actasexamenubicacion.dto.ts).

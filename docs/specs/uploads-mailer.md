@@ -1,88 +1,35 @@
-# Spec: Uploads y Mailer
+# Spec: Archivos Drive y Correo
 
-## Objetivo funcional
+Version 1.1. Fecha: 2026-11-06. Responsable: equipo tecnico CIUNAC. Estado: Implementado (AS-IS).
 
-Gestionar carga de archivos a Google Drive y envio de correos desde canales configurados.
+## Objetivo, actores y precondiciones
 
-## Actores
+El cliente carga archivos y el backend envia notificaciones. Requiere API key, credenciales OAuth Drive/carpetas y credenciales SMTP de los canales usados.
 
-- Usuario administrativo.
-- Frontend CIUNAC.
-- Google Drive.
-- Servidores SMTP.
+## Carga publica
 
-## Precondiciones
+POST /upload/:folder recibe multipart file obligatorio; nombre y fileId son opcionales tambien en Swagger. Si se omite nombre, se conserva el nombre original del archivo. El controller permite DNIS, VOUCHERS, BECAS, CVS y CONSTANCIAS. CERTIFICADOS se usa internamente desde el endpoint dedicado de certificados.
 
-- API key valida.
-- Credenciales Google OAuth configuradas.
-- Folders de Drive configurados.
-- Credenciales SMTP configuradas.
+La carga devuelve success, id, name, viewLink, downloadLink, folder y modifiedTime opcional. Puede reemplazar un archivo cuando se proporciona fileId. Un archivo ausente lanza actualmente Error generico; no documentar 400 universal. Una carpeta invalida produce 400.
 
-## Flujo principal: upload
+Para un DNI usar /upload/DNIS y pasar su viewLink como imgDoc al registrar o actualizar al estudiante. La respuesta no incluye una propiedad url. Drive puede omitir enlaces y el servicio los representa como cadena vacia; comprobar viewLink antes de continuar. Upload no guarda automaticamente estudiantes.img_doc. Se mantienen los permisos actuales de lectura publica por enlace; BL-UPL-001 sigue pendiente.
 
-1. El frontend envia archivo a `POST /upload/:folder`.
-2. El controller valida que exista archivo y carpeta permitida.
-3. `UploadService` resuelve carpeta destino.
-4. El archivo se sube a Google Drive.
-5. El backend devuelve metadata o URL segun implementacion.
+El backend de [estudiante nuevo (HU-EST-002)](estudiante-nuevo.md) permite enviar opcionalmente el viewLink de `POST /upload/DNIS` como imgDoc al alta Q10 y lo guarda en `estudiantes.img_doc`, sin enviarlo a Q10. Valida URL HTTP/HTTPS absoluta, pero no verifica pertenencia a DNIS por API Drive. El upload por si solo no asocia el archivo; formatos, limites, acceso y limpieza siguen pendientes en BL-UPL-001.
 
-## Flujo principal: mailer
+## Firma y repositorios
 
-1. El frontend envia payload a `POST /mailer`.
-2. `MailerService` selecciona transporter por `type`.
-3. El correo se envia desde el remitente configurado.
-4. El backend devuelve confirmacion o error controlado.
+El servicio busca versiones [FIRMADO] normalizando nombre/extensiones y puede recibir un signedFileId explicito. Mueve la version al repositorio, asegura permiso de lectura publico y procesa la limpieza del original. Certificados resuelve ademas una carpeta del periodo existente; no la crea automaticamente.
 
-## Flujos alternos y errores
+Las transiciones, URL persistida, reintentos de limpieza y compensacion se especifican en [certificados](certificados.md) y [constancias](constancias.md).
 
-| Caso | Resultado |
-| --- | --- |
-| Archivo ausente | Error controlado. |
-| Carpeta invalida | `400 Bad Request`. |
-| Error Google Drive | `500 Internal Server Error` controlado. |
-| Tipo de mail no configurado | Error controlado. |
-| Error SMTP | `500 Internal Server Error` en controller. |
+## Correo
 
-## Reglas de negocio
+POST /mailer recibe SendMailDto y devuelve { "message": "success" } con 201. Selecciona canal ALUMNOS/CERTIFICADO/RECAUDA segun el tipo soportado. Un error de envio en el controller responde 500.
 
-- Carpetas permitidas: `DNIS`, `BECAS`, `VOUCHERS`, `CVS`, `CONSTANCIAS`.
-- `CONSTANCIAS` puede moverse a repositorio usando carpeta especifica.
-- Tipos de correo soportados por configuracion: alumnos, certificados y recauda.
+Rechazo y recuperacion llaman MailerService desde backend; el frontend no debe enviar una segunda notificacion. No hay cola ni outbox agregada por esta entrega.
 
-## Contratos API
+## Datos, aceptacion y frontend
 
-| Metodo | Endpoint | Auth | Request | Response |
-| --- | --- | --- | --- | --- |
-| `POST` | `/upload/:folder` | ApiKey | `multipart/form-data` con archivo | Resultado de carga |
-| `POST` | `/mailer` | ApiKey | `SendMailDto` | Confirmacion de envio |
+Upload no tiene tabla propia. Los servicios de documentos asocian sus IDs/URL en MongoDB. SMTP no modifica automaticamente solicitudes.
 
-## Datos involucrados
-
-- DTO: `SendMailDto`.
-- No hay entidad propia de upload; el resultado puede asociarse a documentos segun caso de uso.
-
-## Integraciones externas
-
-- Google Drive API.
-- SMTP via Nodemailer.
-
-## Criterios de aceptacion
-
-- Dado una carpeta permitida y archivo valido, cuando se sube, entonces se almacena en Drive.
-- Dado una carpeta invalida, cuando se sube, entonces se rechaza con `400`.
-- Dado un tipo de correo valido, cuando se envia, entonces se usa el remitente correcto.
-- Dado un error externo, entonces se responde con error controlado sin exponer credenciales.
-
-## Casos de prueba sugeridos
-
-- Unit: resolucion de carpetas y seleccion de transporter.
-- Integration: upload con mock de Google Drive.
-- Integration: mailer con mock de Nodemailer.
-
-## Trazabilidad
-
-| Elemento | Referencia |
-| --- | --- |
-| Controllers | `src/shared/upload/upload.controller.ts`, `src/shared/mailer/mailer.controller.ts` |
-| Services | `UploadService`, `MailerService` |
-| DTO | `src/shared/mailer/dto/send-mail.dto.ts` |
+HU-UPL/HU-MAI y sus CA prueban HTTP y seguridad. Las pruebas unitarias verifican fronteras Drive/SMTP y las de integracion mantienen reales los servicios de documentos con repositorios; no llaman proveedores externos. El frontend usa FormData y presenta warnings sin repetir operaciones completas.

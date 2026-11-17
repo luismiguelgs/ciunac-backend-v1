@@ -1,0 +1,2121 @@
+{
+  "schemaVersion": 1,
+  "scope": "AS-IS",
+  "flows": [
+    {
+      "id": "ACA-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "AcademicoAdministrativoController",
+      "title": "Configurar rubros y pesos",
+      "objective": "Mantener los rubros y pesos usados en el calculo de cumplimiento.",
+      "story": "Como coordinador de evaluacion docente, quiero configurar rubros y pesos, para mantener los rubros y pesos usados en el calculo de cumplimiento.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-ACA-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-ACA-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "ACT-001",
+      "domain": "calificaciones",
+      "spec": "calificaciones.md",
+      "controller": "ActanotasController",
+      "title": "Gestionar actas de notas",
+      "objective": "Guardar y consultar documentos de actas de notas en MongoDB.",
+      "story": "Como operador de calificaciones, quiero gestionar actas de notas, para guardar y consultar documentos de actas de notas en MongoDB.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-ACT-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-ACT-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "operador de calificaciones",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "AUL-001",
+      "domain": "estructura",
+      "spec": "estructura.md",
+      "controller": "AulasController",
+      "title": "Gestionar aulas",
+      "objective": "Mantener aulas disponibles para grupos y examenes.",
+      "story": "Como coordinador academico, quiero gestionar aulas, para mantener aulas disponibles para grupos y examenes.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-AUL-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-AUL-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador academico",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "AUTH-001",
+      "domain": "authentication",
+      "spec": "authentication.md",
+      "controller": "AuthController",
+      "handlers": [
+        "register"
+      ],
+      "title": "Registrar cuenta",
+      "objective": "Crear una cuenta local y vincular al docente cuando se solicita ese rol.",
+      "story": "Como persona usuaria, quiero registrar cuenta, para crear una cuenta local y vincular al docente cuando se solicita ese rol.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-AUTH-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-AUTH-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "persona usuaria",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "AUTH-002",
+      "domain": "authentication",
+      "spec": "authentication.md",
+      "controller": "AuthController",
+      "handlers": [
+        "login"
+      ],
+      "title": "Iniciar sesion",
+      "objective": "Validar credenciales y devolver access_token y usuario.",
+      "story": "Como persona usuaria, quiero iniciar sesion, para validar credenciales y devolver access_token y usuario.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-AUTH-002-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-AUTH-002-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "persona usuaria",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "AUTH-003",
+      "domain": "authentication",
+      "spec": "authentication.md",
+      "controller": "AuthController",
+      "handlers": [
+        "forgotPassword"
+      ],
+      "title": "Solicitar recuperacion",
+      "objective": "Responder sin revelar existencia de la cuenta; persistir solo el hash del token y notificar por correo.",
+      "story": "Como persona usuaria, quiero solicitar recuperacion, para responder sin revelar existencia de la cuenta; persistir solo el hash del token y notificar por correo.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-AUTH-003-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-AUTH-003-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-AUTH-003-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT recuperacion almacena hash consume token una vez y oculta cuenta",
+            "INT recuperacion invalida token si falla SMTP"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "persona usuaria",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "AUTH-004",
+      "domain": "authentication",
+      "spec": "authentication.md",
+      "controller": "AuthController",
+      "handlers": [
+        "resetPassword"
+      ],
+      "title": "Restablecer contrasena",
+      "objective": "Consumir un token vigente una sola vez y guardar la nueva contrasena con hash.",
+      "story": "Como persona usuaria, quiero restablecer contrasena, para consumir un token vigente una sola vez y guardar la nueva contrasena con hash.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-AUTH-004-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-AUTH-004-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-AUTH-004-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT recuperacion almacena hash consume token una vez y oculta cuenta"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "persona usuaria",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "AUTH-005",
+      "domain": "authentication",
+      "spec": "authentication.md",
+      "controller": "AuthController",
+      "handlers": [
+        "logout"
+      ],
+      "title": "Cerrar sesion",
+      "objective": "Confirmar logout con API key y JWT; actualmente no revoca el access token ya emitido.",
+      "story": "Como persona usuaria, quiero cerrar sesion, para confirmar logout con API key y JWT; actualmente no revoca el access token ya emitido.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-AUTH-005-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-AUTH-005-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "persona usuaria",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "AUTH-006",
+      "domain": "authentication",
+      "spec": "authentication.md",
+      "controller": "AuthController",
+      "handlers": [
+        "getProfile"
+      ],
+      "title": "Consultar perfil autenticado",
+      "objective": "Devolver la identidad validada por la estrategia JWT.",
+      "story": "Como persona usuaria, quiero consultar perfil autenticado, para devolver la identidad validada por la estrategia JWT.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-AUTH-006-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-AUTH-006-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "persona usuaria",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "BEC-001",
+      "domain": "administrativas",
+      "spec": "becas.md",
+      "controller": "SolicitudbecasController",
+      "title": "Gestionar solicitudes de beca",
+      "objective": "Persistir y consultar la informacion de beca y filtrar por estado.",
+      "story": "Como administrativo de CIUNAC, quiero gestionar solicitudes de beca, para persistir y consultar la informacion de beca y filtrar por estado.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-BEC-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-BEC-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "CER-001",
+      "domain": "administrativas",
+      "spec": "certificados.md",
+      "controller": "CertificadosController",
+      "title": "Consultar y mantener certificados",
+      "objective": "Consultar documentos MongoDB por solicitud, estado de firma y formato.",
+      "story": "Como administrativo de CIUNAC, quiero consultar y mantener certificados, para consultar documentos MongoDB por solicitud, estado de firma y formato.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-CER-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-CER-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "CER-002",
+      "domain": "administrativas",
+      "spec": "certificados.md",
+      "controller": "CertificadosController",
+      "handlers": [
+        "create"
+      ],
+      "title": "Crear certificado",
+      "objective": "Crear documento MongoDB asociado a solicitud y conservar la generacion actual de datos.",
+      "story": "Como administrativo de CIUNAC, quiero crear certificado, para crear documento MongoDB asociado a solicitud y conservar la generacion actual de datos.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-CER-002-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-CER-002-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-CER-002-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT certificado guarda driveId luego URL firmada y solicitud terminada"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "CER-003",
+      "domain": "administrativas",
+      "spec": "certificados.md",
+      "controller": "CertificadosController",
+      "handlers": [
+        "subirArchivo"
+      ],
+      "title": "Adjuntar archivo de certificado",
+      "objective": "Cargar el archivo con multipart y asociar la informacion de Drive al certificado existente.",
+      "story": "Como administrativo de CIUNAC, quiero adjuntar archivo de certificado, para cargar el archivo con multipart y asociar la informacion de Drive al certificado existente.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-CER-003-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-CER-003-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-CER-003-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT certificado guarda driveId luego URL firmada y solicitud terminada"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "CER-004",
+      "domain": "administrativas",
+      "spec": "certificados.md",
+      "controller": "CertificadosController",
+      "handlers": [
+        "procesarFirma"
+      ],
+      "title": "Procesar firma de certificado",
+      "objective": "Consolidar el archivo firmado, guardar URL y cambiar la solicitud a TERMINADO; compensar si falla persistencia.",
+      "story": "Como administrativo de CIUNAC, quiero procesar firma de certificado, para consolidar el archivo firmado, guardar URL y cambiar la solicitud a TERMINADO; compensar si falla persistencia.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-CER-004-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-CER-004-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-CER-004-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT certificado guarda driveId luego URL firmada y solicitud terminada",
+            "INT certificado compensa Mongo si PostgreSQL falla durante firma"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "CIC-001",
+      "domain": "estructura",
+      "spec": "estructura.md",
+      "controller": "CiclosController",
+      "title": "Gestionar ciclos",
+      "objective": "Mantener ciclos y codigos utilizados en rangos de ubicacion y grupos.",
+      "story": "Como coordinador academico, quiero gestionar ciclos, para mantener ciclos y codigos utilizados en rangos de ubicacion y grupos.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-CIC-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-CIC-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador academico",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "CON-001",
+      "domain": "administrativas",
+      "spec": "constancias.md",
+      "controller": "ConstanciasController",
+      "title": "Consultar y mantener constancias",
+      "objective": "Consultar y actualizar constancias relacionadas con solicitudes.",
+      "story": "Como administrativo de CIUNAC, quiero consultar y mantener constancias, para consultar y actualizar constancias relacionadas con solicitudes.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-CON-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-CON-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "CON-002",
+      "domain": "administrativas",
+      "spec": "constancias.md",
+      "controller": "ConstanciasController",
+      "handlers": [
+        "create"
+      ],
+      "title": "Crear constancia",
+      "objective": "Crear constancia y ejecutar los cambios de solicitud que aplica el servicio actual.",
+      "story": "Como administrativo de CIUNAC, quiero crear constancia, para crear constancia y ejecutar los cambios de solicitud que aplica el servicio actual.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-CON-002-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-CON-002-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-CON-002-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT constancia crea sin transicion y firma persiste URL con warning de limpieza"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "CON-003",
+      "domain": "administrativas",
+      "spec": "constancias.md",
+      "controller": "ConstanciasController",
+      "handlers": [
+        "procesarFirma"
+      ],
+      "title": "Procesar firma de constancia",
+      "objective": "Guardar archivo firmado y finalizar la solicitud, conservando la compensacion implementada.",
+      "story": "Como administrativo de CIUNAC, quiero procesar firma de constancia, para guardar archivo firmado y finalizar la solicitud, conservando la compensacion implementada.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-CON-003-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-CON-003-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-CON-003-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT constancia crea sin transicion y firma persiste URL con warning de limpieza"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "CUM-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "CumplimientoDocenteController",
+      "title": "Registrar cumplimiento",
+      "objective": "Registrar y consultar puntajes por docente, modulo y rubro.",
+      "story": "Como coordinador de evaluacion docente, quiero registrar cumplimiento, para registrar y consultar puntajes por docente, modulo y rubro.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-CUM-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-CUM-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "DAS-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "DashboardDocentesController",
+      "title": "Consultar indicadores docentes",
+      "objective": "Consultar indicadores del modulo activo y distribuciones de puntajes.",
+      "story": "Como coordinador de evaluacion docente, quiero consultar indicadores docentes, para consultar indicadores del modulo activo y distribuciones de puntajes.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-DAS-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-DAS-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "DAS-002",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "DashboardDocentesController",
+      "handlers": [
+        "getRankingDocentes"
+      ],
+      "title": "Consultar ranking docente",
+      "objective": "Seleccionar top 3 y bottom 2 del modulo activo, eliminar duplicados y ordenar por resultado almacenado.",
+      "story": "Como coordinador de evaluacion docente, quiero consultar ranking docente, para seleccionar top 3 y bottom 2 del modulo activo, eliminar duplicados y ordenar por resultado almacenado.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-DAS-002-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-DAS-002-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-DAS-002-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT resultados docentes persisten formula detalle y ranking"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "DDO-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "DocumentosDocenteController",
+      "title": "Gestionar evidencias docentes",
+      "objective": "Registrar documentos y consultarlos por perfil docente.",
+      "story": "Como coordinador de evaluacion docente, quiero gestionar evidencias docentes, para registrar documentos y consultarlos por perfil docente.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-DDO-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-DDO-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "DOC-001",
+      "domain": "principales",
+      "spec": "principales.md",
+      "controller": "DocentesController",
+      "title": "Gestionar docentes",
+      "objective": "Mantener docentes, consultar activos y resolver la vinculacion con usuarios.",
+      "story": "Como operador academico, quiero gestionar docentes, para mantener docentes, consultar activos y resolver la vinculacion con usuarios.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-DOC-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-DOC-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "operador academico",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "EDO-001",
+      "domain": "auxiliares",
+      "spec": "auxiliares.md",
+      "controller": "EstadosController",
+      "title": "Consultar y mantener estados",
+      "objective": "Mantener estados diferenciados por referencia; los IDs tienen significado por dominio.",
+      "story": "Como administrador de catalogos, quiero consultar y mantener estados, para mantener estados diferenciados por referencia; los IDs tienen significado por dominio.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EDO-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EDO-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrador de catalogos",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "ENC-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "EncuestaRespuestasController",
+      "title": "Consultar encuestas",
+      "objective": "Consultar respuestas filtradas por docente y periodo.",
+      "story": "Como coordinador de evaluacion docente, quiero consultar encuestas, para consultar respuestas filtradas por docente y periodo.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-ENC-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-ENC-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "ENC-002",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "EncuestaRespuestasController",
+      "handlers": [
+        "uploadFile"
+      ],
+      "title": "Cargar encuesta docente",
+      "objective": "Resolver docente y preguntas desde CSV y persistir respuestas con sus promedios actuales.",
+      "story": "Como coordinador de evaluacion docente, quiero cargar encuesta docente, para resolver docente y preguntas desde CSV y persistir respuestas con sus promedios actuales.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-ENC-002-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-ENC-002-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-ENC-002-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT encuesta CSV persiste respuestas detalles y metricas sin deduplicar"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "END-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "EncuestaRespuestasDetalleController",
+      "title": "Gestionar detalle de encuesta",
+      "objective": "Mantener respuestas individuales por pregunta.",
+      "story": "Como coordinador de evaluacion docente, quiero gestionar detalle de encuesta, para mantener respuestas individuales por pregunta.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-END-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-END-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "ESC-001",
+      "domain": "auxiliares",
+      "spec": "auxiliares.md",
+      "controller": "EscuelasController",
+      "title": "Gestionar escuelas",
+      "objective": "Mantener escuelas y su facultad relacionada.",
+      "story": "Como administrador de catalogos, quiero gestionar escuelas, para mantener escuelas y su facultad relacionada.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-ESC-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-ESC-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-ESC-001-03",
+          "description": "Escuelas PRE/POS, proteccion de alumnos incompatibles y SQL repetible que conserva historicos sin clasificar.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar campos locales a Q10",
+            "INT SQL escuelas tipo es repetible y conserva historicos sin clasificar"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrador de catalogos",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "EST-001",
+      "domain": "principales",
+      "spec": "principales.md",
+      "controller": "EstudiantesController",
+      "title": "Gestionar estudiantes",
+      "objective": "Mantener la identidad local y consultar estudiantes por UUID o documento sin editar idQ10.",
+      "story": "Como operador academico, quiero gestionar estudiantes, para mantener la identidad local y consultar estudiantes por UUID o documento sin editar idQ10.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EST-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EST-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-EST-001-03",
+          "description": "fechaNacimiento valida YYYY-MM-DD llega como texto al servicio; fechas imposibles, null y ausencia al crear se rechazan antes de persistir. BL-VAL-001 corregido.",
+          "kind": "regression",
+          "testFile": "test/sdd/contracts.contract-spec.cjs",
+          "testNames": [
+            "REG EST fecha calendario valida llega como texto al servicio en POST y PATCH",
+            "REG EST fecha invalida nula o ausente no llega a persistencia",
+            "SWAGGER fecha obligatoria solo al crear y con formato date",
+            "SWAGGER tipos nulos permitidos coinciden con POST y PATCH locales"
+          ]
+        },
+        {
+          "id": "CA-EST-001-04",
+          "description": "El alta y PATCH locales conservan fechas calendario en PostgreSQL, tambien en UTC y America/Lima, sin alterar las relaciones ni los campos locales existentes.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT estudiante local valida POST PATCH y persiste fecha calendario por HTTP",
+            "INT fecha estudiante no cambia de dia en UTC ni America Lima"
+          ]
+        }
+      ],
+      "version": "1.1",
+      "actor": "operador academico",
+      "verificationLimits": "Contratos HTTP, validacion de fecha calendario y persistencia local enlazados. No acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "EVA-001",
+      "domain": "calificaciones",
+      "spec": "calificaciones.md",
+      "controller": "EvaluacionesController",
+      "title": "Gestionar evaluaciones",
+      "objective": "Mantener el catalogo y las referencias de evaluaciones academicas.",
+      "story": "Como operador de calificaciones, quiero gestionar evaluaciones, para mantener el catalogo y las referencias de evaluaciones academicas.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EVA-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EVA-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "operador de calificaciones",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "EXU-001",
+      "domain": "examen_ubicacion",
+      "spec": "examen-ubicacion.md",
+      "controller": "CalificacionesubicacionController",
+      "title": "Configurar rangos de ubicacion",
+      "objective": "Mantener rangos con idioma, nivel y ciclo; las validaciones actuales son las del DTO y la persistencia.",
+      "story": "Como administrativo de examenes, quiero configurar rangos de ubicacion, para mantener rangos con idioma, nivel y ciclo; las validaciones actuales son las del DTO y la persistencia.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EXU-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EXU-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de examenes",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "EXU-002",
+      "domain": "examen_ubicacion",
+      "spec": "examen-ubicacion.md",
+      "controller": "CronogramaubicacionController",
+      "title": "Programar cronograma",
+      "objective": "Mantener fechas y modulo del cronograma; actualmente no es requisito de un examen.",
+      "story": "Como administrativo de examenes, quiero programar cronograma, para mantener fechas y modulo del cronograma; actualmente no es requisito de un examen.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EXU-002-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EXU-002-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de examenes",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "EXU-003",
+      "domain": "examen_ubicacion",
+      "spec": "examen-ubicacion.md",
+      "controller": "ExamenesubicacionController",
+      "title": "Crear y gestionar examen",
+      "objective": "Mantener examen con docente, aula, idioma y estado; impedir borrado si hay detalles vinculados.",
+      "story": "Como administrativo de examenes, quiero crear y gestionar examen, para mantener examen con docente, aula, idioma y estado; impedir borrado si hay detalles vinculados.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EXU-003-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EXU-003-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de examenes",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "EXU-004",
+      "domain": "examen_ubicacion",
+      "spec": "examen-ubicacion.md",
+      "controller": "DetallesubicacionController",
+      "title": "Gestionar participantes y resultados",
+      "objective": "Persistir participantes activos y resultados proporcionados por el cliente, y efectuar baja logica.",
+      "story": "Como administrativo de examenes, quiero gestionar participantes y resultados, para persistir participantes activos y resultados proporcionados por el cliente, y efectuar baja logica.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EXU-004-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EXU-004-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de examenes",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "EXU-005",
+      "domain": "examen_ubicacion",
+      "spec": "examen-ubicacion.md",
+      "controller": "DetallesubicacionController",
+      "handlers": [
+        "update"
+      ],
+      "title": "Registrar resultados de ubicacion",
+      "objective": "Guardar nota, calificacion, nivel y terminado recibidos; actualmente el backend no calcula automaticamente nivel y ciclo.",
+      "story": "Como administrativo de examenes, quiero registrar resultados de ubicacion, para guardar nota, calificacion, nivel y terminado recibidos; actualmente el backend no calcula automaticamente nivel y ciclo.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EXU-005-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EXU-005-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de examenes",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "EXU-006",
+      "domain": "examen_ubicacion",
+      "spec": "examen-ubicacion.md",
+      "controller": "ExamenesubicacionController",
+      "handlers": [
+        "update"
+      ],
+      "title": "Actualizar estado de examen",
+      "objective": "Actualizar el estado recibido por la ruta PATCH; no existe validacion integral de cierre en este servicio.",
+      "story": "Como administrativo de examenes, quiero actualizar estado de examen, para actualizar el estado recibido por la ruta PATCH; no existe validacion integral de cierre en este servicio.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EXU-006-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EXU-006-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de examenes",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "EXU-007",
+      "domain": "examen_ubicacion",
+      "spec": "examen-ubicacion.md",
+      "controller": "ActasexamenubicacionController",
+      "title": "Generar y preservar acta inmutable",
+      "objective": "Consolidar una fotografia unica del examen terminado y rechazar cambios o eliminaciones posteriores.",
+      "story": "Como administrativo de examenes, quiero generar un acta inmutable, para preservar los resultados y su trazabilidad.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EXU-007-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EXU-007-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-EXU-007-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT acta unica inmutable actualiza examen y conserva snapshot",
+            "INT acta elimina insercion Mongo si falla actualizacion PostgreSQL"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de examenes",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "EXU-008",
+      "domain": "examen_ubicacion",
+      "spec": "examen-ubicacion.md",
+      "controller": "ActasexamenubicacionController",
+      "handlers": [
+        "findAll",
+        "findOne"
+      ],
+      "title": "Consultar actas de ubicacion",
+      "objective": "Consultar documentos actuales e historicos sin modificarlos; validar ObjectId y existencia.",
+      "story": "Como administrativo de examenes, quiero consultar actas de ubicacion, para consultar documentos actuales e historicos sin modificarlos; validar ObjectId y existencia.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-EXU-008-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-EXU-008-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de examenes",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "FAC-001",
+      "domain": "auxiliares",
+      "spec": "auxiliares.md",
+      "controller": "FacultadesController",
+      "title": "Gestionar facultades",
+      "objective": "Mantener el catalogo de facultades utilizado por estudiantes y escuelas.",
+      "story": "Como administrador de catalogos, quiero gestionar facultades, para mantener el catalogo de facultades utilizado por estudiantes y escuelas.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-FAC-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-FAC-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrador de catalogos",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "GRU-001",
+      "domain": "estructura",
+      "spec": "estructura.md",
+      "controller": "GruposController",
+      "title": "Gestionar grupos",
+      "objective": "Mantener grupos con docente, modulo, ciclo y aula relacionados.",
+      "story": "Como coordinador academico, quiero gestionar grupos, para mantener grupos con docente, modulo, ciclo y aula relacionados.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-GRU-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-GRU-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador academico",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "IDI-001",
+      "domain": "estructura",
+      "spec": "estructura.md",
+      "controller": "IdiomasController",
+      "title": "Gestionar idiomas",
+      "objective": "Mantener idiomas asociados con niveles, solicitudes y examenes.",
+      "story": "Como coordinador academico, quiero gestionar idiomas, para mantener idiomas asociados con niveles, solicitudes y examenes.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-IDI-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-IDI-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador academico",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "MAI-001",
+      "domain": "shared",
+      "spec": "uploads-mailer.md",
+      "controller": "MailerController",
+      "title": "Enviar correo por canal",
+      "objective": "Enviar mensajes por el canal solicitado y devolver confirmacion del backend.",
+      "story": "Como cliente autorizado de CIUNAC, quiero enviar correo por canal, para enviar mensajes por el canal solicitado y devolver confirmacion del backend.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-MAI-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-MAI-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "cliente autorizado de CIUNAC",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "MET-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "EncuestaMetricasDocenteController",
+      "title": "Gestionar metricas docentes",
+      "objective": "Crear y consultar promedios consolidados de encuesta por docente y modulo.",
+      "story": "Como coordinador de evaluacion docente, quiero gestionar metricas docentes, para crear y consultar promedios consolidados de encuesta por docente y modulo.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-MET-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-MET-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "MOD-001",
+      "domain": "estructura",
+      "spec": "estructura.md",
+      "controller": "ModulosController",
+      "title": "Gestionar periodos academicos",
+      "objective": "Mantener modulos y consultar los visibles; el modulo activo determina los indicadores docentes.",
+      "story": "Como coordinador academico, quiero gestionar periodos academicos, para mantener modulos y consultar los visibles; el modulo activo determina los indicadores docentes.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-MOD-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-MOD-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador academico",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "NFI-001",
+      "domain": "calificaciones",
+      "spec": "calificaciones.md",
+      "controller": "NotasfinalController",
+      "title": "Gestionar notas finales",
+      "objective": "Persistir resultados finales conforme a los datos recibidos por el servicio.",
+      "story": "Como operador de calificaciones, quiero gestionar notas finales, para persistir resultados finales conforme a los datos recibidos por el servicio.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-NFI-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-NFI-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "operador de calificaciones",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "NIV-001",
+      "domain": "estructura",
+      "spec": "estructura.md",
+      "controller": "NivelesController",
+      "title": "Gestionar niveles",
+      "objective": "Mantener niveles academicos y sus relaciones existentes.",
+      "story": "Como coordinador academico, quiero gestionar niveles, para mantener niveles academicos y sus relaciones existentes.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-NIV-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-NIV-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador academico",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "NOT-001",
+      "domain": "calificaciones",
+      "spec": "calificaciones.md",
+      "controller": "NotasController",
+      "title": "Gestionar notas",
+      "objective": "Persistir y consultar notas con las relaciones actuales de estudiante y evaluacion.",
+      "story": "Como operador de calificaciones, quiero gestionar notas, para persistir y consultar notas con las relaciones actuales de estudiante y evaluacion.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-NOT-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-NOT-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "operador de calificaciones",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "PAA-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "PuntajeAcademicoAdministrativoController",
+      "title": "Configurar puntajes administrativos",
+      "objective": "Mantener los puntajes de referencia para rubros academicos administrativos.",
+      "story": "Como coordinador de evaluacion docente, quiero configurar puntajes administrativos, para mantener los puntajes de referencia para rubros academicos administrativos.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-PAA-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-PAA-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "PAG-001",
+      "domain": "administrativas",
+      "spec": "pagos-banco.md",
+      "controller": "PagosBancoController",
+      "title": "Consultar y mantener pagos",
+      "objective": "Gestionar pagos y filtrar por periodo; controlar duplicidad por voucher y fecha efectiva.",
+      "story": "Como administrativo de CIUNAC, quiero consultar y mantener pagos, para gestionar pagos y filtrar por periodo; controlar duplicidad por voucher y fecha efectiva.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-PAG-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-PAG-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "PAG-002",
+      "domain": "administrativas",
+      "spec": "pagos-banco.md",
+      "controller": "PagosBancoController",
+      "handlers": [
+        "uploadFile"
+      ],
+      "title": "Conciliar CSV bancario",
+      "objective": "Validar todas las filas y conciliar en transaccion; distinguir duplicados exactos y vouchers reutilizados.",
+      "story": "Como administrativo de CIUNAC, quiero conciliar csv bancario, para validar todas las filas y conciliar en transaccion; distinguir duplicados exactos y vouchers reutilizados.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-PAG-002-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-PAG-002-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-PAG-002-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT conciliacion CSV paga observa omite duplicados y revierte lote invalido",
+            "INT conciliacion revierte cambios si falla insercion bancaria",
+            "INT fecha bancaria caracteriza riesgo de persistencia fuera de UTC"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "PAG-003",
+      "domain": "administrativas",
+      "spec": "pagos-banco.md",
+      "controller": "PagosBancoController",
+      "handlers": [
+        "reverify"
+      ],
+      "title": "Reverificar pagos",
+      "objective": "Evaluar pagos no verificados y observar nuevas solicitudes que reutilizan pagos ya verificados.",
+      "story": "Como administrativo de CIUNAC, quiero reverificar pagos, para evaluar pagos no verificados y observar nuevas solicitudes que reutilizan pagos ya verificados.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-PAG-003-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-PAG-003-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-PAG-003-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT reverificacion enlaza pago pendiente y observa voucher reutilizado"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "PER-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "PerfilDocenteController",
+      "title": "Gestionar perfil profesional",
+      "objective": "Mantener perfil y puntajes profesionales calculados por el servicio actual.",
+      "story": "Como coordinador de evaluacion docente, quiero gestionar perfil profesional, para mantener perfil y puntajes profesionales calculados por el servicio actual.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-PER-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-PER-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "PRE-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "EncuestaPreguntasController",
+      "title": "Configurar preguntas de encuesta",
+      "objective": "Mantener las preguntas y dimensiones empleadas al procesar la encuesta.",
+      "story": "Como coordinador de evaluacion docente, quiero configurar preguntas de encuesta, para mantener las preguntas y dimensiones empleadas al procesar la encuesta.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-PRE-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-PRE-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "Q10-001",
+      "domain": "q10",
+      "spec": "q10.md",
+      "controller": "Q10Controller",
+      "title": "Consultar y sincronizar horarios",
+      "objective": "Obtener cursos del periodo y crear grupos locales con las reglas actuales de correspondencia.",
+      "story": "Como operador de integracion academica, quiero consultar y sincronizar horarios, para obtener cursos del periodo y crear grupos locales con las reglas actuales de correspondencia.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-Q10-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-Q10-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "operador de integracion academica",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "Q10-002",
+      "domain": "q10",
+      "spec": "q10.md",
+      "controller": "Q10Controller",
+      "handlers": [
+        "register"
+      ],
+      "title": "Registrar estudiante Q10 y local",
+      "objective": "Validar catalogos locales, crear en Q10, vincular Codigo_estudiante y registrar programa sin reintentos automaticos ante fallo parcial.",
+      "story": "Como operador de integracion academica, quiero registrar estudiante q10 y local, para validar catalogos locales, crear en Q10, vincular Codigo_estudiante y registrar programa sin reintentos automaticos ante fallo parcial.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-Q10-002-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-Q10-002-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-Q10-002-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT Q10 sincroniza id local y conserva codigo ante matricula fallida",
+            "INT SQL id_q10 es repetible permite nulos e impide duplicados"
+          ]
+        },
+        {
+          "id": "CA-Q10-002-04",
+          "description": "HU-EST-002: tipo y documento opcionales solo locales, compatibilidad PRE/POS y PG con relaciones opcionales, sin campos locales en Q10.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar campos locales a Q10"
+          ]
+        },
+        {
+          "id": "CA-Q10-002-05",
+          "description": "El request minimo, campos locales null, ejemplos y los cuatro codigos 502 coinciden con Swagger y la validacion HTTP.",
+          "kind": "contract",
+          "testFile": "test/sdd/contracts.contract-spec.cjs",
+          "testNames": [
+            "SWAGGER Q10 campos opcionales y nulos coinciden con HTTP",
+            "SWAGGER ejemplos de alumno nuevo validan contra su requestBody",
+            "SWAGGER error 502 documenta Q10_UNAVAILABLE",
+            "SWAGGER error 502 documenta Q10_CREATED_LOCAL_SYNC_FAILED",
+            "SWAGGER error 502 documenta Q10_CREATED_PROGRAM_PENDING",
+            "SWAGGER error 502 documenta Q10_CREATED_INVALID_RESPONSE"
+          ]
+        }
+      ],
+      "version": "1.1",
+      "actor": "operador de integracion academica",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "RCE-001",
+      "domain": "shared",
+      "spec": "reportes.md",
+      "controller": "CertificadosrController",
+      "title": "Consultar reporte de certificados",
+      "objective": "Agrupar certificados digitales y fisicos por nivel con los datos de su solicitud.",
+      "story": "Como cliente autorizado de CIUNAC, quiero consultar reporte de certificados, para agrupar certificados digitales y fisicos por nivel con los datos de su solicitud.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-RCE-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-RCE-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "cliente autorizado de CIUNAC",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "RES-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "PerfilDocenteResultadosController",
+      "title": "Consultar resultados docentes",
+      "objective": "Consultar resultados almacenados por modulo, perfil o identificador.",
+      "story": "Como coordinador de evaluacion docente, quiero consultar resultados docentes, para consultar resultados almacenados por modulo, perfil o identificador.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-RES-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-RES-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "RES-002",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "PerfilDocenteResultadosController",
+      "handlers": [
+        "generarResultado"
+      ],
+      "title": "Calcular resultado docente",
+      "objective": "Sumar encuesta ponderada, cumplimiento ponderado y perfil profesional ponderado y guardar el resultado.",
+      "story": "Como coordinador de evaluacion docente, quiero calcular resultado docente, para sumar encuesta ponderada, cumplimiento ponderado y perfil profesional ponderado y guardar el resultado.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-RES-002-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-RES-002-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-RES-002-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT resultados docentes persisten formula detalle y ranking"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "RES-003",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "PerfilDocenteResultadosController",
+      "handlers": [
+        "getDetalleEvaluacion"
+      ],
+      "title": "Consultar desglose docente",
+      "objective": "Devolver promedios por grupo, cumplimiento y encuestaMetricas; respetar decimales representados como texto.",
+      "story": "Como coordinador de evaluacion docente, quiero consultar desglose docente, para devolver promedios por grupo, cumplimiento y encuestaMetricas; respetar decimales representados como texto.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-RES-003-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-RES-003-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-RES-003-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT resultados docentes persisten formula detalle y ranking"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "ROL-001",
+      "domain": "authentication",
+      "spec": "authentication.md",
+      "controller": "RolPermisosController",
+      "title": "Gestionar permisos por rol",
+      "objective": "Consultar y mantener los permisos efectivos utilizados por PermissionsGuard.",
+      "story": "Como persona usuaria, quiero gestionar permisos por rol, para consultar y mantener los permisos efectivos utilizados por PermissionsGuard.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-ROL-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-ROL-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "persona usuaria",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "RTI-001",
+      "domain": "shared",
+      "spec": "reportes.md",
+      "controller": "TiemposController",
+      "title": "Consultar tiempos de emision",
+      "objective": "Calcular horas transcurridas entre solicitud y emision y devolver el detalle por certificado.",
+      "story": "Como cliente autorizado de CIUNAC, quiero consultar tiempos de emision, para calcular horas transcurridas entre solicitud y emision y devolver el detalle por certificado.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-RTI-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-RTI-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "cliente autorizado de CIUNAC",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "SOL-001",
+      "domain": "administrativas",
+      "spec": "solicitudes-administrativas.md",
+      "controller": "SolicitudesController",
+      "title": "Gestionar solicitudes",
+      "objective": "Crear, consultar y actualizar solicitudes con sus relaciones y filtros por estado, documento y fechas.",
+      "story": "Como administrativo de CIUNAC, quiero gestionar solicitudes, para crear, consultar y actualizar solicitudes con sus relaciones y filtros por estado, documento y fechas.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-SOL-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-SOL-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-SOL-001-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT solicitud manual evita duplicados pendientes"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "SOL-002",
+      "domain": "administrativas",
+      "spec": "solicitudes-administrativas.md",
+      "controller": "SolicitudesController",
+      "handlers": [
+        "reject"
+      ],
+      "title": "Rechazar solicitud",
+      "objective": "Guardar observaciones y estado 5; notificar sin revertir el rechazo si falla SMTP.",
+      "story": "Como administrativo de CIUNAC, quiero rechazar solicitud, para guardar observaciones y estado 5; notificar sin revertir el rechazo si falla SMTP.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-SOL-002-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-SOL-002-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-SOL-002-03",
+          "description": "Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT rechazo persiste observaciones y es idempotente",
+            "INT rechazo conserva estado ante email ausente o SMTP fallido",
+            "INT rechazo no modifica solicitud si estado no esta configurado"
+          ]
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend."
+    },
+    {
+      "id": "SOL-003",
+      "domain": "administrativas",
+      "spec": "solicitudes-administrativas.md",
+      "controller": "SolicitudesController",
+      "handlers": [
+        "remove"
+      ],
+      "title": "Rechazo legado",
+      "objective": "Aplicar la transicion historica a rechazado sin motivo ni correo; ruta deprecada.",
+      "story": "Como administrativo de CIUNAC, quiero rechazo legado, para aplicar la transicion historica a rechazado sin motivo ni correo; ruta deprecada.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-SOL-003-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-SOL-003-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "SYS-001",
+      "domain": "sistema",
+      "spec": "sistema.md",
+      "controller": "AppController",
+      "title": "Consultar utilidades del sistema",
+      "objective": "Mantener los endpoints raiz actuales, incluido el perfil JWT y las utilidades historicas de token.",
+      "story": "Como cliente del sistema, quiero consultar utilidades del sistema, para mantener los endpoints raiz actuales, incluido el perfil JWT y las utilidades historicas de token.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-SYS-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-SYS-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "cliente del sistema",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "TDP-001",
+      "domain": "seguimiento_docente",
+      "spec": "seguimiento-docente.md",
+      "controller": "TipoDocumentoPerfilController",
+      "title": "Configurar documentos del perfil",
+      "objective": "Mantener tipos de documentos que sustentan el perfil profesional.",
+      "story": "Como coordinador de evaluacion docente, quiero configurar documentos del perfil, para mantener tipos de documentos que sustentan el perfil profesional.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-TDP-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-TDP-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "coordinador de evaluacion docente",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "TIP-001",
+      "domain": "administrativas",
+      "spec": "solicitudes-administrativas.md",
+      "controller": "TipossolicitudController",
+      "title": "Gestionar tipos de solicitud",
+      "objective": "Mantener los tipos que clasifican los tramites administrativos.",
+      "story": "Como administrativo de CIUNAC, quiero gestionar tipos de solicitud, para mantener los tipos que clasifican los tramites administrativos.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-TIP-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-TIP-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrativo de CIUNAC",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "TXT-001",
+      "domain": "auxiliares",
+      "spec": "auxiliares.md",
+      "controller": "TextosController",
+      "title": "Mantener textos documentales",
+      "objective": "Guardar y consultar contenido flexible en MongoDB.",
+      "story": "Como administrador de catalogos, quiero mantener textos documentales, para guardar y consultar contenido flexible en MongoDB.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-TXT-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-TXT-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "administrador de catalogos",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "UPL-001",
+      "domain": "shared",
+      "spec": "uploads-mailer.md",
+      "controller": "UploadController",
+      "title": "Cargar archivos a Drive",
+      "objective": "Enviar archivos a una carpeta funcional y devolver identificadores y enlaces de Drive.",
+      "story": "Como cliente autorizado de CIUNAC, quiero cargar archivos a drive, para enviar archivos a una carpeta funcional y devolver identificadores y enlaces de Drive.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-UPL-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-UPL-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        },
+        {
+          "id": "CA-UPL-001-03",
+          "description": "Upload DNI exige file, permite nombre omitido y devuelve viewLink/downloadLink documentados para su uso como imgDoc.",
+          "kind": "contract",
+          "testFile": "test/sdd/contracts.contract-spec.cjs",
+          "testNames": [
+            "SWAGGER upload DNI no exige nombre y devuelve enlaces"
+          ]
+        }
+      ],
+      "version": "1.1",
+      "actor": "cliente autorizado de CIUNAC",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    },
+    {
+      "id": "USR-001",
+      "domain": "authentication",
+      "spec": "authentication.md",
+      "controller": "UsuariosController",
+      "title": "Gestionar usuarios",
+      "objective": "Mantener usuarios y sus vinculaciones academicas mediante los permisos existentes.",
+      "story": "Como persona usuaria, quiero gestionar usuarios, para mantener usuarios y sus vinculaciones academicas mediante los permisos existentes.",
+      "owner": "Equipo tecnico CIUNAC",
+      "state": "Implementado",
+      "criteria": [
+        {
+          "id": "CA-USR-001-01",
+          "description": "La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual.",
+          "kind": "contract"
+        },
+        {
+          "id": "CA-USR-001-02",
+          "description": "Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente.",
+          "kind": "security"
+        }
+      ],
+      "version": "1.0",
+      "actor": "persona usuaria",
+      "verificationLimits": "Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados."
+    }
+  ]
+}

@@ -1,31 +1,67 @@
-# HU-EXU-005: Registrar notas y calcular ubicación
+# HU-EXU-005: Registrar resultados de ubicacion
 
-## Historia
+<!-- Generado desde flows.json. Mantener la narracion de negocio en el spec enlazado. -->
 
-**Como** administrativo autorizado, **quiero** registrar la nota obtenida por cada participante, **para** que el backend determine automáticamente su nivel y ciclo de ubicación.
+## Identificacion y estado
 
-## Precondiciones
+- Caso: CU-EXU-005. Requisito: RF-EXU-005. Version: 1.0. Responsable: Equipo tecnico CIUNAC.
+- Estado: Implementado (AS-IS). La verificacion se acredita exclusivamente en el reporte de `npm run sdd:check`.
+- Especificacion: [examen-ubicacion.md](../../examen-ubicacion.md).
 
-- El detalle está activo y pertenece a un examen `EN_CURSO`.
-- Existen rangos válidos para el idioma del examen.
-- La nota utiliza la escala de 0 a 100.
+## Historia y objetivo
 
-## Criterios de aceptación
+Como administrativo de examenes, quiero registrar resultados de ubicacion, para guardar nota, calificacion, nivel y terminado recibidos; actualmente el backend no calcula automaticamente nivel y ciclo.
 
-- Dada una nota válida, cuando se ejecuta `PATCH /detallesubicacion/:id`, entonces el backend asigna exactamente una calificación, nivel y ciclo.
-- Dada una nota fuera de la escala, cuando se envía, entonces responde `400 Bad Request`.
-- Dada una nota sin rango o con más de un rango coincidente, cuando se procesa, entonces responde `409 Conflict` sin modificar el detalle.
-- El cliente no puede imponer `calificacionId`, `nivelId` ni ciclo en el flujo objetivo.
-- Cuando el resultado queda completo, el detalle conserva `nota`, resultado calculado y `terminado=true`.
+Guardar nota, calificacion, nivel y terminado recibidos; actualmente el backend no calcula automaticamente nivel y ciclo.
 
-## Rutas existentes
+## Actores y precondiciones
 
-- `PATCH /detallesubicacion/:id`
-- `GET /detallesubicacion/:id`
-- `GET /detallesubicacion/examen/:id`
+- Actor: administrativo de examenes; frontend CIUNAC como cliente HTTP.
+- Persistencia y catalogos relacionados disponibles cuando el servicio los utiliza.
+- Autenticacion: api-key. Los permisos por operacion se detallan en la tabla.
 
-## Reglas y dependencias
+## Flujo principal
 
-- La operación usa `Calificacionesubicacion` como fuente de rangos.
-- La modificación debe ser atómica en PostgreSQL.
-- El resultado se registra mediante la ruta de detalle existente y no se calcula en el frontend.
+1. El frontend recoge los datos del proceso y aplica las validaciones de presentacion.
+2. Invoca una de las operaciones del contrato siguiente; el backend aplica sus guards, pipes e interceptores reales.
+3. Ejecuta `update` y devuelve el resultado actual.
+4. El frontend interpreta el codigo y body documentados, actualiza la vista y evita duplicar acciones con efectos externos.
+
+## Contratos API
+
+| Metodo / Ruta | operationId | Entrada | Seguridad / permiso | Respuestas |
+| --- | --- | --- | --- | --- |
+| `PATCH /detallesubicacion/:id` | `DetallesubicacionController_update` | Param: id; Body: UpdateDetallesubicacionDto | api-key  | 200, 400, 401 |
+
+Los schemas completos y tipos opcionales/nulos estan en [OpenAPI](../../../api/openapi.json).
+
+## Alternativas, errores y reglas
+
+- API key/JWT ausente o invalido devuelve 401 cuando el guard correspondiente existe. Un permiso denegado devuelve 403 cuando se exige.
+- Las validaciones de DTO existentes producen 400; un tipo inline no implica validacion de negocio.
+- No se presupone 404: algunos CRUD actuales devuelven 200 con null o respuesta vacia para recursos inexistentes. Verificar el spec y el servicio asociado.
+- Los efectos, errores de integracion, estados y limitaciones particulares estan definidos en la especificacion del dominio.
+- Las propuestas no implementadas se mantienen en [Backlog](../../backlog.md).
+
+## Datos e integraciones
+
+- [src/modules/examen_ubicacion/detallesubicacion/entities/detallesubicacion.entity.ts](../../../../src/modules/examen_ubicacion/detallesubicacion/entities/detallesubicacion.entity.ts).
+
+## Criterios de aceptacion y evidencia
+
+- **CA-EXU-005-01**: La operacion HTTP acepta el contrato documentado y devuelve el codigo y estructura definidos por el controlador actual. Evidencia: [test/sdd/contracts.contract-spec.cjs](../../../../test/sdd/contracts.contract-spec.cjs), `HTTP DetallesubicacionController_update`.
+- **CA-EXU-005-02**: Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente. Evidencia: [test/sdd/contracts.contract-spec.cjs](../../../../test/sdd/contracts.contract-spec.cjs), `SEC DetallesubicacionController_update`.
+
+Limite de evidencia: Contrato HTTP y guards enlazados; reglas particulares se describen en la spec. Escenarios adicionales de persistencia y frontend no se declaran verificados.
+
+## Responsabilidades frontend/backend
+
+- Frontend: enviar los nombres, tipos y contenido del contrato; manejar estados de carga, confirmacion y error del proceso.
+- Backend: ejecutar las validaciones, permisos, consultas y persistencia implementadas. La UI no reemplaza estos controles.
+- La guia frontend es un contrato de integracion; no acredita la implementacion visual del frontend.
+
+## Trazabilidad tecnica
+
+- [src/modules/examen_ubicacion/detallesubicacion/detallesubicacion.controller.ts](../../../../src/modules/examen_ubicacion/detallesubicacion/detallesubicacion.controller.ts).
+- [src/modules/examen_ubicacion/detallesubicacion/detallesubicacion.service.ts](../../../../src/modules/examen_ubicacion/detallesubicacion/detallesubicacion.service.ts).
+- [src/modules/examen_ubicacion/detallesubicacion/dto/update-detallesubicacion.dto.ts](../../../../src/modules/examen_ubicacion/detallesubicacion/dto/update-detallesubicacion.dto.ts).

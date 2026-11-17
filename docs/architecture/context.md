@@ -35,5 +35,5 @@ C4Context
 | PostgreSQL | Entidades principales: usuarios, estudiantes, docentes, estructura, calificaciones, solicitudes, pagos y seguimiento docente. |
 | MongoDB | Schemas de textos, certificados, constancias, actas y solicitudes de beca. |
 | Q10 | Creacion de estudiantes y gestion de horarios/cursos. |
-| Google Drive | Carga y movimiento de archivos para DNI, becas, vouchers, CVs y constancias. |
+| Google Drive | Carga, firma y movimiento de archivos para DNI, becas, vouchers, CVs, constancias y certificados. |
 | SMTP | Correos por canales de alumnos, certificados y recauda. |

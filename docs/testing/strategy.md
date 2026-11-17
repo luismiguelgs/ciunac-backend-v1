@@ -1,67 +1,42 @@
-# Estrategia de Testing
+# Estrategia de pruebas SDD
 
-## Objetivo
+## Capas y evidencia
 
-Alinear pruebas con specs de negocio y contratos tecnicos. Cada caso de uso importante debe tener pruebas que cubran flujo feliz, errores de validacion, errores de permisos y persistencia.
+| Capa          | Comando                  | Alcance                                                                                                |
+| ------------- | ------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Unitarias     | npm test -- --runInBand  | Suite existente; instanciacion no acredita negocio                                                     |
+| Contratos     | npm run test:contract    | Cada operacion: controller, pipes, guards, interceptor y respuesta contra OpenAPI; servicios simulados |
+| Integracion   | npm run test:integration | Servicios y repositorios reales; PostgreSQL/Mongo aislados; Q10/Drive/SMTP simulados                   |
+| E2E enfocados | npm run test:e2e         | Configuracion aislada, sin AppModule ni .env operativo                                                 |
+| Cierre        | npm run sdd:check        | Compilacion, paridad, unitarias, contratos e integracion                                               |
 
-## Comandos
+Los contratos prueban transporte y delegacion, no todos los caminos de un servicio simulado. Las integraciones verifican las reglas criticas siguientes. Las propuestas siguen en [backlog](../specs/backlog.md).
 
-| Objetivo | Comando |
-| --- | --- |
-| Unit tests | `npm run test` |
-| Test especifico | `npx jest src/path/to/file.spec.ts` |
-| Watch | `npm run test:watch` |
-| Coverage | `npm run test:cov` |
-| E2E | `npm run test:e2e` |
-| Build | `npm run build` |
+## Bases aisladas
 
-## Piramide recomendada
+[Compose](../../test/sdd/compose.yml): PostgreSQL 16.10-alpine3.22 y Mongo 8.0.15-noble. Base exclusiva ciunac_sdd_test, puertos loopback 16543/27028, almacenamiento temporal y retirada al finalizar. No se carga dotenv ni AppModule. El helper exige nombre, host, puertos y URI exactos antes de sincronizar.
 
-- Unit: services, guards, transformaciones, calculos y validaciones de negocio.
-- Integration: controllers con providers mockeados o bases de prueba cuando aplique.
-- E2E: flujos criticos completos con Supertest.
+Fixtures desde entidades TypeORM y schemas Mongoose compilados. synchronize:true solo en esa base temporal; produccion mantiene false. SQL id_q10 ejecutado dos veces en transaccion: longitud, nulos y unicidad; rollback final.
 
-## Trazabilidad spec -> pruebas
+## Integracion critica
 
-| Spec | Unit | Integration | E2E |
-| --- | --- | --- | --- |
-| Authentication | `AuthService`, guards, permisos | register/login/profile | login -> profile -> permiso |
-| Solicitudes administrativas | filtros, estados, fechas | solicitud + documento | solicitud -> constancia/certificado |
-| Pagos banco | parseo CSV, reverificacion | upload CSV | upload -> list -> reverify |
-| Examen ubicación | rangos, elegibilidad, cálculo, cierre, consolidación, duplicidad y compensación | cronograma -> examen -> detalle -> resultado -> acta | examen cerrado -> acta -> consulta; segundo intento `409` |
-| Seguimiento docente | resultados y dashboard | perfil -> documento -> resultado | CSV encuesta -> dashboard |
-| Q10 | mock Q10 | endpoints con API key | horarios/cursos |
-| Uploads y mailer | resolver carpeta, transporter | mocks Drive/SMTP | upload/mail basico |
+- Rechazo: estados vigentes, observaciones, email oficial, idempotencia y fallo SMTP.
+- Solicitud manual: pendiente duplicada rechazada.
+- CSV banco: pago, observacion, duplicados, lote invalido sin persistencia, reverificacion y voucher reutilizado.
+- Recuperacion: SHA256, cooldown, respuesta uniforme, bcrypt, uso unico e invalidacion SMTP.
+- Certificado: creacion sin transicion, carga sin URL, firma con URL Mongo y solicitud terminada; compensacion.
+- Acta: snapshot, examen 8 a 13, indice unico, inmutabilidad y compensacion Mongo.
+- Q10: UUID local, idempotencia, conflicto, respuesta invalida y persistencia ante matricula fallida.
+- Alumno local: POST/PATCH HTTP con servicios y repositorios reales, fechas validas/imposibles/null/ausentes y conservacion del dia en procesos separados UTC/America-Lima.
+- Swagger alumno nuevo: requests Q10 minimos y nulls, ejemplos de alta, nombre de upload opcional, enlaces de respuesta y los cuatro codigos 502; comparacion contra la validacion HTTP real.
+- Docentes: formula 81, detalle textual ponderado, persistencia y ranking.
 
-## Casos transversales obligatorios
+## Trazabilidad y cierre
 
-- API key ausente o invalida.
-- JWT ausente, expirado o invalido.
-- Usuario sin permiso.
-- DTO con campos no permitidos.
-- Recurso inexistente.
-- Error de integracion externa.
-- CSV vacio, invalido y valido.
+[traceability.json](../specs/traceability.json) relaciona HU, CU, requisito, CA, operationId, implementacion y archivo/nombre de prueba. Cada operacion tiene HTTP y SEC; reglas criticas tienen INT.
 
-## Matriz mínima: examen de ubicación
+artifacts/sdd/verification.json solo declara Verificado cuando todas las etapas aprueban y las pruebas exigidas aparecen aprobadas en el archivo y nombre exactos de esa ejecucion. Excluye pruebas "should be defined" y registra huella SHA256 de las fuentes, que no deben cambiar durante el cierre. Versionar una story no equivale a verificarla. La cobertura de operaciones no equivale a cobertura total de ramas.
 
-- Rangos: límites 0 y 100, mínimo mayor al máximo, solapamientos y nota sin coincidencia.
-- Cronograma y examen: referencias inexistentes, código duplicado y transiciones inválidas.
-- Participantes: solicitud distinta de tipo 7, estado distinto de 4, voucher vacío, idioma incompatible y asignación duplicada.
-- Resultados: nota válida, fuera de rango, cálculo único de nivel/ciclo y detalle inactivo.
-- Cierre: examen vacío, participante pendiente y cierre exitoso.
-- Acta: DTO con solo `examenId`, examen inexistente, estado distinto de `CERRADO`, participante incompleto, creación exitosa e índice único.
-- Inmutabilidad: `PATCH` y `DELETE` de acta publicada responden `409 ACTA_INMUTABLE`.
-- Consistencia: fallo MongoDB, fallo PostgreSQL posterior a la inserción y compensación del documento no publicado.
-- Seguridad: API key, JWT, permiso administrativo y campos no permitidos.
+Para cambios: actualizar spec/metadata, compilar, exportar API, regenerar docs, revisar diff y ejecutar cierre. GitHub Actions publica snapshots, diferencias y resultados incluso ante fallo. Docker debe estar disponible; los puertos de prueba deben estar libres.
 
-## Criterio de salida para nuevas features
-
-Una feature esta lista cuando:
-
-1. Tiene spec actualizado.
-2. Tiene endpoint documentado.
-3. Tiene DTO validado.
-4. Tiene prueba unitaria del service.
-5. Tiene prueba de controller o e2e si expone flujo critico.
-6. `npm run build` pasa.
+La implementacion y validacion visual frontend siguen pendientes en su repositorio.

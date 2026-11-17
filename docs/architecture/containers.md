@@ -44,13 +44,8 @@ Cada feature debe mantener:
 - Entity TypeORM o Schema Mongoose segun persistencia.
 - Tests unitarios en `*.spec.ts`.
 
-## Backlog OpenAPI
+## Contratos y verificacion
 
-Para generar contratos verificables:
+OpenAPI ya esta configurado mediante SwaggerModule y metadata por operacion. El plugin compila DTOs, entidades y schemas; exportacion aislada y pruebas se describen en [OpenAPI](../api/openapi.md).
 
-1. Instalar `@nestjs/swagger` y `swagger-ui-express`.
-2. Configurar `SwaggerModule` en `main.ts`.
-3. Agregar `@ApiTags` por controller.
-4. Agregar `@ApiOperation`, `@ApiResponse`, `@ApiBearerAuth` y `@ApiHeader({ name: 'x-api-key' })`.
-5. Decorar DTOs con `@ApiProperty`.
-6. Publicar una ruta interna, por ejemplo `/api/docs`, protegida segun ambiente.
+Los reportes certificadosr/tiempos consultan MongoDB y PostgreSQL sin almacenamiento propio. Recuperacion de contrasena guarda tokens hash en PostgreSQL y usa SMTP. Ninguna capa comparte una transaccion distribuida entre PostgreSQL, MongoDB y Drive.

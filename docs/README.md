@@ -9,11 +9,18 @@ Esta carpeta contiene la documentacion versionada del backend CIUNAC. Esta pensa
 - Para revisar seguridad, variables sensibles y riesgos, leer [Seguridad](architecture/security.md).
 - Para revisar persistencia, leer [Datos y persistencia](architecture/data.md).
 - Para implementar o validar endpoints, usar [Inventario API](api/endpoints.md) y [Swagger / OpenAPI](api/openapi.md).
-- Para trabajar con spec-driven development, usar [Plantilla de specs](specs/spec-template.md), [Índice de casos de uso](specs/use-cases-index.md) y, para el flujo ya especificado, [Exámenes de ubicación](specs/examen-ubicacion.md).
+- Para trabajar con spec-driven development, usar [Workflow SDD](specs/workflow.md), [Plantilla](specs/spec-template.md), [Historias y casos de uso](specs/use-cases-index.md) y [Matriz verificable](specs/traceability.json).
+- Para integrar pantallas, usar [Guia frontend por flujo](frontend/integration.md).
 - Para pruebas, usar [Estrategia de testing](testing/strategy.md).
 - Para operacion y configuracion, usar [Configuracion operacional](operations/configuration.md).
 
 ## Estado inicial
+
+Las specs describen el comportamiento actual (AS-IS). Las propuestas y limitaciones estan en [backlog](specs/backlog.md). Los conteos se descubren desde codigo y se publican en el inventario API, la matriz y el [inventario de modulos](architecture/module-inventory.md).
+
+El [registro de reconciliacion](specs/reconciliation.md) identifica las operaciones omitidas/obsoletas y las contradicciones corregidas, sin modificar reglas de negocio.
+
+Ciclo: Borrador -> Especificado -> Implementado -> Verificado. Solo una ejecucion aprobada de npm run sdd:check acredita Verificado mediante artifacts/sdd/verification.json con pruebas, fecha y commit. Cobertura documental no equivale a ausencia de defectos ni a cobertura total de ramas.
 
 La documentacion refleja el estado actual del codigo fuente bajo `src/`:
 
@@ -46,3 +53,13 @@ Cada cambio funcional nuevo debe actualizar al menos:
 3. La metadata OpenAPI si cambia seguridad, multipart, deprecacion o contrato.
 4. La documentacion de datos si cambia una entidad o schema.
 5. La estrategia de pruebas si cambia el criterio de aceptacion o el riesgo.
+
+## Specs por dominio
+
+- [Autenticacion y recuperacion](specs/authentication.md), [principales](specs/principales.md), [auxiliares](specs/auxiliares.md), [estructura](specs/estructura.md).
+- [Solicitudes](specs/solicitudes-administrativas.md), [rechazo](specs/rechazo-solicitud.md), [pagos CSV](specs/pagos-banco.md), [becas](specs/becas.md), [certificados](specs/certificados.md), [constancias](specs/constancias.md).
+- [Seguimiento docente y formulas](specs/seguimiento-docente.md), [examen de ubicacion](specs/examen-ubicacion.md), [calificaciones](specs/calificaciones.md).
+- [Q10](specs/q10.md), [upload y correo](specs/uploads-mailer.md), [reportes](specs/reportes.md), [sistema legado](specs/sistema.md).
+- Backend implementado: [Estudiante nuevo: tipo y documento opcionales, escuelas PRE/POS](specs/estudiante-nuevo.md). Despliegue SQL y clasificacion historica requeridos; frontend pendiente.
+
+Actualizar spec, metadata y pruebas; ejecutar npm run build, npm run api:export y npm run docs:update; revisar diffs y cerrar con npm run sdd:check. CI repite las verificaciones y publica evidencia. La implementacion y validacion visual frontend quedan pendientes en su repositorio.
