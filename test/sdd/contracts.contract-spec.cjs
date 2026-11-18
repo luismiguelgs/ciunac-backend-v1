@@ -337,7 +337,14 @@ const q10Minimum = {
 test('SWAGGER Q10 campos opcionales y nulos coinciden con HTTP', async () => {
   for (const optional of [
     {},
-    { tipoEstudiante: null, imgDoc: null, facultadId: null, escuelaId: null },
+    {
+      tipoEstudiante: null,
+      imgDoc: null,
+      codigo: null,
+      facultadId: null,
+      escuelaId: null,
+    },
+    { codigo: '0012345678', imgDoc: 'https://example.com/documento.pdf' },
   ]) {
     const route = source.routes.find(
       (item) => item.operationId === 'Q10Controller_register',

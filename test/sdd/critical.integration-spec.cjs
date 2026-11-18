@@ -950,8 +950,8 @@ test('INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar 
     {},
   );
   const original = global.fetch;
-  let code = 0;
-  global.fetch = jest.fn(async (url) => {
+  const remoteStudents = new Map();
+  global.fetch = jest.fn(async (url, options) => {
     if (url.includes('/periodos'))
       return {
         ok: true,
@@ -961,9 +961,18 @@ test('INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar 
       return { ok: true, json: async () => [{ Consecutivo_inscripcion: 20 }] };
     if (url.includes('/matriculasProgramas'))
       return { ok: true, json: async () => ({ matricula: 1 }) };
+    const { Numero_identificacion } = JSON.parse(options.body);
+    if (!remoteStudents.has(Numero_identificacion)) {
+      remoteStudents.set(
+        Numero_identificacion,
+        `Q10-TIPO-${remoteStudents.size + 1}`,
+      );
+    }
     return {
       ok: true,
-      json: async () => ({ Codigo_estudiante: `Q10-TIPO-${++code}` }),
+      json: async () => ({
+        Codigo_estudiante: remoteStudents.get(Numero_identificacion),
+      }),
     };
   });
   const payload = {
@@ -984,10 +993,12 @@ test('INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar 
         tipoEstudiante === 'PG' ? historical.id : schools[tipoEstudiante].id;
       const Numero_identificacion = `2222000${index}`;
       const imgDoc = `https://drive.google.com/file/d/documento-${index}/view`;
+      const codigo = `001234567${index}`;
       const result = await q10.crearEstudianteEnQ10({
         ...payload,
         Numero_identificacion,
         tipoEstudiante,
+        codigo,
         imgDoc,
         facultadId: faculty.id,
         escuelaId,
@@ -995,38 +1006,49 @@ test('INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar 
       const student = await estudiantes.findOne(result.estudiante.id);
       expect(student).toMatchObject({
         tipoEstudiante,
+        codigo,
         imgDoc,
         escuelaId,
         facultadId: faculty.id,
         idQ10: result.estudiante.idQ10,
       });
       assertContract('EstudiantesController_findOne', student);
-      const existingId = student.id;
-      await estudiantes.syncFromQ10({
-        idQ10: student.idQ10,
-        numeroDocumento: Numero_identificacion,
-        nombres: student.nombres,
-        apellidos: student.apellidos,
-        genero: student.genero,
-        fechaNacimiento: student.fechaNacimiento,
-        tipoDocumento: student.tipoDocumento,
-        celular: student.celular,
+      const updated = {
+        codigo: `009876543${index}`,
+        imgDoc: `${imgDoc}?updated=1`,
+      };
+      for (const changes of [
+        updated,
+        {},
+        { codigo: null, imgDoc: null, tipoEstudiante: null },
+      ]) {
+        const synchronized = await q10.crearEstudianteEnQ10({
+          ...payload,
+          Numero_identificacion,
+          ...changes,
+        });
+        expect(synchronized.estudiante.id).toBe(student.id);
+        expect(await estudiantes.findOne(student.id)).toMatchObject({
+          tipoEstudiante,
+          ...updated,
+        });
+      }
+    }
+    for (const [Numero_identificacion, optional] of [
+      ['22220003', {}],
+      ['22220005', { codigo: null, imgDoc: null }],
+    ]) {
+      const legacy = await q10.crearEstudianteEnQ10({
+        ...payload,
+        Numero_identificacion,
+        ...optional,
+      });
+      expect(await estudiantes.findOne(legacy.estudiante.id)).toMatchObject({
         tipoEstudiante: null,
+        codigo: null,
         imgDoc: null,
       });
-      expect(await estudiantes.findOne(existingId)).toMatchObject({
-        tipoEstudiante,
-        imgDoc,
-      });
     }
-    const legacy = await q10.crearEstudianteEnQ10({
-      ...payload,
-      Numero_identificacion: '22220003',
-    });
-    expect(await estudiantes.findOne(legacy.estudiante.id)).toMatchObject({
-      tipoEstudiante: null,
-      imgDoc: null,
-    });
     const calls = global.fetch.mock.calls.length;
     for (const escuelaId of [historical.id, schools.POS.id]) {
       await expect(
@@ -1053,7 +1075,13 @@ test('INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar 
     for (const [, options] of global.fetch.mock.calls) {
       if (!options?.body) continue;
       const remote = JSON.parse(options.body);
-      for (const key of ['tipoEstudiante', 'imgDoc', 'facultadId', 'escuelaId'])
+      for (const key of [
+        'tipoEstudiante',
+        'codigo',
+        'imgDoc',
+        'facultadId',
+        'escuelaId',
+      ])
         expect(remote).not.toHaveProperty(key);
     }
     const escuelas = service(

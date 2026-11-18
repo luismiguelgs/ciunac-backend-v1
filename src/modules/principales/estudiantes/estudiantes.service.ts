@@ -193,6 +193,7 @@ export class EstudiantesService {
       facultadId,
       escuelaId,
       tipoEstudiante,
+      codigo,
       imgDoc,
       ...datosPersonales
     } = input;
@@ -201,6 +202,7 @@ export class EstudiantesService {
       ...(facultadId != null ? { facultadId } : {}),
       ...(escuelaId != null ? { escuelaId } : {}),
       ...(tipoEstudiante != null ? { tipoEstudiante } : {}),
+      ...(codigo != null ? { codigo } : {}),
       ...(imgDoc != null ? { imgDoc } : {}),
     };
     const estudiante = estudiantePorDocumento

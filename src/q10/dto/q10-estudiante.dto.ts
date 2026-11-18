@@ -8,9 +8,11 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Length,
   Min,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   TIPOS_ESTUDIANTE,
   TipoEstudiante,
@@ -153,11 +155,33 @@ export class Q10EstudianteDto {
 
   @ApiPropertyOptional({
     type: String,
+    minLength: 1,
+    maxLength: 50,
+    nullable: true,
+    example: '0012345678',
+    description:
+      'Codigo de alumno local. Se recortan espacios de los extremos; null u omision conserva el valor anterior. No se envia a Q10.',
+  })
+  @Transform(
+    ({ obj, key }) => {
+      // Use the original input so implicit conversion cannot turn numbers into codes.
+      const input: unknown = obj[key];
+      return typeof input === 'string' ? input.trim() : input;
+    },
+    { toClassOnly: true },
+  )
+  @IsOptional()
+  @IsString()
+  @Length(1, 50)
+  codigo?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
     format: 'uri',
     nullable: true,
     example: 'https://drive.google.com/file/d/ID_DEVUELTO_POR_UPLOAD/view',
     description:
-      'Referencia local del documento cargado en DNIS. No se envia a Q10; null se omite.',
+      'URL absoluta HTTP/HTTPS (viewLink del upload DNIS). Se guarda en estudiantes.img_doc. La clave JSON es imgDoc. No se envia a Q10; null se omite.',
   })
   @IsOptional()
   @IsString()

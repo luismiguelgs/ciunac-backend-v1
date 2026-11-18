@@ -50,7 +50,9 @@ Las historias pertenecen al proceso de negocio, no a un repositorio frontend exc
 
 ## Validacion pendiente en frontend
 
-El backend de [estudiante nuevo](../specs/estudiante-nuevo.md) acepta `tipoEstudiante` PRE/POS/PG e `imgDoc` opcionales en `/q10/estudiantes`; solo se guardan en la tabla estudiantes. Omitirlos o enviar null conserva los valores anteriores. PG admite IDs academicos opcionales. Para PRE/POS, filtrar escuelas por tipo y facultad; una escuela sin clasificar o incompatible devuelve 400. Si se adjunta documento, cargarlo primero por `/upload/DNIS` y enviar su viewLink como imgDoc (URL HTTP/HTTPS absoluta). Conservar el enlace y manejar fallos parciales sin repetir el alta Q10. La pantalla frontend no se implementa en esta entrega.
+El backend de [estudiante nuevo](../specs/estudiante-nuevo.md) acepta `tipoEstudiante` PRE/POS/PG, `codigo` e `imgDoc` opcionales en `/q10/estudiantes`. Se guardan en PostgreSQL. Omitirlos o enviar `null` conserva los valores anteriores. PG admite IDs academicos opcionales. Para PRE/POS, filtrar escuelas por tipo y facultad. Una escuela sin clasificar o incompatible devuelve `400`.
+
+Enviar `codigo` como texto (por ejemplo, `"0012345678"`). El backend recorta espacios de los extremos, conserva ceros iniciales y exige entre 1 y 50 caracteres. Si se adjunta un documento, cargarlo primero por `/upload/DNIS` y enviar su `viewLink` como `imgDoc` (URL HTTP/HTTPS absoluta). La columna es `estudiantes.img_doc` y la clave JSON `img_doc` devuelve `400`. Consultar los valores guardados en `GET /estudiantes/:id`. Conservar el enlace y manejar fallos parciales sin repetir el alta Q10.
 
 El upload admite nombre omitido y devuelve viewLink, no url. Los cinco campos Q10 Direccion/Lugar_nacimiento/Lugar_residencia/Consecutivo_sedejornada/Consecutivo_periodo no deben exigirse al usuario. Para alta local usar fechaNacimiento="2000-01-01", sin hora ni zona; no convertir con new Date().toISOString(). Usar POST /estudiantes solo si NO se realiza alta Q10.
 

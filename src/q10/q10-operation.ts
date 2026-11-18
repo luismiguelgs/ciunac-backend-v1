@@ -59,6 +59,7 @@ const fields = new Set([
   'facultadId',
   'escuelaId',
   'tipoEstudiante',
+  'codigo',
   'imgDoc',
 ]);
 const rules = new Set([
@@ -71,6 +72,7 @@ const rules = new Set([
   'min',
   'isNumber',
   'isUrl',
+  'isLength',
   'whitelistValidation',
   'FACULTY_NOT_FOUND',
   'SCHOOL_NOT_FOUND',

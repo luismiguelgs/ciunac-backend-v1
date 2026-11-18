@@ -123,7 +123,14 @@ export class Q10Service {
     body: Q10EstudianteDto,
   ): Promise<Q10EstudianteRegistrationResponseDto> {
     q10Stage('LOCAL_VALIDATION');
-    const { facultadId, escuelaId, tipoEstudiante, imgDoc, ...datosQ10 } = body;
+    const {
+      facultadId,
+      escuelaId,
+      tipoEstudiante,
+      codigo,
+      imgDoc,
+      ...datosQ10
+    } = body;
     await this.estudiantesService.validarFacultadYEscuela({
       facultadId,
       escuelaId,
@@ -323,6 +330,7 @@ export class Q10Service {
       facultadId: originalBody.facultadId,
       escuelaId: originalBody.escuelaId,
       tipoEstudiante: originalBody.tipoEstudiante,
+      codigo: originalBody.codigo,
       imgDoc: originalBody.imgDoc,
     });
   }

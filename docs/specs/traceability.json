@@ -3612,7 +3612,7 @@
         },
         {
           "id": "CA-Q10-002-04",
-          "description": "HU-EST-002: tipo y documento opcionales solo locales, compatibilidad PRE/POS y PG con relaciones opcionales, sin campos locales en Q10.",
+          "description": "HU-EST-002: tipo, codigo y documento opcionales solo locales, compatibilidad PRE/POS y PG con relaciones opcionales, sin campos locales en Q10.",
           "kind": "integration",
           "testFile": "test/sdd/critical.integration-spec.cjs",
           "testNames": [
@@ -12738,7 +12738,7 @@
       "controller": "Q10Controller",
       "handler": "guardarHorariosCursos",
       "controllerFile": "src/q10/q10.controller.ts",
-      "line": 98,
+      "line": 99,
       "domain": "q10",
       "module": "q10",
       "successStatus": 201,
@@ -12780,7 +12780,7 @@
       "controller": "Q10Controller",
       "handler": "listarHorariosCursos",
       "controllerFile": "src/q10/q10.controller.ts",
-      "line": 93,
+      "line": 94,
       "domain": "q10",
       "module": "q10",
       "successStatus": 200,

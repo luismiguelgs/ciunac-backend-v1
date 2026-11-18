@@ -14,5 +14,6 @@ export interface SyncEstudianteQ10Input {
   facultadId?: number | null;
   escuelaId?: number | null;
   tipoEstudiante?: TipoEstudiante | null;
+  codigo?: string | null;
   imgDoc?: string | null;
 }

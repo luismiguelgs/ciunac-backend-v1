@@ -3260,6 +3260,14 @@
           "Telefono": {
             "type": "string"
           },
+          "codigo": {
+            "description": "Codigo de alumno local. Se recortan espacios de los extremos; null u omision conserva el valor anterior. No se envia a Q10.",
+            "example": "0012345678",
+            "maxLength": 50,
+            "minLength": 1,
+            "nullable": true,
+            "type": "string"
+          },
           "escuelaId": {
             "description": "ID de escuela del catalogo local. No se envia a Q10; null se omite.",
             "example": 8,
@@ -3275,7 +3283,7 @@
             "type": "integer"
           },
           "imgDoc": {
-            "description": "Referencia local del documento cargado en DNIS. No se envia a Q10; null se omite.",
+            "description": "URL absoluta HTTP/HTTPS (viewLink del upload DNIS). Se guarda en estudiantes.img_doc. La clave JSON es imgDoc. No se envia a Q10; null se omite.",
             "example": "https://drive.google.com/file/d/ID_DEVUELTO_POR_UPLOAD/view",
             "format": "uri",
             "nullable": true,
@@ -14348,7 +14356,7 @@
     },
     "/q10/estudiantes": {
       "post": {
-        "description": "tipoEstudiante, imgDoc, facultadId y escuelaId son opcionales y se guardan solo en estudiantes (PostgreSQL), nunca se envian a Q10. PRE/POS requieren una escuela del mismo tipo si se selecciona; PG admite relaciones academicas. Los valores omitidos o null conservan los datos locales existentes.",
+        "description": "tipoEstudiante, codigo, imgDoc, facultadId y escuelaId son opcionales y se guardan solo en estudiantes (PostgreSQL), nunca se envian a Q10. PRE/POS requieren una escuela del mismo tipo si se selecciona; PG admite relaciones academicas. Los valores omitidos o null conservan los datos locales existentes.",
         "operationId": "Q10Controller_register",
         "parameters": [
           {
@@ -14380,6 +14388,7 @@
                     "Segundo_apellido": "Lopez",
                     "Segundo_nombre": "Maria",
                     "Telefono": "014444444",
+                    "codigo": "0012345678",
                     "escuelaId": 8,
                     "facultadId": 3,
                     "imgDoc": "https://drive.google.com/file/d/ID_DEVUELTO_POR_UPLOAD/view",
@@ -14413,7 +14422,7 @@
                 }
               }
             },
-            "description": "Datos invalidos, tipoEstudiante o URL imgDoc invalidos, facultad o escuela inexistentes, escuela sin clasificar o incompatible con la facultad/tipo del estudiante, o registro rechazado por Q10."
+            "description": "Datos invalidos, incluidos codigo invalido, URL imgDoc invalida o propiedad img_doc no admitida; facultad o escuela inexistentes, escuela sin clasificar o incompatible, o rechazo de Q10."
           },
           "401": {
             "description": "Credenciales ausentes o invalidas."

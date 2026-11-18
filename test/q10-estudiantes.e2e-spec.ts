@@ -94,6 +94,8 @@ describe('Q10 student registration (e2e)', () => {
     { imgDoc: 'https://drive.google.com/file/d/documento/view' },
     { tipoEstudiante: 'PRE', imgDoc: 'http://example.com/documento.pdf' },
     { tipoEstudiante: null, imgDoc: null },
+    { codigo: null },
+    { codigo: '0'.repeat(50) },
   ])('accepts optional local academic fields: %j', async (academicData) => {
     await request(app.getHttpServer())
       .post('/q10/estudiantes')
@@ -103,6 +105,18 @@ describe('Q10 student registration (e2e)', () => {
 
     expect(q10Service.crearEstudianteEnQ10).toHaveBeenCalledWith(
       expect.objectContaining(academicData),
+    );
+  });
+
+  it('trims the student code without losing leading zeros', async () => {
+    await request(app.getHttpServer())
+      .post('/q10/estudiantes')
+      .set('x-api-key', 'test-api-key')
+      .send({ ...payload, codigo: '  0012345678  ' })
+      .expect(201);
+
+    expect(q10Service.crearEstudianteEnQ10).toHaveBeenCalledWith(
+      expect.objectContaining({ codigo: '0012345678' }),
     );
   });
 
@@ -123,8 +137,16 @@ describe('Q10 student registration (e2e)', () => {
     { imgDoc: 'ftp://example.com/documento.pdf' },
     { imgDoc: 'javascript:alert(1)' },
     { imgDoc: 'drive.google.com/file/d/documento/view' },
+    { img_doc: 'https://example.com/documento.pdf' },
+    { codigo: '' },
+    { codigo: '   ' },
+    { codigo: '0'.repeat(51) },
+    { codigo: 12345678 },
+    { codigo: true },
+    { codigo: ['0012345678'] },
+    { codigo: { valor: '0012345678' } },
   ])(
-    'rejects invalid academic IDs at the HTTP boundary: %j',
+    'rejects invalid local fields at the HTTP boundary: %j',
     async (academicData) => {
       await request(app.getHttpServer())
         .post('/q10/estudiantes')
@@ -150,8 +172,10 @@ describe('Q10 student registration (e2e)', () => {
           enum: ['PRE', 'POS', 'PG', null],
         },
         imgDoc: { type: 'string', nullable: true, format: 'uri' },
+        codigo: { type: 'string', nullable: true, minLength: 1, maxLength: 50 },
       },
     });
+    expect(schema?.properties).not.toHaveProperty('img_doc');
     const operation = document.paths['/q10/estudiantes'].post;
     expect(operation?.requestBody).toMatchObject({
       content: {
@@ -163,6 +187,7 @@ describe('Q10 student registration (e2e)', () => {
                 Codigo_programa: 'INGLES',
                 facultadId: 3,
                 escuelaId: 8,
+                codigo: '0012345678',
               },
             },
           },

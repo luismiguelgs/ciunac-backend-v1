@@ -30,7 +30,7 @@ export class Q10Controller {
   @ApiOperation({
     summary: 'Crear estudiante en Q10 y sincronizarlo localmente',
     description:
-      'tipoEstudiante, imgDoc, facultadId y escuelaId son opcionales y se guardan solo en estudiantes (PostgreSQL), nunca se envian a Q10. PRE/POS requieren una escuela del mismo tipo si se selecciona; PG admite relaciones academicas. Los valores omitidos o null conservan los datos locales existentes.',
+      'tipoEstudiante, codigo, imgDoc, facultadId y escuelaId son opcionales y se guardan solo en estudiantes (PostgreSQL), nunca se envian a Q10. PRE/POS requieren una escuela del mismo tipo si se selecciona; PG admite relaciones academicas. Los valores omitidos o null conservan los datos locales existentes.',
   })
   @ApiResponse({ status: 201, type: Q10EstudianteRegistrationResponseDto })
   @ApiBody({
@@ -55,6 +55,7 @@ export class Q10Controller {
           facultadId: 3,
           escuelaId: 8,
           tipoEstudiante: 'PRE',
+          codigo: '0012345678',
           imgDoc: 'https://drive.google.com/file/d/ID_DEVUELTO_POR_UPLOAD/view',
         },
       },
@@ -63,7 +64,7 @@ export class Q10Controller {
   @ApiBadRequestResponse({
     type: Q10RegistrationErrorResponseDto,
     description:
-      'Datos invalidos, tipoEstudiante o URL imgDoc invalidos, facultad o escuela inexistentes, escuela sin clasificar o incompatible con la facultad/tipo del estudiante, o registro rechazado por Q10.',
+      'Datos invalidos, incluidos codigo invalido, URL imgDoc invalida o propiedad img_doc no admitida; facultad o escuela inexistentes, escuela sin clasificar o incompatible, o rechazo de Q10.',
   })
   @ApiConflictResponse({
     type: Q10RegistrationErrorResponseDto,

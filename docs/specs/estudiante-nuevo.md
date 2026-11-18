@@ -6,7 +6,7 @@
 - Estado: **Backend implementado**; las pruebas ejecutadas se acreditan en el reporte SDD, no por esta etiqueta documental.
 - Extiende [HU-Q10-002](historias-usuario/q10/hu-q10-002-registrar-estudiante-q10-y-local.md), el catalogo [HU-ESC-001](historias-usuario/auxiliares/hu-esc-001-gestionar-escuelas.md) y las consultas de estudiantes.
 
-El alta recibe opcionalmente `tipoEstudiante` e `imgDoc`. Ambos pertenecen exclusivamente a la tabla local `estudiantes`, en `tipo_estudiante` e `img_doc`. Nunca se envian a Q10. La pantalla frontend y las politicas nuevas de upload no forman parte de esta implementacion.
+El alta recibe opcionalmente `tipoEstudiante`, `codigo` e `imgDoc`. Se guardan exclusivamente en la tabla local `estudiantes`, en `tipo_estudiante`, `codigo` e `img_doc`. La pantalla frontend y las politicas nuevas de upload no forman parte de esta implementacion.
 
 ## Reglas de negocio
 
@@ -17,8 +17,9 @@ El alta recibe opcionalmente `tipoEstudiante` e `imgDoc`. Ambos pertenecen exclu
 | RF-EST-002-03 | Una escuela nueva requiere `tipo: PRE` o `POS`. Las historicas pueden conservar `null` hasta clasificarse; `PG` no es tipo de escuela.                                                |
 | RF-EST-002-04 | Para PRE/POS con escuela seleccionada, esta debe estar clasificada y tener el mismo tipo, aunque no se envie facultad.                                                                |
 | RF-EST-002-05 | `imgDoc` es opcional. Si se envia en el alta Q10 debe ser una URL absoluta HTTP/HTTPS no vacia; se recomienda usar `viewLink` del upload DNIS.                                        |
-| RF-EST-002-06 | `tipoEstudiante`, `imgDoc`, `facultadId` y `escuelaId` se excluyen de todas las peticiones Q10.                                                                                       |
+| RF-EST-002-06 | `tipoEstudiante`, `codigo`, `imgDoc`, `facultadId` y `escuelaId` se excluyen de todas las peticiones Q10.                                                                             |
 | RF-EST-002-07 | El exito exige sincronizacion local e inscripcion en el programa Q10. No se exige tipo ni documento cuando se omiten.                                                                 |
+| RF-EST-002-08 | `codigo` admite texto de 1 a 50 caracteres tras recortar espacios y conserva los ceros iniciales. La clave de imagen es `imgDoc`; `img_doc` se rechaza en JSON. |
 
 Omitir los campos locales o enviar `null` conserva sus valores existentes al sincronizar; en un registro nuevo quedan sin valor. No hay borrado implicito ni inferencia de tipo desde la escuela. Para validar un estudiante existente se usa el tipo y las relaciones efectivas (valor nuevo no nulo, o persistido). Si no existe tipo efectivo, se mantienen las validaciones de existencia y pertenencia sin exigir clasificacion.
 
@@ -30,9 +31,9 @@ Un cambio de tipo de escuela devuelve `400` si existen estudiantes vinculados PR
 2. Si se adjunta documento, carga primero `POST /upload/DNIS`, multipart `file` y `nombre` opcional. Conserva el `viewLink` de una respuesta con `success: true`.
 3. Envia el JSON a `POST /q10/estudiantes`, incluyendo los campos locales que correspondan. No realiza otro `POST /estudiantes`.
 4. El backend valida el DTO y los catalogos efectivos antes de contactar a Q10.
-5. Crea en Q10 con sus campos actuales, valida `Codigo_estudiante` y sincroniza por documento, guardando juntos `id_q10`, tipo, documento y relaciones proporcionadas.
+5. Crea en Q10 con sus campos actuales, valida `Codigo_estudiante` y sincroniza por documento, guardando juntos `id_q10`, tipo, codigo, documento y relaciones proporcionadas.
 6. Confirma la matricula del programa. Responde `201` con `status`, `estudiante: { id, idQ10, numeroDocumento }` y `programaRegistrado`.
-7. `GET /estudiantes/:id` permite consultar `tipoEstudiante` e `imgDoc` persistidos.
+7. `GET /estudiantes/:id` permite consultar `tipoEstudiante`, `codigo` e `imgDoc` persistidos.
 
 Todos los endpoints anteriores mantienen `x-api-key`. El registro sigue siendo JSON; el binario, si existe, se carga por separado.
 
@@ -60,17 +61,18 @@ Todos los endpoints anteriores mantienen `x-api-key`. El registro sigue siendo J
   "Celular": "999999999",
   "Codigo_programa": "INGLES",
   "tipoEstudiante": "PG",
+  "codigo": "0012345678",
   "imgDoc": "https://drive.google.com/file/d/ID_DEVUELTO_POR_UPLOAD/view",
   "facultadId": 3,
   "escuelaId": 8
 }
 ```
 
-Los cuatro ultimos campos pueden omitirse individualmente. Los IDs son ejemplos del catalogo local. Para PRE/POS, una escuela enviada debe tener el mismo tipo del estudiante.
+Los cinco ultimos campos pueden omitirse individualmente. Los IDs son ejemplos del catalogo local. Para PRE/POS, una escuela enviada debe tener el mismo tipo del estudiante.
 
 | Operacion                                                                  | Cambio                                                                                            |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `POST /q10/estudiantes`                                                    | Acepta tipo y documento opcionales; `null` conserva valores previos.                              |
+| `POST /q10/estudiantes`                                                    | Acepta tipo, codigo y documento opcionales; `null` conserva valores previos.                      |
 | `POST /estudiantes`, `PATCH /estudiantes/:id`                              | Admiten y validan tipo opcional. Conservan la validacion generica actual de `imgDoc` como cadena. |
 | `GET /estudiantes`, `GET /estudiantes/:id`, `GET /estudiantes/buscar/:dni` | Exponen los campos locales persistidos.                                                           |
 | `POST /escuelas`                                                           | Requiere `tipo` con valor `PRE` o `POS`.                                                          |
@@ -81,7 +83,7 @@ Los cuatro ultimos campos pueden omitirse individualmente. Los IDs son ejemplos 
 
 | Situacion                                                                | Respuesta                                                                                                  |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Tipo fuera de PRE/POS/PG o URL documental vacia/invalida                 | `400` antes de contactar a Q10.                                                                            |
+| Tipo fuera de PRE/POS/PG, codigo invalido, URL documental invalida o clave `img_doc` | `400` antes de contactar a Q10.                                                                  |
 | PRE/POS con escuela sin clasificar                                       | `400`: `La escuela indicada debe clasificarse como PRE o POS antes de registrar al estudiante`.            |
 | PRE/POS con escuela de otro tipo                                         | `400`: `El tipo de la escuela indicada no coincide con el tipo del estudiante`.                            |
 | Escuela/facultad inexistentes o pertenencia incompatible                 | Se conservan los mensajes `400` actuales.                                                                  |
@@ -111,7 +113,7 @@ Drive, Q10 y PostgreSQL no comparten transaccion. La idempotencia local no garan
 | CA-EST-002-05 | Validar coincidencia PRE/POS y rechazar escuelas sin clasificar, incluso sin facultad en el request. |
 | CA-EST-002-06 | Persistir el enlace documental proporcionado y recuperarlo en la consulta local.                     |
 | CA-EST-002-07 | Admitir documento omitido/null y conservar el existente; rechazar URL vacia o invalida.              |
-| CA-EST-002-08 | Excluir los cuatro campos locales de toda peticion Q10.                                              |
+| CA-EST-002-08 | Excluir los campos locales de toda peticion Q10.                                                     |
 | CA-EST-002-09 | Mantener los errores parciales y la respuesta exitosa actual.                                        |
 | CA-EST-002-10 | SQL repetible, conservando historicos sin clasificar ni modificar sus IDs.                           |
 

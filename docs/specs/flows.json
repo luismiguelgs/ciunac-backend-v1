@@ -1642,7 +1642,7 @@
         },
         {
           "id": "CA-Q10-002-04",
-          "description": "HU-EST-002: tipo y documento opcionales solo locales, compatibilidad PRE/POS y PG con relaciones opcionales, sin campos locales en Q10.",
+          "description": "HU-EST-002: tipo, codigo y documento opcionales solo locales, compatibilidad PRE/POS y PG con relaciones opcionales, sin campos locales en Q10.",
           "kind": "integration",
           "testFile": "test/sdd/critical.integration-spec.cjs",
           "testNames": [
