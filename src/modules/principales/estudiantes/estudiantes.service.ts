@@ -116,7 +116,11 @@ export class EstudiantesService {
         where: { id: facultadId },
       });
       if (!facultad) {
-        throw new BadRequestException('La facultad indicada no existe');
+        throw this.academicError(
+          'La facultad indicada no existe',
+          'facultadId',
+          'FACULTY_NOT_FOUND',
+        );
       }
     }
 
@@ -125,22 +129,32 @@ export class EstudiantesService {
         where: { id: escuelaId },
       });
       if (!escuela) {
-        throw new BadRequestException('La escuela indicada no existe');
+        throw this.academicError(
+          'La escuela indicada no existe',
+          'escuelaId',
+          'SCHOOL_NOT_FOUND',
+        );
       }
       if (facultadId != null && escuela.facultadId !== facultadId) {
-        throw new BadRequestException(
+        throw this.academicError(
           'La escuela indicada no pertenece a la facultad indicada',
+          'escuelaId',
+          'SCHOOL_FACULTY_MISMATCH',
         );
       }
       if (tipoEstudiante === 'PRE' || tipoEstudiante === 'POS') {
         if (escuela.tipo == null) {
-          throw new BadRequestException(
+          throw this.academicError(
             'La escuela indicada debe clasificarse como PRE o POS antes de registrar al estudiante',
+            'escuelaId',
+            'SCHOOL_UNCLASSIFIED',
           );
         }
         if (escuela.tipo !== tipoEstudiante) {
-          throw new BadRequestException(
+          throw this.academicError(
             'El tipo de la escuela indicada no coincide con el tipo del estudiante',
+            'escuelaId',
+            'SCHOOL_TYPE_MISMATCH',
           );
         }
       }
@@ -204,6 +218,18 @@ export class EstudiantesService {
       }
       throw error;
     }
+  }
+
+  private academicError(
+    message: string,
+    field: string,
+    rule: string,
+  ): BadRequestException {
+    return new BadRequestException({
+      code: 'Q10_LOCAL_VALIDATION_FAILED',
+      message,
+      validationErrors: [{ field, rules: [rule] }],
+    });
   }
 
   private isUniqueConstraintViolation(error: unknown): boolean {

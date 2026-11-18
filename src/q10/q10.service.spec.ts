@@ -253,7 +253,7 @@ describe('Q10Service', () => {
       response: {
         code: 'Q10_UNAVAILABLE',
         message: 'No fue posible comunicarse con Q10',
-        retryAllowed: true,
+        retryAllowed: false,
       },
     });
     expect(estudiantesService.syncFromQ10).not.toHaveBeenCalled();
@@ -269,6 +269,87 @@ describe('Q10Service', () => {
     await expect(service.crearEstudianteEnQ10(request)).rejects.toBeInstanceOf(
       ConflictException,
     );
+  });
+
+  it.each([
+    null,
+    [],
+    {},
+    [{ Consecutivo: 0, Ordenamiento: 1 }],
+    [{ Consecutivo: 2, Ordenamiento: 'invalid' }],
+  ])('stops before any write for invalid periods: %j', async (data) => {
+    fetchMock.mockResolvedValueOnce(response(data));
+    await expect(service.crearEstudianteEnQ10(request)).rejects.toMatchObject({
+      status: 502,
+      response: { code: 'Q10_PERIOD_LOOKUP_FAILED', retryAllowed: false },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(estudiantesService.syncFromQ10).not.toHaveBeenCalled();
+  });
+
+  it('does not send period zero after a network failure', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('PRIVATE-SENTINEL'));
+    await expect(service.crearEstudianteEnQ10(request)).rejects.toMatchObject({
+      response: { code: 'Q10_PERIOD_LOOKUP_FAILED' },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes rejected response bodies without reading or logging their contents', async () => {
+    mockPeriod();
+    const cancel = jest.fn().mockResolvedValue(undefined);
+    const json = jest.fn();
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      body: { cancel },
+      json,
+    } as unknown as Response);
+    await expect(service.crearEstudianteEnQ10(request)).rejects.toMatchObject({
+      status: 400,
+    });
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(json).not.toHaveBeenCalled();
+  });
+
+  it.each([400, 409, 422, 429, 500, 503])(
+    'maps a Q10 HTTP %i without exposing its response',
+    async (status) => {
+      mockPeriod();
+      const json = jest.fn().mockResolvedValue({ Message: 'PRIVATE-SENTINEL' });
+      fetchMock.mockResolvedValueOnce({
+        ok: false,
+        status,
+        json,
+      } as unknown as Response);
+      const error = await service
+        .crearEstudianteEnQ10(request)
+        .catch((error) => error);
+      expect(error.getStatus()).toBe(status >= 500 ? 502 : 400);
+      expect(error.getResponse()).toMatchObject({
+        code:
+          status >= 500 ? 'Q10_UNAVAILABLE' : 'Q10_STUDENT_CREATION_REJECTED',
+        retryAllowed: false,
+      });
+      expect(JSON.stringify(error.getResponse())).not.toContain(
+        'PRIVATE-SENTINEL',
+      );
+      expect(estudiantesService.syncFromQ10).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    },
+  );
+
+  it('does not post a program registration when enrollment lookup is empty', async () => {
+    mockPeriod();
+    fetchMock
+      .mockResolvedValueOnce(response(q10Response))
+      .mockResolvedValueOnce(response([]));
+    estudiantesService.syncFromQ10.mockResolvedValue(localStudent);
+    await expect(service.crearEstudianteEnQ10(request)).rejects.toMatchObject({
+      response: { code: 'Q10_CREATED_PROGRAM_PENDING', retryAllowed: false },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(estudiantesService.syncFromQ10).toHaveBeenCalledTimes(1);
   });
 
   it('reports program pending after the local student has been saved', async () => {

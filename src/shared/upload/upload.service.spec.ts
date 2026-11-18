@@ -43,6 +43,171 @@ describe('UploadService', () => {
     Reflect.set(service, 'driveClient', driveClient);
   });
 
+  it.each([
+    '[R] constancia-123-Juan Perez.pdf',
+    'constancia-123-Juan Perez[R].pdf',
+    'constancia-123-Juan Perez[R]',
+    '[ r ]_constancia-123-Juan Perez.PDF',
+    'constancia-123-Juan Perez - [ R ].pdf',
+    '[FIRMADO] constancia-123-Juan Perez.pdf',
+    'constancia-123-Juan Perez[FIRMADO].pdf',
+    'constancia-123-Juan Perez[FIRMADO]',
+    '[ firmado ]_constancia-123-Juan Perez.PDF',
+    'constancia-123-Juan Perez - [ FiRmAdO ].pdf',
+  ])('finds a matching signed version by name: %s', async (name) => {
+    driveClient.files.get.mockResolvedValue({
+      data: {
+        id: 'original-id',
+        name: 'constancia-123-Juan Perez.pdf',
+        parents: ['source-folder'],
+      },
+    });
+    driveClient.files.list.mockResolvedValue({
+      data: { files: [{ id: 'signed-id', name }] },
+    });
+
+    const result = await service.findSignedVersion('original-id');
+
+    expect(result.signedFile).toMatchObject({ id: 'signed-id', name });
+    expect(driveClient.files.update).not.toHaveBeenCalled();
+  });
+
+  it.each(['R', 'FIRMADO'])(
+    'selects by modifiedTime across both markers with %s newest',
+    async (newestMarker) => {
+      driveClient.files.get.mockResolvedValue({
+        data: {
+          id: 'original-id',
+          name: 'constancia-123.pdf',
+          parents: ['source-folder'],
+        },
+      });
+      driveClient.files.list
+        .mockResolvedValueOnce({
+          data: {
+            files: [
+              {
+                id: 'old-id',
+                name: `constancia-123[${newestMarker === 'R' ? 'FIRMADO' : 'R'}].pdf`,
+                modifiedTime: '2026-11-17T10:00:00Z',
+              },
+              {
+                id: 'unrelated-id',
+                name: 'constancia-999[R].pdf',
+                modifiedTime: '2026-11-19T10:00:00Z',
+              },
+              {
+                id: 'unsigned-id',
+                name: 'constancia-123.pdf',
+                modifiedTime: '2026-11-19T10:00:00Z',
+              },
+            ],
+          },
+        })
+        .mockResolvedValueOnce({
+          data: {
+            files: [
+              {
+                id: 'new-id',
+                name: `constancia-123[${newestMarker}].pdf`,
+                modifiedTime: '2026-11-18T10:00:00Z',
+              },
+            ],
+          },
+        });
+
+      const result = await service.findSignedVersion('original-id');
+
+      expect(result.signedFile.id).toBe('new-id');
+    },
+  );
+
+  it.each([
+    '[R] constancia-123.pdf',
+    'constancia-123[ r ].pdf',
+    '[FIRMADO] constancia-123.pdf',
+  ])('validates a direct signedFileId with %s', async (name) => {
+    driveClient.files.get
+      .mockResolvedValueOnce({
+        data: { id: 'original-id', name: 'constancia-123.pdf' },
+      })
+      .mockResolvedValueOnce({ data: { id: 'signed-id', name } });
+
+    await expect(
+      service.findSignedVersion('original-id', 'signed-id'),
+    ).resolves.toMatchObject({ signedFile: { id: 'signed-id', name } });
+    expect(driveClient.files.list).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'constancia-123.pdf',
+    'constancia-123[RR].pdf',
+    'constancia-123[REVISADO].pdf',
+    'constancia-999[R].pdf',
+    'constancia-123-otro[R].pdf',
+  ])(
+    'rejects a direct ID without an accepted marker or with a different base name: %s',
+    async (name) => {
+      driveClient.files.get
+        .mockResolvedValueOnce({
+          data: { id: 'original-id', name: 'constancia-123.pdf' },
+        })
+        .mockResolvedValueOnce({ data: { id: 'signed-id', name } });
+
+      await expect(
+        service.findSignedVersion('original-id', 'signed-id'),
+      ).rejects.toThrow(BadRequestException);
+      expect(driveClient.files.update).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['R', 'FIRMADO'])(
+    'recognizes an already signed file with %s and does not move it twice',
+    async (marker) => {
+      driveClient.files.get.mockResolvedValue({
+        data: {
+          id: 'signed-id',
+          name: `constancia-123[${marker}].pdf`,
+          parents: ['repository-folder'],
+        },
+      });
+
+      const result = await service.findSignedVersion('signed-id');
+      expect(result.originalFile.id).toBe(result.signedFile.id);
+      await service.moveFileToRepository(result.signedFile.id);
+
+      expect(driveClient.files.list).not.toHaveBeenCalled();
+      expect(driveClient.files.update).not.toHaveBeenCalled();
+    },
+  );
+
+  it('returns a clear 404 when no candidate has a matching marker and full base name', async () => {
+    driveClient.files.get.mockResolvedValue({
+      data: {
+        id: 'original-id',
+        name: 'constancia-123.pdf',
+        parents: ['source-folder'],
+      },
+    });
+    driveClient.files.list.mockResolvedValue({
+      data: {
+        files: [
+          { id: 'unsigned-id', name: 'constancia-123.pdf' },
+          { id: 'other-marker', name: 'constancia-123[RR].pdf' },
+          { id: 'other-document', name: 'constancia-999[R].pdf' },
+        ],
+      },
+    });
+
+    const result = service.findSignedVersion('original-id');
+
+    await expect(result).rejects.toBeInstanceOf(NotFoundException);
+    await expect(result).rejects.toThrow(
+      'No se encontro una version [R] o [FIRMADO] para el archivo constancia-123.pdf',
+    );
+    expect(driveClient.files.update).not.toHaveBeenCalled();
+  });
+
   it('selects the newest signed version and ignores unrelated files', async () => {
     driveClient.files.get.mockResolvedValue({
       data: {

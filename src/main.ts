@@ -1,11 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { configureQ10Diagnostics, Q10ValidationPipe } from './q10/q10-operation';
 import helmet from 'helmet';
 import { isSwaggerEnabled, setupSwagger } from './config/swagger.config';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
+	configureQ10Diagnostics(app);
 
 	app.enableCors({
 		origin: [
@@ -21,7 +22,7 @@ async function bootstrap() {
 		allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
 	});
 
-	app.useGlobalPipes(new ValidationPipe({
+	app.useGlobalPipes(new Q10ValidationPipe({
 		whitelist: true,
 		forbidNonWhitelisted: true,
 		transform: true,

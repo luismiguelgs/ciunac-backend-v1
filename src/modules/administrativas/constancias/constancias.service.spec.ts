@@ -184,45 +184,65 @@ describe('ConstanciasService', () => {
       });
     });
 
-    it('moves the signed file, updates both stores, and trashes the original', async () => {
-      const result = await service.procesarFirma(
-        'constancia-1',
-        'stale-frontend-id',
-        123,
-      );
+    it.each(['R', 'FIRMADO'])(
+      'moves the %s signed file, updates both stores, and trashes only the original',
+      async (marker) => {
+        const name = `[${marker}] constancia-123.pdf`;
+        uploadService.findSignedVersion.mockResolvedValue({
+          originalFile: {
+            id: 'stored-original-id',
+            name: 'constancia-123.pdf',
+          },
+          signedFile: { id: 'signed-id', name },
+        });
+        uploadService.moveFileToRepository.mockResolvedValue({
+          id: 'signed-id',
+          name,
+        });
+        const result = await service.procesarFirma(
+          'constancia-1',
+          'stale-frontend-id',
+          123,
+        );
 
-      expect(uploadService.findSignedVersion).toHaveBeenCalledWith(
-        'stored-original-id',
-        undefined,
-      );
-      expect(uploadService.moveFileToRepository).toHaveBeenCalledWith(
-        'signed-id',
-      );
-      expect(mockConstanciaModel.findOneAndUpdate).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          impreso: true,
-          driveId: 'signed-id',
-          url: 'https://drive.google.com/uc?export=download&id=signed-id',
-          driveIdOriginal: 'stored-original-id',
-          originalTrashed: false,
-        }),
-        { new: true },
-      );
-      expect(solicitudesService.update).toHaveBeenCalledWith(123, {
-        estadoId: 3,
-      });
-      expect(uploadService.trashFile).toHaveBeenCalledWith(
-        'stored-original-id',
-      );
-      expect(result).toEqual({
-        success: true,
-        fileId: 'signed-id',
-        name: '[FIRMADO] constancia-123.pdf',
-        viewLink: 'https://drive.google.com/uc?export=download&id=signed-id',
-        originalTrashed: true,
-      });
-    });
+        expect(uploadService.findSignedVersion).toHaveBeenCalledWith(
+          'stored-original-id',
+          undefined,
+        );
+        expect(uploadService.moveFileToRepository).toHaveBeenCalledWith(
+          'signed-id',
+        );
+        expect(mockConstanciaModel.findOneAndUpdate).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            impreso: true,
+            driveId: 'signed-id',
+            url: 'https://drive.google.com/uc?export=download&id=signed-id',
+            driveIdOriginal: 'stored-original-id',
+            originalTrashed: false,
+          }),
+          { new: true },
+        );
+        expect(solicitudesService.update).toHaveBeenCalledWith(123, {
+          estadoId: 3,
+        });
+        expect(uploadService.trashFile).toHaveBeenCalledWith(
+          'stored-original-id',
+        );
+        expect(result).toEqual({
+          success: true,
+          fileId: 'signed-id',
+          name,
+          viewLink: 'https://drive.google.com/uc?export=download&id=signed-id',
+          originalTrashed: true,
+        });
+        expect(uploadService.trashFile).toHaveBeenCalledTimes(1);
+        expect(uploadService.trashFile).not.toHaveBeenCalledWith('signed-id');
+        expect(
+          solicitudesService.update.mock.invocationCallOrder[0],
+        ).toBeLessThan(uploadService.trashFile.mock.invocationCallOrder[0]);
+      },
+    );
 
     it('fails before consulting Drive when the constancia does not exist', async () => {
       mockFindOne(null);
@@ -388,16 +408,25 @@ describe('ConstanciasService', () => {
       expect(uploadService.trashFile).not.toHaveBeenCalled();
     });
 
-    it('does not trash the signed file during an idempotent retry', async () => {
-      uploadService.findSignedVersion.mockResolvedValue({
-        originalFile: { id: 'signed-id', name: '[FIRMADO] constancia-123.pdf' },
-        signedFile: { id: 'signed-id', name: '[FIRMADO] constancia-123.pdf' },
-      });
+    it.each(['R', 'FIRMADO'])(
+      'does not trash the %s signed file during an idempotent retry',
+      async (marker) => {
+        uploadService.findSignedVersion.mockResolvedValue({
+          originalFile: {
+            id: 'signed-id',
+            name: `[${marker}] constancia-123.pdf`,
+          },
+          signedFile: {
+            id: 'signed-id',
+            name: `[${marker}] constancia-123.pdf`,
+          },
+        });
 
-      await service.procesarFirma('constancia-1', undefined, 123);
+        await service.procesarFirma('constancia-1', undefined, 123);
 
-      expect(uploadService.trashFile).not.toHaveBeenCalled();
-    });
+        expect(uploadService.trashFile).not.toHaveBeenCalled();
+      },
+    );
   });
 
   function mockFindOne(value: any): void {

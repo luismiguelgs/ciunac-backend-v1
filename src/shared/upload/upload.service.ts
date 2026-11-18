@@ -264,7 +264,7 @@ export class UploadService {
 
     if (candidates.length === 0) {
       throw new NotFoundException(
-        `No se encontro una version [FIRMADO] para el archivo ${originalFile.name}`,
+        `No se encontro una version [R] o [FIRMADO] para el archivo ${originalFile.name}`,
       );
     }
 
@@ -425,13 +425,13 @@ export class UploadService {
   }
 
   private isSignedFileName(name: string): boolean {
-    return /\[\s*FIRMADO\s*\]/i.test(name);
+    return /\[\s*(?:R|FIRMADO)\s*\]/i.test(name);
   }
 
   private normalizeSignedFileName(name: string): string {
     return name
       .normalize('NFKC')
-      .replace(/(?:[\s_-]*)\[\s*FIRMADO\s*\](?:[\s_-]*)/gi, '')
+      .replace(/(?:[\s_-]*)\[\s*(?:R|FIRMADO)\s*\](?:[\s_-]*)/gi, '')
       .replace(/\.[a-z0-9]{1,10}$/i, '')
       .replace(/\s+/g, ' ')
       .trim()

@@ -16,6 +16,8 @@ El administrativo guarda y procesa la firma de Constancia en MongoDB, relacionad
 6. Cambia la solicitud a TERMINADO=3. Ante fallo PostgreSQL restaura la constancia al estado anterior; las acciones Drive ya ejecutadas no se revierten atomicamente.
 7. Limpieza del original es posterior; un fallo puede devolver warning sin deshacer el procesamiento exitoso.
 
+La version firmada admite `[R]` (nuevo) y `[FIRMADO]` (historico), como prefijo o sufijo, sin distinguir mayusculas y con espacios opcionales dentro de los corchetes: `[R] constancia-123.pdf`, `constancia-123[R].pdf` y `constancia-123[FIRMADO].pdf`. La busqueda, signedFileId y los reintentos usan el mismo nombre base normalizado. Si existen varias copias compatibles, se elige la mas reciente por modifiedTime entre ambos marcadores. Una ausencia devuelve 404 mencionando `[R]` y `[FIRMADO]`; no se modifican estados ni se elimina el original. No requiere cambios del frontend ni migraciones.
+
 Respuesta: success, fileId, name, viewLink, originalTrashed y warning opcional.
 
 ## Consultas y alternativas

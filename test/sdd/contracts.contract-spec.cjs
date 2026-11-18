@@ -405,6 +405,7 @@ test('SWAGGER upload DNI no exige nombre y devuelve enlaces', async () => {
 });
 test.each([
   'Q10_UNAVAILABLE',
+  'Q10_PERIOD_LOOKUP_FAILED',
   'Q10_CREATED_LOCAL_SYNC_FAILED',
   'Q10_CREATED_PROGRAM_PENDING',
   'Q10_CREATED_INVALID_RESPONSE',
@@ -416,7 +417,7 @@ test.each([
   assertSchema(schema, {
     code,
     message: 'Fallo controlado de prueba',
-    retryAllowed: code === 'Q10_UNAVAILABLE',
+    retryAllowed: false,
   });
 });
 

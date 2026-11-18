@@ -18,7 +18,9 @@ El backend de [estudiante nuevo (HU-EST-002)](estudiante-nuevo.md) permite envia
 
 ## Firma y repositorios
 
-El servicio busca versiones [FIRMADO] normalizando nombre/extensiones y puede recibir un signedFileId explicito. Mueve la version al repositorio, asegura permiso de lectura publico y procesa la limpieza del original. Certificados resuelve ademas una carpeta del periodo existente; no la crea automaticamente.
+El servicio reconoce versiones con `[R]` o `[FIRMADO]`, sin distinguir mayusculas y admitiendo espacios dentro de los corchetes. Acepta prefijo o sufijo, por ejemplo `[R] constancia-123.pdf`, `constancia-123[R].pdf` o `constancia-123[FIRMADO].pdf`, con o sin extension. Compara el nombre base completo tras quitar el marcador y normalizar separadores/extensiones/espacios. Entre copias relacionadas de ambos formatos, selecciona la de modifiedTime mas reciente; ignora archivos de otros documentos y marcadores distintos.
+
+La misma validacion se aplica a signedFileId explicito y a reintentos con un archivo ya firmado. Si no hay coincidencia, devuelve 404 indicando los dos marcadores aceptados. Mueve la version al repositorio, asegura permiso de lectura publico y procesa la limpieza del original. Certificados resuelve ademas una carpeta del periodo existente; no la crea automaticamente. No renombra archivos ni modifica registros historicos; no cambian endpoints, DTO ni respuesta.
 
 Las transiciones, URL persistida, reintentos de limpieza y compensacion se especifican en [certificados](certificados.md) y [constancias](constancias.md).
 

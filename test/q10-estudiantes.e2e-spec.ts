@@ -1,19 +1,23 @@
-import {
-  BadGatewayException,
-  INestApplication,
-  ValidationPipe,
-} from '@nestjs/common';
+import { BadGatewayException, INestApplication, Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { Q10Controller } from '../src/q10/q10.controller';
 import { Q10Service } from '../src/q10/q10.service';
+import { Q10EstudianteDto } from '../src/q10/dto/q10-estudiante.dto';
 import { createSwaggerDocument } from '../src/config/swagger.config';
+import {
+  configureQ10Diagnostics,
+  Q10ValidationPipe,
+  q10Stage,
+} from '../src/q10/q10-operation';
 
 describe('Q10 student registration (e2e)', () => {
   let app: INestApplication<App>;
   let q10Service: { crearEstudianteEnQ10: jest.Mock };
   const previousApiKey = process.env.API_KEY;
+  let logError: jest.SpyInstance;
+  let logWarn: jest.SpyInstance;
 
   const payload = {
     Primer_nombre: 'Ana',
@@ -41,8 +45,9 @@ describe('Q10 student registration (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    configureQ10Diagnostics(app);
     app.useGlobalPipes(
-      new ValidationPipe({
+      new Q10ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
@@ -50,14 +55,22 @@ describe('Q10 student registration (e2e)', () => {
       }),
     );
     await app.init();
+    logError = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => {});
+    logWarn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
   });
 
   afterAll(async () => {
+    logError.mockRestore();
+    logWarn.mockRestore();
     await app.close();
     process.env.API_KEY = previousApiKey;
   });
 
   beforeEach(() => {
+    logError.mockClear();
+    logWarn.mockClear();
     q10Service.crearEstudianteEnQ10.mockReset();
     q10Service.crearEstudianteEnQ10.mockResolvedValue({
       status: 'COMPLETED',
@@ -214,7 +227,8 @@ describe('Q10 student registration (e2e)', () => {
       .expect(({ body }) => {
         expect(body).toMatchObject({
           code: 'Q10_CREATED_PROGRAM_PENDING',
-          message: 'El estudiante fue creado, pero la matricula esta pendiente.',
+          message:
+            'El estudiante fue creado, pero la matricula esta pendiente.',
           retryAllowed: false,
         });
       });
@@ -225,5 +239,128 @@ describe('Q10 student registration (e2e)', () => {
       .post('/q10/estudiantes')
       .send(payload)
       .expect(401);
+  });
+
+  it('logs safe validation rules and correlates the response without field values', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/q10/estudiantes')
+      .set('x-api-key', 'test-api-key')
+      .set('x-correlation-id', 'af76ba35-4c64-4e3c-a5df-b16f2bbebba1')
+      .send({
+        ...payload,
+        Email: 'PRIVATE-SENTINEL',
+        'PRIVATE-KEY': 'PRIVATE-VALUE',
+      })
+      .expect(400);
+    expect(res.body).toMatchObject({
+      code: 'Q10_REQUEST_VALIDATION_FAILED',
+      stage: 'REQUEST_VALIDATION',
+      retryAllowed: false,
+      validationErrors: expect.arrayContaining([
+        { field: 'Email', rules: ['isEmail'] },
+        { field: 'unknown', rules: ['whitelistValidation'] },
+      ]),
+    });
+    expect(res.headers['x-operation-id']).toBe(res.body.operationId);
+    expect(logWarn).toHaveBeenCalledTimes(1);
+    const event = JSON.parse(logWarn.mock.calls[0][0]);
+    expect(event).toMatchObject({
+      operationId: res.body.operationId,
+      httpStatus: 400,
+      correlationId: 'af76ba35-4c64-4e3c-a5df-b16f2bbebba1',
+      remoteStudent: 'not_attempted',
+    });
+    expect(JSON.stringify([logWarn.mock.calls, res.body])).not.toContain(
+      'PRIVATE-',
+    );
+  });
+
+  it('logs malformed JSON before the controller and does not expose parser messages', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/q10/estudiantes')
+      .set('Content-Type', 'application/json')
+      .send('{"PRIVATE-SENTINEL":')
+      .expect(400);
+    expect(res.body.code).toBe('Q10_INVALID_JSON');
+    expect(res.headers['x-operation-id']).toBe(res.body.operationId);
+    expect(logWarn).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify([logWarn.mock.calls, res.body])).not.toContain(
+      'PRIVATE-SENTINEL',
+    );
+    expect(q10Service.crearEstudianteEnQ10).not.toHaveBeenCalled();
+  });
+
+  it('logs unexpected failures once, without exception contents or invalid correlation', async () => {
+    q10Service.crearEstudianteEnQ10.mockImplementationOnce(async () => {
+      q10Stage('LOCAL_SYNC');
+      throw new Error('PRIVATE-SENTINEL');
+    });
+    const res = await request(app.getHttpServer())
+      .post('/q10/estudiantes')
+      .set('x-api-key', 'test-api-key')
+      .set('x-correlation-id', 'PRIVATE-CORRELATION')
+      .send(payload)
+      .expect(500);
+    expect(res.body).toMatchObject({
+      code: 'Q10_INTERNAL_ERROR',
+      stage: 'LOCAL_SYNC',
+    });
+    expect(logError).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify([logError.mock.calls, res.body])).not.toContain(
+      'PRIVATE-',
+    );
+  });
+
+  it('keeps normal Nest validation behavior on other endpoints', async () => {
+    const pipe = new Q10ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+    await expect(
+      pipe.transform({}, { type: 'body', metatype: Q10EstudianteDto }),
+    ).rejects.toMatchObject({
+      response: { statusCode: 400, message: expect.any(Array) },
+    });
+  });
+
+  it('preserves the JSON size limit and logs a controlled rejection', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/q10/estudiantes')
+      .set('x-api-key', 'test-api-key')
+      .send({ ...payload, imgDoc: 'x'.repeat(110 * 1024) })
+      .expect(413);
+    expect(res.body.code).toBe('Q10_REQUEST_TOO_LARGE');
+    expect(logWarn).toHaveBeenCalledTimes(1);
+    expect(q10Service.crearEstudianteEnQ10).not.toHaveBeenCalled();
+  });
+
+  it('isolates operation IDs and stages across concurrent requests', async () => {
+    q10Service.crearEstudianteEnQ10.mockImplementation(
+      async (body: Q10EstudianteDto) => {
+        q10Stage(body.Genero === 'M' ? 'LOCAL_VALIDATION' : 'LOCAL_SYNC');
+        await new Promise((resolve) => setImmediate(resolve));
+        throw new Error('PRIVATE-SENTINEL');
+      },
+    );
+    const results = await Promise.all(
+      ['M', 'F'].map((Genero) =>
+        request(app.getHttpServer())
+          .post('/q10/estudiantes')
+          .set('x-api-key', 'test-api-key')
+          .send({ ...payload, Genero })
+          .expect(500),
+      ),
+    );
+    expect(new Set(results.map((res) => res.body.operationId)).size).toBe(2);
+    expect(logError).toHaveBeenCalledTimes(2);
+    const events = logError.mock.calls.map((call) => JSON.parse(call[0]));
+    for (const [index, stage] of ['LOCAL_VALIDATION', 'LOCAL_SYNC'].entries()) {
+      expect(
+        events.find(
+          (event) => event.operationId === results[index].body.operationId,
+        ),
+      ).toMatchObject({ stage });
+    }
+    expect(JSON.stringify(events)).not.toContain('PRIVATE-SENTINEL');
   });
 });

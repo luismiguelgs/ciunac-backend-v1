@@ -22,28 +22,51 @@ export class Q10EstudianteRegistrationResponseDto {
   programaRegistrado: true;
 }
 
-export class Q10PartialFailureResponseDto {
+export class Q10ValidationIssueDto {
+  @ApiProperty({ example: 'escuelaId' })
+  field: string;
+
+  @ApiProperty({ type: [String], example: ['SCHOOL_TYPE_MISMATCH'] })
+  rules: string[];
+}
+
+export class Q10RegistrationErrorResponseDto {
+  @ApiProperty({ example: 'Q10_LOCAL_VALIDATION_FAILED' })
+  code: string;
+
+  @ApiProperty({ example: 'Los datos del estudiante no son validos' })
+  message: string;
+
+  @ApiProperty({ example: false, enum: [false] })
+  retryAllowed: boolean;
+
+  @ApiProperty({ required: false, example: 400 })
+  statusCode?: number;
+
+  @ApiProperty({ required: false, format: 'uuid' })
+  operationId?: string;
+
+  @ApiProperty({ required: false, example: 'LOCAL_VALIDATION' })
+  stage?: string;
+
+  @ApiProperty({ required: false, enum: ['request', 'local', 'q10'] })
+  origin?: string;
+
+  @ApiProperty({ required: false, type: [Q10ValidationIssueDto] })
+  validationErrors?: Q10ValidationIssueDto[];
+}
+
+export class Q10PartialFailureResponseDto extends Q10RegistrationErrorResponseDto {
   @ApiProperty({
     enum: [
       'Q10_UNAVAILABLE',
+      'Q10_PERIOD_LOOKUP_FAILED',
       'Q10_CREATED_LOCAL_SYNC_FAILED',
       'Q10_CREATED_PROGRAM_PENDING',
       'Q10_CREATED_INVALID_RESPONSE',
     ],
   })
-  code: string;
-
-  @ApiProperty({
-    example: 'Q10 creo al estudiante, pero fallo la sincronizacion local',
-  })
-  message: string;
-
-  @ApiProperty({
-    example: false,
-    description:
-      'true solo para Q10_UNAVAILABLE; false para los fallos posteriores al alta remota. No repetir automaticamente altas parciales.',
-  })
-  retryAllowed: boolean;
+  declare code: string;
 
   @ApiProperty({ required: false, format: 'uuid' })
   estudianteId?: string;

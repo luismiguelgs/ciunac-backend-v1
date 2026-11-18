@@ -15,6 +15,7 @@ import { Q10_API_URL, SEDE_JORNADA } from './lib/q10.constants';
 import { CiclosService } from 'src/modules/estructura/ciclos/ciclos.service';
 import { Q10EstudianteResponse } from './interfaces/q10-estudiante-response.interface';
 import { Q10EstudianteRegistrationResponseDto } from './dto/q10-estudiante-response.dto';
+import { q10Effect, q10HttpStatus, q10Stage } from './q10-operation';
 
 type Periodo = {
   Consecutivo: number;
@@ -121,6 +122,7 @@ export class Q10Service {
   async crearEstudianteEnQ10(
     body: Q10EstudianteDto,
   ): Promise<Q10EstudianteRegistrationResponseDto> {
+    q10Stage('LOCAL_VALIDATION');
     const { facultadId, escuelaId, tipoEstudiante, imgDoc, ...datosQ10 } = body;
     await this.estudiantesService.validarFacultadYEscuela({
       facultadId,
@@ -128,6 +130,7 @@ export class Q10Service {
       tipoEstudiante,
       numeroDocumento: body.Numero_identificacion,
     });
+    q10Stage('PERIOD_LOOKUP');
     const periodo = await this.getPeriodoActivo();
     const payload = {
       ...datosQ10,
@@ -139,6 +142,8 @@ export class Q10Service {
     };
 
     let res: Response;
+    q10Stage('REMOTE_CREATE');
+    q10Effect('remoteStudent', 'unknown');
     try {
       res = await fetch(`${Q10_API_URL}/estudiantes`, {
         method: 'POST',
@@ -149,25 +154,40 @@ export class Q10Service {
       throw new BadGatewayException({
         code: 'Q10_UNAVAILABLE',
         message: 'No fue posible comunicarse con Q10',
-        retryAllowed: true,
+        retryAllowed: false,
+      });
+    }
+
+    q10HttpStatus(res.status);
+    if (!res.ok) {
+      await this.discardResponse(res);
+      if (res.status >= 500 || res.status < 400) {
+        throw new BadGatewayException({
+          code: 'Q10_UNAVAILABLE',
+          message: 'Q10 no confirmo el registro del estudiante',
+          retryAllowed: false,
+        });
+      }
+      throw new BadRequestException({
+        code: 'Q10_STUDENT_CREATION_REJECTED',
+        message: 'Q10 rechazo el registro del estudiante',
+        retryAllowed: false,
       });
     }
 
     const responseData = await this.readJson(res);
-    if (!res.ok) {
-      throw new BadRequestException({
-        code: 'Q10_STUDENT_CREATION_REJECTED',
-        message: `Error al registrar estudiante en Q10: ${this.getQ10Message(responseData)}`,
-      });
-    }
-
     const q10Student = this.validateCreatedStudentResponse(responseData);
+    q10Effect('remoteStudent', 'confirmed');
     let estudiante: Estudiante;
 
+    q10Stage('LOCAL_SYNC');
+    q10Effect('localStudent', 'unknown');
     try {
       estudiante = await this.crearEstudianteLocal(q10Student, body);
+      q10Effect('localStudent', 'confirmed');
     } catch (error: unknown) {
       if (error instanceof ConflictException) {
+        q10Effect('localStudent', 'not_attempted');
         throw error;
       }
 
@@ -198,6 +218,7 @@ export class Q10Service {
       });
     }
 
+    q10Stage('COMPLETED');
     return {
       status: 'COMPLETED',
       estudiante: {
@@ -216,9 +237,11 @@ export class Q10Service {
   ): Promise<unknown | null> {
     const periodoMatricula =
       periodo === undefined ? await this.getPeriodoActivo() : periodo;
+    q10Stage('ENROLLMENT_LOOKUP');
+    const inscripcion = await this.getRegister(code);
     const payload = {
       Codigo_estudiante: code,
-      Consecutivo_inscripcion: await this.getRegister(code),
+      Consecutivo_inscripcion: inscripcion,
       Codigo_matricula: dni,
       Fecha_matricula: getCurretDate_YYYYMMDD(),
       Consecutivo_periodo: periodoMatricula,
@@ -230,14 +253,22 @@ export class Q10Service {
       Observaciones: '',
     };
 
+    q10Stage('PROGRAM_REGISTRATION');
+    q10Effect('program', 'unknown');
     const res = await fetch(`${Q10_API_URL}/matriculasProgramas`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(payload),
     });
 
-    const data = await res.json();
-    return res.ok ? data : null;
+    q10HttpStatus(res.status);
+    if (!res.ok) {
+      await this.discardResponse(res);
+      return null;
+    }
+    const data: unknown = await res.json();
+    if (data) q10Effect('program', 'confirmed');
+    return data;
   }
 
   // 3️⃣ Función que registra localmente usando el servicio de estudiantes
@@ -328,14 +359,12 @@ export class Q10Service {
     }
   }
 
-  private getQ10Message(data: unknown): string {
-    if (!data || typeof data !== 'object') {
-      return 'Error desconocido en Q10';
+  private async discardResponse(response: Response): Promise<void> {
+    try {
+      await response.body?.cancel();
+    } catch {
+      // Body cleanup must not replace the original HTTP failure.
     }
-
-    const response = data as Record<string, unknown>;
-    const message = response.Message ?? response.message ?? response.error;
-    return typeof message === 'string' ? message : 'Error desconocido en Q10';
   }
 
   // 4️⃣ Obtener último periodo activo desde Q10
@@ -345,14 +374,36 @@ export class Q10Service {
         method: 'GET',
         headers: this.headers,
       });
-      const data = await res.json();
+      q10HttpStatus(res.status);
+      if (!res.ok) {
+        await this.discardResponse(res);
+        throw new Error('Period lookup rejected');
+      }
+      const data: unknown = await res.json();
+      if (
+        !Array.isArray(data) ||
+        !data.length ||
+        data.some(
+          (item) =>
+            !item ||
+            typeof item !== 'object' ||
+            !Number.isInteger(item.Consecutivo) ||
+            item.Consecutivo <= 0 ||
+            typeof item.Ordenamiento !== 'number' ||
+            !Number.isFinite(item.Ordenamiento),
+        )
+      )
+        throw new Error('Invalid periods');
       const sorted = data.sort(
         (a: Periodo, b: Periodo) => b.Ordenamiento - a.Ordenamiento,
       );
       return sorted[0].Consecutivo;
-    } catch (err) {
-      console.log('Error al obtener periodo', err);
-      return 0;
+    } catch {
+      throw new BadGatewayException({
+        code: 'Q10_PERIOD_LOOKUP_FAILED',
+        message: 'No fue posible obtener un periodo valido de Q10',
+        retryAllowed: false,
+      });
     }
   }
 
@@ -364,7 +415,18 @@ export class Q10Service {
         headers: this.headers,
       },
     );
-    const data = await res.json();
-    return data[0]?.Consecutivo_inscripcion ?? 0;
+    q10HttpStatus(res.status);
+    if (!res.ok) {
+      await this.discardResponse(res);
+      throw new Error('Enrollment lookup rejected');
+    }
+    const data: unknown = await res.json();
+    const inscription = Array.isArray(data)
+      ? data[0]?.Consecutivo_inscripcion
+      : undefined;
+    if (!Number.isInteger(inscription) || inscription <= 0) {
+      throw new Error('Invalid enrollment');
+    }
+    return inscription;
   }
 }

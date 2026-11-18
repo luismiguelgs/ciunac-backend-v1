@@ -31,7 +31,7 @@ Validar catalogos locales, crear en Q10, vincular Codigo_estudiante y registrar 
 
 | Metodo / Ruta | operationId | Entrada | Seguridad / permiso | Respuestas |
 | --- | --- | --- | --- | --- |
-| `POST /q10/estudiantes` | `Q10Controller_register` | Body: Q10EstudianteDto | api-key  | 201, 400, 401, 409, 502 |
+| `POST /q10/estudiantes` | `Q10Controller_register` | Body: Q10EstudianteDto | api-key  | 201, 400, 401, 409, 413, 500, 502 |
 
 Los schemas completos y tipos opcionales/nulos estan en [OpenAPI](../../../api/openapi.json).
 
@@ -53,7 +53,8 @@ Los schemas completos y tipos opcionales/nulos estan en [OpenAPI](../../../api/o
 - **CA-Q10-002-02**: Los guards y permisos realmente declarados se aplican antes de invocar el servicio; las rutas publicas se identifican explicitamente. Evidencia: [test/sdd/contracts.contract-spec.cjs](../../../../test/sdd/contracts.contract-spec.cjs), `SEC Q10Controller_register`.
 - **CA-Q10-002-03**: Los escenarios criticos AS-IS de persistencia y efectos externos indicados por las pruebas se conservan. Evidencia: [test/sdd/critical.integration-spec.cjs](../../../../test/sdd/critical.integration-spec.cjs), `INT Q10 sincroniza id local y conserva codigo ante matricula fallida`, `INT SQL id_q10 es repetible permite nulos e impide duplicados`.
 - **CA-Q10-002-04**: HU-EST-002: tipo y documento opcionales solo locales, compatibilidad PRE/POS y PG con relaciones opcionales, sin campos locales en Q10. Evidencia: [test/sdd/critical.integration-spec.cjs](../../../../test/sdd/critical.integration-spec.cjs), `INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar campos locales a Q10`.
-- **CA-Q10-002-05**: El request minimo, campos locales null, ejemplos y los cuatro codigos 502 coinciden con Swagger y la validacion HTTP. Evidencia: [test/sdd/contracts.contract-spec.cjs](../../../../test/sdd/contracts.contract-spec.cjs), `SWAGGER Q10 campos opcionales y nulos coinciden con HTTP`, `SWAGGER ejemplos de alumno nuevo validan contra su requestBody`, `SWAGGER error 502 documenta Q10_UNAVAILABLE`, `SWAGGER error 502 documenta Q10_CREATED_LOCAL_SYNC_FAILED`, `SWAGGER error 502 documenta Q10_CREATED_PROGRAM_PENDING`, `SWAGGER error 502 documenta Q10_CREATED_INVALID_RESPONSE`.
+- **CA-Q10-002-05**: El request minimo, campos locales null, ejemplos y los codigos 502 coinciden con Swagger y la validacion HTTP. Evidencia: [test/sdd/contracts.contract-spec.cjs](../../../../test/sdd/contracts.contract-spec.cjs), `SWAGGER Q10 campos opcionales y nulos coinciden con HTTP`, `SWAGGER ejemplos de alumno nuevo validan contra su requestBody`, `SWAGGER error 502 documenta Q10_UNAVAILABLE`, `SWAGGER error 502 documenta Q10_PERIOD_LOOKUP_FAILED`, `SWAGGER error 502 documenta Q10_CREATED_LOCAL_SYNC_FAILED`, `SWAGGER error 502 documenta Q10_CREATED_PROGRAM_PENDING`, `SWAGGER error 502 documenta Q10_CREATED_INVALID_RESPONSE`.
+- **CA-Q10-002-06**: Los rechazos incluyen operacion, etapa y reglas seguras; JSON malformado y errores inesperados se registran sin datos personales. Evidencia: [test/q10-estudiantes.e2e-spec.ts](../../../../test/q10-estudiantes.e2e-spec.ts), `logs safe validation rules and correlates the response without field values`, `logs malformed JSON before the controller and does not expose parser messages`, `logs unexpected failures once, without exception contents or invalid correlation`.
 
 Limite de evidencia: Contrato HTTP y escenarios criticos de negocio enlazados; no acredita todas las ramas ni la interfaz frontend.
 

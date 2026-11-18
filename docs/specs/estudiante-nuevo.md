@@ -44,7 +44,7 @@ Todos los endpoints anteriores mantienen `x-api-key`. El registro sigue siendo J
 - `POST /estudiantes` es una alternativa SOLO local, sin Q10; requiere `fechaNacimiento` como fecha real `YYYY-MM-DD`. `PATCH /estudiantes/:id` permite omitir `fechaNacimiento`, pero no acepta `null`, fechas imposibles ni timestamps. Se conserva el dia sin conversion a `Date` en esos endpoints.
 - El alta Q10 sigue usando el campo `Fecha_nacimiento` y su contrato existente; no confundir los nombres de ambos DTOs.
 - La respuesta Q10 `201` conserva UUID local, `idQ10` y `numeroDocumento`; tipo, documento e IDs academicos se consultan con `GET /estudiantes/:id`. No se agregan campos de respuesta ficticios.
-- El schema `502` incluye `Q10_UNAVAILABLE` con `retryAllowed=true`; los tres codigos `Q10_CREATED_*` conservan `retryAllowed=false`. Los errores incluyen `message`. Un fallo de comunicacion puede ser ambiguo: nunca repetir automaticamente un alta sin revisar el estado remoto.
+- El schema `502` incluye `Q10_PERIOD_LOOKUP_FAILED`, `Q10_UNAVAILABLE` y los tres codigos `Q10_CREATED_*`, todos con `retryAllowed=false`. Los errores incluyen `message`, operacion y etapa. Ver [contrato de errores y logs](../frontend/q10-registration-errors.md). Un fallo de comunicacion puede ser ambiguo: nunca repetir automaticamente un alta sin revisar el estado remoto.
 
 ```json
 {

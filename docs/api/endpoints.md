@@ -225,7 +225,7 @@ Las rutas son relativas al backend. No existe prefijo global `/api/ciunac`; cual
 | --- | --- | --- | --- | --- | --- |
 | POST | `/q10/horarios-cursos` | api-key | Body Q10HorariosDto | 201, 400, 401 | `Q10Controller_guardarHorariosCursos` / CU-Q10-001 |
 | GET | `/q10/horarios-cursos` | api-key | Query periodo | 200, 401 | `Q10Controller_listarHorariosCursos` / CU-Q10-001 |
-| POST | `/q10/estudiantes` | api-key | Body Q10EstudianteDto | 201, 400, 401, 409, 502 | `Q10Controller_register` / CU-Q10-002 |
+| POST | `/q10/estudiantes` | api-key | Body Q10EstudianteDto | 201, 400, 401, 409, 413, 500, 502 | `Q10Controller_register` / CU-Q10-002 |
 
 ## seguimiento_docente
 

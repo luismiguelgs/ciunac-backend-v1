@@ -22,6 +22,8 @@ Administrativo, frontend y Drive. API key; Solicitud en PostgreSQL y Certificado
 5. Cambia la Solicitud a TERMINADO=3. Si falla PostgreSQL restaura el estado anterior del documento MongoDB; los efectos ya realizados en Drive no son una transaccion distribuida.
 6. Intenta enviar el original a papelera. Fallo de limpieza no revierte la firma; devuelve warning y originalTrashed=false.
 
+Se reconocen `[R]` (nuevo) y `[FIRMADO]` (historico) como prefijo o sufijo, con espacios opcionales dentro de los corchetes y sin distinguir mayusculas: `[R] certificado-123.pdf`, `certificado-123[R].pdf` y `certificado-123[FIRMADO].pdf`. Se conserva la coincidencia del nombre base completo y, entre versiones compatibles de ambos formatos, se elige la de modifiedTime mas reciente. La regla se aplica tambien a signedFileId y reintentos en la carpeta del periodo. Sin coincidencia se devuelve 404 mencionando ambos marcadores. No se renombra el archivo, no cambia la API y no se requieren migraciones.
+
 Respuesta de firma: success, fileId, name, viewLink, originalTrashed y warning opcional. No devuelve un objeto certificado embebido.
 
 ## Consultas y estados documentales

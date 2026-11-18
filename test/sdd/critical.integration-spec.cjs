@@ -843,6 +843,25 @@ test('INT Q10 sincroniza id local y conserva codigo ante matricula fallida', asy
         .repo('Estudiante')
         .countBy({ numeroDocumento: payload.Numero_identificacion }),
     ).toBe(1);
+    // Only isolated SDD data is deleted; Q10 is a double throughout this test.
+    const retainedUser = await db.seed('Usuario', {
+      email: 'q10-retained@example.invalid',
+      rol: 'ESTUDIANTE',
+    });
+    await db
+      .repo('Estudiante')
+      .update(first.estudiante.id, { usuario: retainedUser });
+    await db.repo('Estudiante').delete(first.estudiante.id);
+    expect(await db.repo('Usuario').countBy({ id: retainedUser.id })).toBe(1);
+    q10Code = 'Q10-RECREATED';
+    const recreated = await q10.crearEstudianteEnQ10(payload);
+    expect(recreated.estudiante.id).not.toBe(first.estudiante.id);
+    expect(recreated.estudiante.idQ10).toBe('Q10-RECREATED');
+    expect(
+      await db
+        .repo('Estudiante')
+        .countBy({ numeroDocumento: payload.Numero_identificacion }),
+    ).toBe(1);
     await expect(
       q10.crearEstudianteEnQ10({
         ...payload,
@@ -1220,6 +1239,175 @@ test('INT constancia crea sin transicion y firma persiste URL con warning de lim
   expect((await solicitudes.findOne(request.id)).estadoId).toBe(3);
   assertContract('ConstanciasController_procesarFirma', result);
 });
+
+test.each(['R', 'FIRMADO'])(
+  'INT firma %s resuelve Drive archiva actualiza ambos almacenes y reintenta sin borrar el firmado',
+  async (marker) => {
+    const previousFolders = {
+      GOOGLE_DRIVE_FOLDER_CONSTANCIAS_REPOSITORIO:
+        process.env.GOOGLE_DRIVE_FOLDER_CONSTANCIAS_REPOSITORIO,
+      GOOGLE_DRIVE_FOLDER_CERTIFICADOS_REPOSITORIO:
+        process.env.GOOGLE_DRIVE_FOLDER_CERTIFICADOS_REPOSITORIO,
+    };
+    process.env.GOOGLE_DRIVE_FOLDER_CONSTANCIAS_REPOSITORIO =
+      'constancias-repository';
+    process.env.GOOGLE_DRIVE_FOLDER_CERTIFICADOS_REPOSITORIO =
+      'certificados-repository';
+    try {
+      for (const kind of ['constancias', 'certificados']) {
+        const originalId = `${kind}-${marker}-original`;
+        const signedId = `${kind}-${marker}-signed`;
+        const baseName = `${kind}-documento-123`;
+        const targetFolder =
+          kind === 'certificados' ? 'period-folder' : 'constancias-repository';
+        const signedName =
+          kind === 'certificados'
+            ? `${baseName}[${marker}].pdf`
+            : `[${marker}] ${baseName}.pdf`;
+        const files = new Map([
+          [
+            originalId,
+            {
+              id: originalId,
+              name: `${baseName}.pdf`,
+              parents: ['source-folder'],
+              trashed: false,
+            },
+          ],
+          [
+            signedId,
+            {
+              id: signedId,
+              name: signedName,
+              parents: ['source-folder'],
+              trashed: false,
+              modifiedTime: '2026-11-18T10:00:00Z',
+            },
+          ],
+        ]);
+        const upload = service(
+          'src/shared/upload/upload.service.ts',
+          'UploadService',
+          {},
+        );
+        let instance;
+        let document;
+        const request = await solicitud({ estadoId: 4 });
+        const driveClient = {
+          files: {
+            get: jest.fn(async ({ fileId }) => ({
+              data: { ...files.get(fileId) },
+            })),
+            list: jest.fn(async ({ q }) => ({
+              data: {
+                files: q.includes('mimeType =')
+                  ? [{ id: 'period-folder', name: '2026-10' }]
+                  : [...files.values()].filter(
+                      (file) =>
+                        !file.trashed &&
+                        file.parents.some((folder) =>
+                          q.includes(`'${folder}' in parents`),
+                        ),
+                    ),
+              },
+            })),
+            update: jest.fn(async ({ fileId, addParents, requestBody }) => {
+              const file = files.get(fileId);
+              if (requestBody?.trashed) {
+                // La limpieza solo puede ocurrir despues de ambas escrituras reales.
+                expect(await instance.findOne(document.id)).toMatchObject({
+                  driveId: signedId,
+                  impreso: true,
+                });
+                expect((await solicitudes.findOne(request.id)).estadoId).toBe(
+                  3,
+                );
+                expect(fileId).toBe(originalId);
+                file.trashed = true;
+              }
+              if (addParents) file.parents = [addParents];
+              return { data: { ...file } };
+            }),
+          },
+          permissions: {
+            list: jest.fn(async () => ({
+              data: { permissions: [{ type: 'anyone', role: 'reader' }] },
+            })),
+          },
+        };
+        Reflect.set(upload, 'driveClient', driveClient);
+        const isCertificate = kind === 'certificados';
+        const modelName = isCertificate ? 'Certificado' : 'Constancia';
+        instance = service(
+          moduleFile('administrativas', kind),
+          `${modelName}sService`,
+          db.mongo.model(modelName),
+          upload,
+          solicitudes,
+        );
+        if (isCertificate) {
+          document = await certificado(instance, request);
+          await instance.update(document.id, { driveId: originalId });
+        } else {
+          document = await instance.create({
+            tipo: 'MATRICULA',
+            estudiante: 'Ana SDD',
+            dni: base.estudiante.numeroDocumento,
+            idioma: 'Ingles',
+            idiomaId: base.idioma.id,
+            nivel: 'Basico',
+            nivelId: base.nivel.id,
+            ciclo: 1,
+            id_solicitud: request.id,
+            modalidad: 'REGULAR',
+            driveId: originalId,
+            url: 'https://example.invalid/original',
+          });
+        }
+        const result = await instance.procesarFirma(
+          document.id,
+          'stale-frontend-id',
+          request.id,
+        );
+        const url = `https://drive.google.com/uc?export=download&id=${signedId}`;
+        expect(result).toMatchObject({
+          success: true,
+          fileId: signedId,
+          name: signedName,
+          viewLink: url,
+          originalTrashed: true,
+        });
+        expect(await instance.findOne(document.id)).toMatchObject({
+          driveId: signedId,
+          driveIdOriginal: originalId,
+          url,
+          impreso: true,
+          originalTrashed: true,
+        });
+        expect(files.get(signedId)).toMatchObject({
+          parents: [targetFolder],
+          trashed: false,
+        });
+        expect(files.get(originalId).trashed).toBe(true);
+        const writes = driveClient.files.update.mock.calls.length;
+        await expect(
+          instance.procesarFirma(document.id, undefined),
+        ).resolves.toMatchObject({
+          success: true,
+          fileId: signedId,
+          originalTrashed: true,
+        });
+        expect(driveClient.files.update).toHaveBeenCalledTimes(writes);
+        expect(files.get(signedId).trashed).toBe(false);
+      }
+    } finally {
+      for (const [key, value] of Object.entries(previousFolders)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  },
+);
 
 test('INT encuesta CSV persiste respuestas detalles y metricas sin deduplicar', async () => {
   const docente = await db.seed('Docente', { numeroDocumento: '22223333' });

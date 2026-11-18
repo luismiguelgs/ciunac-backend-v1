@@ -3622,16 +3622,29 @@
         },
         {
           "id": "CA-Q10-002-05",
-          "description": "El request minimo, campos locales null, ejemplos y los cuatro codigos 502 coinciden con Swagger y la validacion HTTP.",
+          "description": "El request minimo, campos locales null, ejemplos y los codigos 502 coinciden con Swagger y la validacion HTTP.",
           "kind": "contract",
           "testFile": "test/sdd/contracts.contract-spec.cjs",
           "testNames": [
             "SWAGGER Q10 campos opcionales y nulos coinciden con HTTP",
             "SWAGGER ejemplos de alumno nuevo validan contra su requestBody",
             "SWAGGER error 502 documenta Q10_UNAVAILABLE",
+            "SWAGGER error 502 documenta Q10_PERIOD_LOOKUP_FAILED",
             "SWAGGER error 502 documenta Q10_CREATED_LOCAL_SYNC_FAILED",
             "SWAGGER error 502 documenta Q10_CREATED_PROGRAM_PENDING",
             "SWAGGER error 502 documenta Q10_CREATED_INVALID_RESPONSE"
+          ],
+          "state": "Implementado"
+        },
+        {
+          "id": "CA-Q10-002-06",
+          "description": "Los rechazos incluyen operacion, etapa y reglas seguras; JSON malformado y errores inesperados se registran sin datos personales.",
+          "kind": "e2e",
+          "testFile": "test/q10-estudiantes.e2e-spec.ts",
+          "testNames": [
+            "logs safe validation rules and correlates the response without field values",
+            "logs malformed JSON before the controller and does not expose parser messages",
+            "logs unexpected failures once, without exception contents or invalid correlation"
           ],
           "state": "Implementado"
         }
@@ -12725,7 +12738,7 @@
       "controller": "Q10Controller",
       "handler": "guardarHorariosCursos",
       "controllerFile": "src/q10/q10.controller.ts",
-      "line": 85,
+      "line": 98,
       "domain": "q10",
       "module": "q10",
       "successStatus": 201,
@@ -12767,7 +12780,7 @@
       "controller": "Q10Controller",
       "handler": "listarHorariosCursos",
       "controllerFile": "src/q10/q10.controller.ts",
-      "line": 80,
+      "line": 93,
       "domain": "q10",
       "module": "q10",
       "successStatus": 200,
@@ -12808,7 +12821,7 @@
       "controller": "Q10Controller",
       "handler": "register",
       "controllerFile": "src/q10/q10.controller.ts",
-      "line": 28,
+      "line": 29,
       "domain": "q10",
       "module": "q10",
       "successStatus": 201,
@@ -12841,7 +12854,8 @@
         "CA-Q10-002-02",
         "CA-Q10-002-03",
         "CA-Q10-002-04",
-        "CA-Q10-002-05"
+        "CA-Q10-002-05",
+        "CA-Q10-002-06"
       ],
       "contractTest": "HTTP Q10Controller_register",
       "securityTest": "SEC Q10Controller_register"

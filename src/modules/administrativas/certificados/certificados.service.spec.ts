@@ -179,51 +179,70 @@ describe('CertificadosService', () => {
       mockUpdateResult({ ...mockCertificado, driveId: 'signed-id' });
     });
 
-    it('archives the signed file in its period and updates both stores', async () => {
-      const result = await service.procesarFirma(
-        mockCertificado._id.toString(),
-        'stale-id',
-        123,
-      );
+    it.each(['R', 'FIRMADO'])(
+      'archives the %s signed file in its period and updates both stores',
+      async (marker) => {
+        const name = `certificado-123[${marker}].pdf`;
+        uploadService.findSignedVersion.mockResolvedValue({
+          originalFile: {
+            id: 'stored-original-id',
+            name: 'certificado-123.pdf',
+          },
+          signedFile: { id: 'signed-id', name },
+        });
+        uploadService.moveFileToRepository.mockResolvedValue({
+          id: 'signed-id',
+          name,
+        });
+        const result = await service.procesarFirma(
+          mockCertificado._id.toString(),
+          'stale-id',
+          123,
+        );
 
-      expect(
-        uploadService.getCertificatePeriodFolderId,
-      ).toHaveBeenCalledWith('202607');
-      expect(uploadService.findSignedVersion).toHaveBeenCalledWith(
-        'stored-original-id',
-        undefined,
-        'period-folder',
-      );
-      expect(uploadService.moveFileToRepository).toHaveBeenCalledWith(
-        'signed-id',
-        'period-folder',
-      );
-      expect(modelMethods.findOneAndUpdate).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          impreso: true,
-          driveId: 'signed-id',
-          url: 'https://drive.google.com/uc?export=download&id=signed-id',
-          driveIdOriginal: 'stored-original-id',
-          originalTrashed: false,
-        }),
-        { new: true },
-      );
-      expect(solicitudesService.update).toHaveBeenCalledWith(123, {
-        estadoId: 3,
-      });
-      expect(uploadService.trashFile).toHaveBeenCalledWith(
-        'stored-original-id',
-      );
-      expect(result).toEqual({
-        success: true,
-        fileId: 'signed-id',
-        name: 'certificado-123[FIRMADO].pdf',
-        viewLink:
-          'https://drive.google.com/uc?export=download&id=signed-id',
-        originalTrashed: true,
-      });
-    });
+        expect(uploadService.getCertificatePeriodFolderId).toHaveBeenCalledWith(
+          '202607',
+        );
+        expect(uploadService.findSignedVersion).toHaveBeenCalledWith(
+          'stored-original-id',
+          undefined,
+          'period-folder',
+        );
+        expect(uploadService.moveFileToRepository).toHaveBeenCalledWith(
+          'signed-id',
+          'period-folder',
+        );
+        expect(modelMethods.findOneAndUpdate).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            impreso: true,
+            driveId: 'signed-id',
+            url: 'https://drive.google.com/uc?export=download&id=signed-id',
+            driveIdOriginal: 'stored-original-id',
+            originalTrashed: false,
+          }),
+          { new: true },
+        );
+        expect(solicitudesService.update).toHaveBeenCalledWith(123, {
+          estadoId: 3,
+        });
+        expect(uploadService.trashFile).toHaveBeenCalledWith(
+          'stored-original-id',
+        );
+        expect(result).toEqual({
+          success: true,
+          fileId: 'signed-id',
+          name,
+          viewLink: 'https://drive.google.com/uc?export=download&id=signed-id',
+          originalTrashed: true,
+        });
+        expect(uploadService.trashFile).toHaveBeenCalledTimes(1);
+        expect(uploadService.trashFile).not.toHaveBeenCalledWith('signed-id');
+        expect(
+          solicitudesService.update.mock.invocationCallOrder[0],
+        ).toBeLessThan(uploadService.trashFile.mock.invocationCallOrder[0]);
+      },
+    );
 
     it('does not mutate state when the period folder is missing', async () => {
       uploadService.getCertificatePeriodFolderId.mockRejectedValue(
@@ -259,9 +278,7 @@ describe('CertificadosService', () => {
       ).rejects.toThrow(BadRequestException);
 
       expect(solicitudesService.findOne).not.toHaveBeenCalled();
-      expect(
-        uploadService.getCertificatePeriodFolderId,
-      ).not.toHaveBeenCalled();
+      expect(uploadService.getCertificatePeriodFolderId).not.toHaveBeenCalled();
     });
 
     it('fails when no stored or fallback drive id exists', async () => {
@@ -271,9 +288,7 @@ describe('CertificadosService', () => {
         service.procesarFirma(mockCertificado._id.toString(), undefined, 123),
       ).rejects.toThrow(BadRequestException);
 
-      expect(
-        uploadService.getCertificatePeriodFolderId,
-      ).not.toHaveBeenCalled();
+      expect(uploadService.getCertificatePeriodFolderId).not.toHaveBeenCalled();
     });
 
     it('restores Mongo when updating PostgreSQL fails', async () => {

@@ -28,7 +28,7 @@ Fixtures desde entidades TypeORM y schemas Mongoose compilados. synchronize:true
 - Acta: snapshot, examen 8 a 13, indice unico, inmutabilidad y compensacion Mongo.
 - Q10: UUID local, idempotencia, conflicto, respuesta invalida y persistencia ante matricula fallida.
 - Alumno local: POST/PATCH HTTP con servicios y repositorios reales, fechas validas/imposibles/null/ausentes y conservacion del dia en procesos separados UTC/America-Lima.
-- Swagger alumno nuevo: requests Q10 minimos y nulls, ejemplos de alta, nombre de upload opcional, enlaces de respuesta y los cuatro codigos 502; comparacion contra la validacion HTTP real.
+- Swagger alumno nuevo: requests Q10 minimos y nulls, ejemplos de alta, nombre de upload opcional, enlaces de respuesta y codigos 502; comparacion contra la validacion HTTP real. Diagnosticos Q10: operacion, etapa, efectos parciales y reglas sin valores personales, incluyendo JSON malformado y errores inesperados.
 - Docentes: formula 81, detalle textual ponderado, persistencia y ranking.
 
 ## Trazabilidad y cierre
