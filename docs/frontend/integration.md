@@ -2,6 +2,10 @@
 
 Contrato vigente: [OpenAPI](../api/openapi.json), [inventario](../api/endpoints.md) y [casos](../specs/use-cases-index.md). No hay prefijo global `/api/ciunac` en main.ts; si el despliegue lo usa, corresponde al proxy o al cliente. Usar `operationId` para enlazar pantallas, no copiar reglas pendientes como implementadas.
 
+Para el modulo administrativo de estudiantes de `ciunac-admin-2`, usar el [encargo de implementacion, flujo y contratos](ciunac-admin-2-estudiantes.md), con listado, detalle, edicion local, alta Q10 y criterios de prueba frontend.
+
+`GET /estudiantes` devuelve `{ data, meta }` con paginacion y filtros de servidor. Migrar los consumidores del array anterior junto con el despliegue del backend. Consultar [el contrato de listado](../specs/principales.md#listado-paginado-de-estudiantes).
+
 ## Responsabilidades compartidas
 
 Las historias pertenecen al proceso de negocio, no a un repositorio frontend exclusivo. El backend mantiene persistencia, validacion, permisos y efectos externos; el frontend mantiene formularios, confirmaciones, estado visual y manejo de errores. La validacion visual queda pendiente de revisar el repositorio frontend. Los contratos HTTP se prueban aqui, no las pantallas.

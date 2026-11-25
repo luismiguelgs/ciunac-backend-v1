@@ -137,9 +137,7 @@ async function solicitud(overrides = {}) {
   });
 }
 
-test('INT estudiante local valida POST PATCH y persiste fecha calendario por HTTP', async () => {
-  const previousApiKey = process.env.API_KEY;
-  process.env.API_KEY = 'sdd-local-student-test-only';
+async function createEstudiantesApp() {
   const { EstudiantesController } = load(
     'src/modules/principales/estudiantes/estudiantes.controller.ts',
   );
@@ -160,6 +158,13 @@ test('INT estudiante local valida POST PATCH y persiste fecha calendario por HTT
     }),
   );
   await app.init();
+  return app;
+}
+
+test('INT estudiante local valida POST PATCH y persiste fecha calendario por HTTP', async () => {
+  const previousApiKey = process.env.API_KEY;
+  process.env.API_KEY = 'sdd-local-student-test-only';
+  const app = await createEstudiantesApp();
   try {
     const payload = {
       nombres: 'Ana',
@@ -245,6 +250,243 @@ test('INT estudiante local valida POST PATCH y persiste fecha calendario por HTT
     else process.env.API_KEY = previousApiKey;
   }
 });
+
+test('INT estudiantes pagina filtra y proyecta el listado por HTTP', async () => {
+  const previousApiKey = process.env.API_KEY;
+  process.env.API_KEY = 'sdd-student-list-test-only';
+  const app = await createEstudiantesApp();
+  const list = (query = {}) =>
+    request(app.getHttpServer())
+      .get('/estudiantes')
+      .query(query)
+      .set('x-api-key', process.env.API_KEY);
+  try {
+    const facultad = await db.seed('Facultad', { nombre: 'Facultad SDD' });
+    const otraFacultad = await db.seed('Facultad');
+    const escuela = await db.seed('Escuela', {
+      facultadId: facultad.id,
+      nombre: 'Escuela SDD',
+    });
+    const otraEscuela = await db.seed('Escuela', { facultadId: facultad.id });
+    const usuario = await db.seed('Usuario', {
+      email: 'listado-usuario@example.invalid',
+      password: 'hash-privado',
+      refreshTokenHash: 'refresh-privado',
+    });
+    const lote = {
+      nombres: 'Ana',
+      apellidos: 'Aaa Paginacion',
+      tipoDocumento: 'DNI',
+      tipoEstudiante: 'PRE',
+      facultadId: facultad.id,
+      escuelaId: escuela.id,
+      imgDoc: 'https://example.invalid/privado.pdf',
+    };
+    const primero = await db.seed('Estudiante', {
+      ...lote,
+      id: '00000000-0000-4000-8000-000000000001',
+      numeroDocumento: '00009101',
+      codigo: 'LIST%_!01',
+      email: 'Paginacion-Ana@example.invalid',
+      idQ10: 'Q10-PAG-1',
+      usuario,
+    });
+    const segundo = await db.seed('Estudiante', {
+      ...lote,
+      id: '00000000-0000-4000-8000-000000000002',
+      numeroDocumento: '00009102',
+      codigo: 'LISTABC02',
+      idQ10: 'Q10-PAG-2',
+    });
+    const sinTipo = await db.seed('Estudiante', {
+      ...lote,
+      numeroDocumento: '00009103',
+      tipoEstudiante: null,
+      idQ10: '   ',
+    });
+    const fueraDeEscuela = await db.seed('Estudiante', {
+      ...lote,
+      numeroDocumento: '00009104',
+      escuelaId: otraEscuela.id,
+      idQ10: 'Q10-PAG-4',
+    });
+    await db.seed('Estudiante', {
+      ...lote,
+      numeroDocumento: '00009105',
+      facultadId: otraFacultad.id,
+      escuelaId: null,
+      idQ10: 'Q10-PAG-5',
+    });
+    await db.seed('Estudiante', {
+      ...lote,
+      numeroDocumento: '00009106',
+      idQ10: null,
+    });
+    for (let index = 0; index < 25; index++) {
+      await db.seed('Estudiante', {
+        nombres: 'Extra',
+        apellidos: 'Zzz Paginacion',
+        numeroDocumento: `PAG-${index}`,
+      });
+    }
+
+    const total = await db.repo('Estudiante').count();
+    const defaults = (await list().expect(200)).body;
+    assertContract('EstudiantesController_findAll', defaults);
+    expect(defaults.meta).toEqual({
+      page: 1,
+      limit: 25,
+      total,
+      totalPages: Math.ceil(total / 25),
+    });
+    expect(defaults.data).toHaveLength(25);
+    const max = (await list({ search: '   ', limit: 100 }).expect(200)).body;
+    expect(max.meta).toEqual({ page: 1, limit: 100, total, totalPages: 1 });
+    expect(max.data).toHaveLength(total);
+
+    const filtros = {
+      search: '  aNa AaA  ',
+      tipoEstudiante: 'PRE',
+      facultadId: facultad.id,
+      escuelaId: escuela.id,
+      vinculadoQ10: 'true',
+      limit: 1,
+    };
+    const page1 = (await list(filtros).expect(200)).body;
+    const page2 = (await list({ ...filtros, page: 2 }).expect(200)).body;
+    expect(page1.meta).toEqual({ page: 1, limit: 1, total: 2, totalPages: 2 });
+    expect(page2.meta).toEqual({ page: 2, limit: 1, total: 2, totalPages: 2 });
+    expect(page1.data).toEqual([
+      {
+        id: primero.id,
+        nombres: lote.nombres,
+        apellidos: lote.apellidos,
+        tipoDocumento: 'DNI',
+        numeroDocumento: '00009101',
+        codigo: 'LIST%_!01',
+        tipoEstudiante: 'PRE',
+        idQ10: 'Q10-PAG-1',
+        facultadId: facultad.id,
+        escuelaId: escuela.id,
+        facultad: { id: facultad.id, nombre: facultad.nombre },
+        escuela: { id: escuela.id, nombre: escuela.nombre },
+      },
+    ]);
+    expect(page2.data.map((row) => row.id)).toEqual([segundo.id]);
+    const outOfRange = (await list({ ...filtros, page: 999 }).expect(200)).body;
+    expect(outOfRange).toEqual({
+      data: [],
+      meta: { page: 999, limit: 1, total: 2, totalPages: 2 },
+    });
+    const empty = (
+      await list({ search: 'imposible-de-coincidir-sdd' }).expect(200)
+    ).body;
+    expect(empty).toEqual({
+      data: [],
+      meta: { page: 1, limit: 25, total: 0, totalPages: 0 },
+    });
+
+    for (const search of ['00009101', 'list%_!', 'paginacion-ANA@']) {
+      const result = (await list({ search }).expect(200)).body;
+      expect(result.data.map((row) => row.id)).toEqual([primero.id]);
+    }
+    const unclassified = (
+      await list({
+        search: '000091',
+        tipoEstudiante: 'SIN_CLASIFICAR',
+        vinculadoQ10: 'false',
+      }).expect(200)
+    ).body;
+    expect(unclassified.data).toMatchObject([
+      { id: sinTipo.id, idQ10: null, tipoEstudiante: null },
+    ]);
+    const bySchool = (await list({ escuelaId: otraEscuela.id }).expect(200))
+      .body;
+    expect(bySchool.data.map((row) => row.id)).toEqual([fueraDeEscuela.id]);
+
+    for (const invalid of [
+      { page: 0 },
+      { page: 1.5 },
+      { page: 'wrong' },
+      { limit: 0 },
+      { limit: 101 },
+      { page: [1, 2] },
+      { tipoEstudiante: 'OTRO' },
+      { vinculadoQ10: '1' },
+      { facultadId: 0 },
+      { escuelaId: '2147483648' },
+      { inesperado: true },
+    ])
+      await list(invalid).expect(400);
+    await request(app.getHttpServer()).get('/estudiantes').expect(401);
+  } finally {
+    await app.close();
+    if (previousApiKey === undefined) delete process.env.API_KEY;
+    else process.env.API_KEY = previousApiKey;
+  }
+});
+
+const benchmark =
+  process.env.CIUNAC_ESTUDIANTES_BENCHMARK === '1' ? test : test.skip;
+benchmark(
+  'PERF estudiantes mide busqueda y listado sobre 50000 filas',
+  async () => {
+    const runner = db.pg.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+    try {
+      await runner.query(`
+      INSERT INTO estudiantes
+        (nombres, apellidos, genero, fecha_nacimiento, tipo_documento, numero_documento, celular, codigo)
+      SELECT 'Estudiante', 'Apellido ' || (i % 5000), 'F', DATE '2000-01-01',
+        'DNI', LPAD(i::text, 8, '0'), '999999999', 'MUESTRA-' || LPAD(i::text, 6, '0')
+      FROM generate_series(1, 50000) AS series(i)
+    `);
+      await runner.query('ANALYZE estudiantes');
+      const instance = service(
+        moduleFile('principales', 'estudiantes'),
+        'EstudiantesService',
+        ...['Estudiante', 'Facultad', 'Escuela'].map((name) =>
+          runner.manager.getRepository(db.classes[name]),
+        ),
+      );
+      const query = jest.spyOn(runner, 'query');
+      try {
+        for (const [label, filters] of [
+          ['primera pagina', { limit: 25 }],
+          [
+            'busqueda por codigo parcial',
+            { search: 'muestra-0042', limit: 25 },
+          ],
+        ]) {
+          query.mockClear();
+          const result = await instance.findAll(filters);
+          expect(result.data).toHaveLength(25);
+          if (filters.search) expect(result.meta.total).toBe(100);
+          const queries = query.mock.calls.slice();
+          expect(queries).toHaveLength(2);
+          const timings = [];
+          for (const [sql, params] of queries) {
+            const rows = await runner.query(
+              `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${sql}`,
+              params,
+            );
+            timings.push(rows[0]['QUERY PLAN'][0]['Execution Time']);
+          }
+          console.info(
+            `PERF estudiantes (${label}, 50000 filas sinteticas) PostgreSQL count=${timings[0]} ms, pagina=${timings[1]} ms`,
+          );
+        }
+      } finally {
+        query.mockRestore();
+      }
+    } finally {
+      await runner.rollbackTransaction();
+      await runner.release();
+    }
+  },
+  30000,
+);
 
 test('INT fecha estudiante no cambia de dia en UTC ni America Lima', () => {
   for (const timezone of ['UTC', 'America/Lima']) {

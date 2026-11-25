@@ -74,7 +74,8 @@ Los cinco ultimos campos pueden omitirse individualmente. Los IDs son ejemplos d
 | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `POST /q10/estudiantes`                                                    | Acepta tipo, codigo y documento opcionales; `null` conserva valores previos.                      |
 | `POST /estudiantes`, `PATCH /estudiantes/:id`                              | Admiten y validan tipo opcional. Conservan la validacion generica actual de `imgDoc` como cadena. |
-| `GET /estudiantes`, `GET /estudiantes/:id`, `GET /estudiantes/buscar/:dni` | Exponen los campos locales persistidos.                                                           |
+| `GET /estudiantes` | [Listado paginado](principales.md#listado-paginado-de-estudiantes) con los campos de tabla. |
+| `GET /estudiantes/:id`, `GET /estudiantes/buscar/:dni` | Exponen los campos locales persistidos. |
 | `POST /escuelas`                                                           | Requiere `tipo` con valor `PRE` o `POS`.                                                          |
 | `PATCH /escuelas/:id`                                                      | Tipo opcional, pero `null`/`PG` se rechazan; protege alumnos vinculados incompatibles.            |
 | `GET /escuelas`, `GET /escuelas/:id`                                       | Exponen `tipo`, nullable para historicos.                                                         |

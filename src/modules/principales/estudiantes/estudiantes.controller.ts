@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { EstudiantesService } from './estudiantes.service';
 import { CreateEstudianteDto } from './dto/create-estudiante.dto';
@@ -13,7 +14,14 @@ import { UpdateEstudianteDto } from './dto/update-estudiante.dto';
 import { UseGuards } from '@nestjs/common';
 //import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { ApiKeyGuard } from 'src/modules/authentication/auth/guards/api-key.guard';
-import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+} from '@nestjs/swagger';
+import { ListarEstudiantesDto } from './dto/listar-estudiantes.dto';
+import { EstudiantesPaginadosDto } from './dto/estudiantes-paginados.dto';
 
 //@UseGuards(JwtAuthGuard)
 @UseGuards(ApiKeyGuard)
@@ -50,8 +58,15 @@ export class EstudiantesController {
   }
 
   @Get()
-  findAll() {
-    return this.estudiantesService.findAll();
+  @ApiOperation({
+    summary: 'Listar estudiantes con paginacion, busqueda y filtros',
+  })
+  @ApiOkResponse({ type: EstudiantesPaginadosDto })
+  @ApiBadRequestResponse({ description: 'Parametros de listado invalidos' })
+  findAll(
+    @Query() query: ListarEstudiantesDto,
+  ): Promise<EstudiantesPaginadosDto> {
+    return this.estudiantesService.findAll(query);
   }
 
   @Get(':id')

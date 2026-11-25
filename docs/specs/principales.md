@@ -21,6 +21,23 @@ Los contratos, parametros y tipos exactos se detallan por operacion en [historia
 
 La eliminacion puede fallar por referencias existentes. La idempotencia de sincronizacion local es por documento y mismo idQ10; no equivale a reintentar un alta externa.
 
+## Listado paginado de estudiantes
+
+`GET /estudiantes?page=1&limit=25&search=00123&tipoEstudiante=PRE&vinculadoQ10=true` requiere la API key habitual. Por defecto devuelve la pagina 1 con hasta 25 filas. `page` y `limit` son enteros positivos y `limit` admite hasta 100. Los parametros invalidos devuelven `400`.
+
+| Parametro opcional | Comportamiento |
+| --- | --- |
+| `search` | Coincidencia parcial por documento, codigo, nombres y apellidos o correo, sin distinguir mayusculas. Conserva ceros iniciales, trata `%` y `_` como caracteres literales y omite terminos vacios. |
+| `tipoEstudiante` | `PRE`, `POS`, `PG` o `SIN_CLASIFICAR` (sin tipo almacenado). |
+| `facultadId`, `escuelaId` | IDs positivos del catalogo local. |
+| `vinculadoQ10` | `true` para ID local informado, `false` para ID nulo o en blanco. |
+
+Los filtros se combinan y se aplican en PostgreSQL al total y a los datos. El orden es ascendente por apellidos, nombres e ID. La respuesta contiene `data` y `meta: { page, limit, total, totalPages }`, donde `total` cuenta las coincidencias. Una pagina fuera de rango devuelve `200` con `data: []` y conserva los totales. Sin coincidencias, `total` y `totalPages` son cero.
+
+Cada fila devuelve `id`, `nombres`, `apellidos`, `tipoDocumento`, `numeroDocumento`, `codigo`, `tipoEstudiante`, `idQ10`, `facultadId`, `escuelaId` y las relaciones de catalogo `facultad` y `escuela` como `{ id, nombre }` o `null`. Para el resto de campos se utiliza el detalle por ID.
+
+El nuevo contrato reemplaza el array anterior. Coordinar despliegue con los consumidores y actualizar su paginador para leer `data` y `meta`.
+
 ## Datos y efectos
 
 Estudiante, Docente, Usuario, Facultad y Escuela en PostgreSQL. El CRUD local no crea automaticamente al estudiante en Q10 ni envia correo.

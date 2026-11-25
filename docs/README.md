@@ -11,6 +11,7 @@ Esta carpeta contiene la documentacion versionada del backend CIUNAC. Esta pensa
 - Para implementar o validar endpoints, usar [Inventario API](api/endpoints.md) y [Swagger / OpenAPI](api/openapi.md).
 - Para trabajar con spec-driven development, usar [Workflow SDD](specs/workflow.md), [Plantilla](specs/spec-template.md), [Historias y casos de uso](specs/use-cases-index.md) y [Matriz verificable](specs/traceability.json).
 - Para integrar pantallas, usar [Guia frontend por flujo](frontend/integration.md).
+- Para implementar estudiantes y alumno nuevo en `ciunac-admin-2`, usar [Flujo y contratos administrativos](frontend/ciunac-admin-2-estudiantes.md).
 - Para pruebas, usar [Estrategia de testing](testing/strategy.md).
 - Para operacion y configuracion, usar [Configuracion operacional](operations/configuration.md).
 

@@ -7,7 +7,9 @@ import { CreateEstudianteDto } from './dto/create-estudiante.dto';
 import { UpdateEstudianteDto } from './dto/update-estudiante.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Estudiante } from './entities/estudiante.entity';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
+import { ListarEstudiantesDto } from './dto/listar-estudiantes.dto';
+import { EstudiantesPaginadosDto } from './dto/estudiantes-paginados.dto';
 import { SyncEstudianteQ10Input } from './interfaces/sync-estudiante-q10.interface';
 import { Facultad } from 'src/modules/auxiliares/facultades/entities/facultad.entity';
 import { Escuela } from 'src/modules/auxiliares/escuelas/entities/escuela.entity';
@@ -36,10 +38,104 @@ export class EstudiantesService {
     return await this.estudianteRepository.save(item);
   }
 
-  async findAll(): Promise<Estudiante[]> {
-    return await this.estudianteRepository.find({
-      relations: ['facultad', 'escuela', 'usuario'],
-    });
+  async findAll({
+    page = 1,
+    limit = 25,
+    search,
+    tipoEstudiante,
+    facultadId,
+    escuelaId,
+    vinculadoQ10,
+  }: ListarEstudiantesDto = {}): Promise<EstudiantesPaginadosDto> {
+    const query = this.estudianteRepository.createQueryBuilder('estudiante');
+
+    if (search) {
+      const patron = `%${search.replace(/[!%_]/g, '!$&')}%`;
+      query.andWhere(
+        new Brackets((terms) => {
+          terms
+            .where("estudiante.numeroDocumento ILIKE :patron ESCAPE '!'")
+            .orWhere("estudiante.codigo ILIKE :patron ESCAPE '!'")
+            .orWhere(
+              "concat_ws(' ', estudiante.nombres, estudiante.apellidos) ILIKE :patron ESCAPE '!'",
+            )
+            .orWhere("estudiante.email ILIKE :patron ESCAPE '!'");
+        }),
+        { patron },
+      );
+    }
+
+    if (tipoEstudiante === 'SIN_CLASIFICAR') {
+      query.andWhere('estudiante.tipoEstudiante IS NULL');
+    } else if (tipoEstudiante !== undefined) {
+      query.andWhere('estudiante.tipoEstudiante = :tipoEstudiante', {
+        tipoEstudiante,
+      });
+    }
+    if (facultadId !== undefined) {
+      query.andWhere('estudiante.facultadId = :facultadId', { facultadId });
+    }
+    if (escuelaId !== undefined) {
+      query.andWhere('estudiante.escuelaId = :escuelaId', { escuelaId });
+    }
+    if (vinculadoQ10 !== undefined) {
+      query.andWhere(
+        vinculadoQ10 === 'true'
+          ? "NULLIF(BTRIM(estudiante.idQ10), '') IS NOT NULL"
+          : "NULLIF(BTRIM(estudiante.idQ10), '') IS NULL",
+      );
+    }
+
+    const total = await query.getCount();
+    const meta = { page, limit, total, totalPages: Math.ceil(total / limit) };
+    if (page > meta.totalPages) return { data: [], meta };
+
+    const estudiantes = await query
+      .leftJoin('estudiante.facultad', 'facultad')
+      .leftJoin('estudiante.escuela', 'escuela')
+      .select([
+        'estudiante.id',
+        'estudiante.nombres',
+        'estudiante.apellidos',
+        'estudiante.tipoDocumento',
+        'estudiante.numeroDocumento',
+        'estudiante.codigo',
+        'estudiante.tipoEstudiante',
+        'estudiante.idQ10',
+        'estudiante.facultadId',
+        'estudiante.escuelaId',
+        'facultad.id',
+        'facultad.nombre',
+        'escuela.id',
+        'escuela.nombre',
+      ])
+      .orderBy('estudiante.apellidos', 'ASC')
+      .addOrderBy('estudiante.nombres', 'ASC')
+      .addOrderBy('estudiante.id', 'ASC')
+      .offset((page - 1) * limit)
+      .limit(limit)
+      .getMany();
+
+    const data = estudiantes.map((estudiante) => ({
+      id: estudiante.id,
+      nombres: estudiante.nombres,
+      apellidos: estudiante.apellidos,
+      tipoDocumento: estudiante.tipoDocumento,
+      numeroDocumento: estudiante.numeroDocumento,
+      codigo: estudiante.codigo ?? null,
+      tipoEstudiante: estudiante.tipoEstudiante ?? null,
+      idQ10: estudiante.idQ10?.trim() || null,
+      facultadId: estudiante.facultadId ?? null,
+      escuelaId: estudiante.escuelaId ?? null,
+      facultad: estudiante.facultad
+        ? { id: estudiante.facultad.id, nombre: estudiante.facultad.nombre }
+        : null,
+      escuela: estudiante.escuela
+        ? { id: estudiante.escuela.id, nombre: estudiante.escuela.nombre }
+        : null,
+    }));
+
+    return { data, meta };
   }
 
   async findOne(id: string): Promise<Estudiante | null> {

@@ -2043,6 +2043,16 @@
             "INT fecha estudiante no cambia de dia en UTC ni America Lima"
           ],
           "state": "Implementado"
+        },
+        {
+          "id": "CA-EST-001-05",
+          "description": "El listado aplica busqueda, filtros y paginacion en PostgreSQL, devuelve totales y excluye credenciales y el documento adjunto.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT estudiantes pagina filtra y proyecta el listado por HTTP"
+          ],
+          "state": "Implementado"
         }
       ],
       "version": "1.1",
@@ -9523,7 +9533,7 @@
       "controller": "EstudiantesController",
       "handler": "create",
       "controllerFile": "src/modules/principales/estudiantes/estudiantes.controller.ts",
-      "line": 24,
+      "line": 32,
       "domain": "principales",
       "module": "estudiantes",
       "successStatus": 201,
@@ -9555,7 +9565,8 @@
         "CA-EST-001-01",
         "CA-EST-001-02",
         "CA-EST-001-03",
-        "CA-EST-001-04"
+        "CA-EST-001-04",
+        "CA-EST-001-05"
       ],
       "contractTest": "HTTP EstudiantesController_create",
       "securityTest": "SEC EstudiantesController_create"
@@ -9567,7 +9578,7 @@
       "controller": "EstudiantesController",
       "handler": "findAll",
       "controllerFile": "src/modules/principales/estudiantes/estudiantes.controller.ts",
-      "line": 52,
+      "line": 60,
       "domain": "principales",
       "module": "estudiantes",
       "successStatus": 200,
@@ -9581,7 +9592,16 @@
           "method": "findAll"
         }
       ],
-      "parameters": [],
+      "parameters": [
+        {
+          "name": "query",
+          "binding": "Query",
+          "key": "",
+          "type": "ListarEstudiantesDto",
+          "typeFile": "src/modules/principales/estudiantes/dto/listar-estudiantes.dto.ts",
+          "pipes": []
+        }
+      ],
       "multipart": false,
       "storyId": "HU-EST-001",
       "useCaseId": "CU-EST-001",
@@ -9590,7 +9610,8 @@
         "CA-EST-001-01",
         "CA-EST-001-02",
         "CA-EST-001-03",
-        "CA-EST-001-04"
+        "CA-EST-001-04",
+        "CA-EST-001-05"
       ],
       "contractTest": "HTTP EstudiantesController_findAll",
       "securityTest": "SEC EstudiantesController_findAll"
@@ -9602,7 +9623,7 @@
       "controller": "EstudiantesController",
       "handler": "findByDni",
       "controllerFile": "src/modules/principales/estudiantes/estudiantes.controller.ts",
-      "line": 61,
+      "line": 76,
       "domain": "principales",
       "module": "estudiantes",
       "successStatus": 200,
@@ -9633,7 +9654,8 @@
         "CA-EST-001-01",
         "CA-EST-001-02",
         "CA-EST-001-03",
-        "CA-EST-001-04"
+        "CA-EST-001-04",
+        "CA-EST-001-05"
       ],
       "contractTest": "HTTP EstudiantesController_findByDni",
       "securityTest": "SEC EstudiantesController_findByDni"
@@ -9645,7 +9667,7 @@
       "controller": "EstudiantesController",
       "handler": "findOne",
       "controllerFile": "src/modules/principales/estudiantes/estudiantes.controller.ts",
-      "line": 57,
+      "line": 72,
       "domain": "principales",
       "module": "estudiantes",
       "successStatus": 200,
@@ -9676,7 +9698,8 @@
         "CA-EST-001-01",
         "CA-EST-001-02",
         "CA-EST-001-03",
-        "CA-EST-001-04"
+        "CA-EST-001-04",
+        "CA-EST-001-05"
       ],
       "contractTest": "HTTP EstudiantesController_findOne",
       "securityTest": "SEC EstudiantesController_findOne"
@@ -9688,7 +9711,7 @@
       "controller": "EstudiantesController",
       "handler": "remove",
       "controllerFile": "src/modules/principales/estudiantes/estudiantes.controller.ts",
-      "line": 79,
+      "line": 94,
       "domain": "principales",
       "module": "estudiantes",
       "successStatus": 200,
@@ -9719,7 +9742,8 @@
         "CA-EST-001-01",
         "CA-EST-001-02",
         "CA-EST-001-03",
-        "CA-EST-001-04"
+        "CA-EST-001-04",
+        "CA-EST-001-05"
       ],
       "contractTest": "HTTP EstudiantesController_remove",
       "securityTest": "SEC EstudiantesController_remove"
@@ -9731,7 +9755,7 @@
       "controller": "EstudiantesController",
       "handler": "update",
       "controllerFile": "src/modules/principales/estudiantes/estudiantes.controller.ts",
-      "line": 66,
+      "line": 81,
       "domain": "principales",
       "module": "estudiantes",
       "successStatus": 200,
@@ -9770,7 +9794,8 @@
         "CA-EST-001-01",
         "CA-EST-001-02",
         "CA-EST-001-03",
-        "CA-EST-001-04"
+        "CA-EST-001-04",
+        "CA-EST-001-05"
       ],
       "contractTest": "HTTP EstudiantesController_update",
       "securityTest": "SEC EstudiantesController_update"

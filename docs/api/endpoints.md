@@ -213,7 +213,7 @@ Las rutas son relativas al backend. No existe prefijo global `/api/ciunac`; cual
 | DELETE | `/docentes/:id` | api-key | Param id | 200, 401 | `DocentesController_remove` / CU-DOC-001 |
 | PATCH | `/docentes/:id` | api-key | Param id; Body UpdateDocenteDto | 200, 400, 401 | `DocentesController_update` / CU-DOC-001 |
 | POST | `/estudiantes` | api-key | Body CreateEstudianteDto | 201, 400, 401 | `EstudiantesController_create` / CU-EST-001 |
-| GET | `/estudiantes` | api-key | Sin parametros | 200, 401 | `EstudiantesController_findAll` / CU-EST-001 |
+| GET | `/estudiantes` | api-key | Query ListarEstudiantesDto | 200, 400, 401 | `EstudiantesController_findAll` / CU-EST-001 |
 | GET | `/estudiantes/buscar/:dni` | api-key | Param dni | 200, 401 | `EstudiantesController_findByDni` / CU-EST-001 |
 | GET | `/estudiantes/:id` | api-key | Param id | 200, 401 | `EstudiantesController_findOne` / CU-EST-001 |
 | DELETE | `/estudiantes/:id` | api-key | Param id | 200, 401 | `EstudiantesController_remove` / CU-EST-001 |

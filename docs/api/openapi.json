@@ -2455,6 +2455,117 @@
         ],
         "type": "object"
       },
+      "EstudianteListadoDto": {
+        "properties": {
+          "apellidos": {
+            "type": "string"
+          },
+          "codigo": {
+            "nullable": true,
+            "type": "string"
+          },
+          "escuela": {
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "nombre": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "nombre"
+            ],
+            "type": "object"
+          },
+          "escuelaId": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "facultad": {
+            "nullable": true,
+            "properties": {
+              "id": {
+                "type": "integer"
+              },
+              "nombre": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "nombre"
+            ],
+            "type": "object"
+          },
+          "facultadId": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "idQ10": {
+            "nullable": true,
+            "type": "string"
+          },
+          "nombres": {
+            "type": "string"
+          },
+          "numeroDocumento": {
+            "type": "string"
+          },
+          "tipoDocumento": {
+            "type": "string"
+          },
+          "tipoEstudiante": {
+            "enum": [
+              "PRE",
+              "POS",
+              "PG",
+              null
+            ],
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombres",
+          "apellidos",
+          "tipoDocumento",
+          "numeroDocumento",
+          "codigo",
+          "tipoEstudiante",
+          "idQ10",
+          "facultadId",
+          "escuelaId",
+          "facultad",
+          "escuela"
+        ],
+        "type": "object"
+      },
+      "EstudiantesPaginadosDto": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EstudianteListadoDto"
+            },
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PaginacionEstudiantesDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "type": "object"
+      },
       "Evaluacion": {
         "properties": {
           "activo": {
@@ -2920,6 +3031,29 @@
           "aprobado",
           "creadoEn",
           "modificadoEn"
+        ],
+        "type": "object"
+      },
+      "PaginacionEstudiantesDto": {
+        "properties": {
+          "limit": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "page",
+          "limit",
+          "total",
+          "totalPages"
         ],
         "type": "object"
       },
@@ -10595,20 +10729,99 @@
       "get": {
         "description": "GET /estudiantes",
         "operationId": "EstudiantesController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Coincidencia parcial por documento, codigo, nombres y apellidos o correo.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tipoEstudiante",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PRE",
+                "POS",
+                "PG",
+                "SIN_CLASIFICAR"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "facultadId",
+            "required": false,
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "escuelaId",
+            "required": false,
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Presencia de un idQ10 local no vacio.",
+            "in": "query",
+            "name": "vinculadoQ10",
+            "required": false,
+            "schema": {
+              "enum": [
+                "true",
+                "false"
+              ],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Estudiante"
-                  },
-                  "type": "array"
+                  "$ref": "#/components/schemas/EstudiantesPaginadosDto"
                 }
               }
             },
             "description": ""
+          },
+          "400": {
+            "description": "Parametros de listado invalidos"
           },
           "401": {
             "description": "Credenciales ausentes o invalidas."
@@ -10619,7 +10832,7 @@
             "api-key": []
           }
         ],
-        "summary": "GET /estudiantes",
+        "summary": "Listar estudiantes con paginacion, busqueda y filtros",
         "tags": [
           "Principales"
         ],

@@ -904,6 +904,15 @@
             "INT estudiante local valida POST PATCH y persiste fecha calendario por HTTP",
             "INT fecha estudiante no cambia de dia en UTC ni America Lima"
           ]
+        },
+        {
+          "id": "CA-EST-001-05",
+          "description": "El listado aplica busqueda, filtros y paginacion en PostgreSQL, devuelve totales y excluye credenciales y el documento adjunto.",
+          "kind": "integration",
+          "testFile": "test/sdd/critical.integration-spec.cjs",
+          "testNames": [
+            "INT estudiantes pagina filtra y proyecta el listado por HTTP"
+          ]
         }
       ],
       "version": "1.1",
