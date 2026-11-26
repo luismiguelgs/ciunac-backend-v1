@@ -83,6 +83,46 @@ describe('Q10 student registration (e2e)', () => {
     });
   });
 
+  it('accepts the portal UTC midnight birth date', async () => {
+    const Fecha_nacimiento = '2000-02-29T00:00:00.000Z';
+    await request(app.getHttpServer())
+      .post('/q10/estudiantes')
+      .set('x-api-key', 'test-api-key')
+      .send({ ...payload, Fecha_nacimiento })
+      .expect(201);
+    expect(q10Service.crearEstudianteEnQ10).toHaveBeenCalledWith(
+      expect.objectContaining({ Fecha_nacimiento }),
+    );
+  });
+
+  it.each([
+    ['2025-02-29', 'isDateString'],
+    ['2025-02-29T00:00:00.000Z', 'isDateString'],
+    ['2000-01-01T12:00:00.000Z', 'matches'],
+    ['2000-01-01T00:00:00.000-05:00', 'matches'],
+    ['2000-01-01T00:00:00.000Z\n', 'matches'],
+    ['0000-01-01', 'matches'],
+    [20000101, 'matches'],
+    [null, 'matches'],
+  ])(
+    'rejects birth date %j before student creation',
+    async (Fecha_nacimiento, rule) => {
+      const response = await request(app.getHttpServer())
+        .post('/q10/estudiantes')
+        .set('x-api-key', 'test-api-key')
+        .send({ ...payload, Fecha_nacimiento })
+        .expect(400);
+      expect(response.body).toMatchObject({
+        code: 'Q10_REQUEST_VALIDATION_FAILED',
+        retryAllowed: false,
+        validationErrors: expect.arrayContaining([
+          { field: 'Fecha_nacimiento', rules: expect.arrayContaining([rule]) },
+        ]),
+      });
+      expect(q10Service.crearEstudianteEnQ10).not.toHaveBeenCalled();
+    },
+  );
+
   it.each([
     { facultadId: 3, escuelaId: 8 },
     { facultadId: 3 },

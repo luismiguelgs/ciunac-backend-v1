@@ -1,4 +1,5 @@
 import {
+  IsDateString,
   IsEmail,
   IsEnum,
   IsIn,
@@ -9,14 +10,17 @@ import {
   IsString,
   IsUrl,
   Length,
+  Matches,
   Min,
 } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   TIPOS_ESTUDIANTE,
   TipoEstudiante,
 } from 'src/shared/types/tipo-academico';
+
+const birthDatePattern = /^(?!0000)\d{4}-\d{2}-\d{2}(?:T00:00:00\.000Z)?$/;
 
 export class Q10EstudianteDto {
   @IsNotEmpty()
@@ -53,8 +57,15 @@ export class Q10EstudianteDto {
   @IsEnum(['M', 'F'], { message: 'Genero debe ser M o F' })
   Genero: string;
 
-  @IsNotEmpty()
-  @IsString()
+  @ApiProperty({
+    type: String,
+    pattern: birthDatePattern.source,
+    example: '2000-01-01',
+    description:
+      'Fecha real YYYY-MM-DD o YYYY-MM-DDT00:00:00.000Z. Q10 recibe YYYY-MM-DD sin conversion horaria.',
+  })
+  @Matches(birthDatePattern)
+  @IsDateString({ strict: true })
   Fecha_nacimiento: string;
 
   @IsNotEmpty()

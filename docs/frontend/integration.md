@@ -58,6 +58,8 @@ El backend de [estudiante nuevo](../specs/estudiante-nuevo.md) acepta `tipoEstud
 
 Enviar `codigo` como texto (por ejemplo, `"0012345678"`). El backend recorta espacios de los extremos, conserva ceros iniciales y exige entre 1 y 50 caracteres. Si se adjunta un documento, cargarlo primero por `/upload/DNIS` y enviar su `viewLink` como `imgDoc` (URL HTTP/HTTPS absoluta). La columna es `estudiantes.img_doc` y la clave JSON `img_doc` devuelve `400`. Consultar los valores guardados en `GET /estudiantes/:id`. Conservar el enlace y manejar fallos parciales sin repetir el alta Q10.
 
+Para `POST /q10/estudiantes`, enviar una fecha real en `Fecha_nacimiento` como `2000-01-01` o `2000-01-01T00:00:00.000Z`, el formato de medianoche UTC del portal. El backend envia `2000-01-01` a Q10 en ambos casos. Otros formatos, horas o fechas imposibles devuelven `400` local antes de contactar a Q10.
+
 El upload admite nombre omitido y devuelve viewLink, no url. Los cinco campos Q10 Direccion/Lugar_nacimiento/Lugar_residencia/Consecutivo_sedejornada/Consecutivo_periodo no deben exigirse al usuario. Para alta local usar fechaNacimiento="2000-01-01", sin hora ni zona; no convertir con new Date().toISOString(). Usar POST /estudiantes solo si NO se realiza alta Q10.
 
 Por cada historia: asociar pantalla y prueba de interfaz a su ID; verificar requests reales en red, accesibilidad, errores, reintentos y estados de carga. Registrar repositorio, commit y resultado en la matriz cuando se disponga del frontend. Esto no se marca Verificado mediante las pruebas de este repositorio.

@@ -361,7 +361,7 @@ Ejemplo con los datos locales opcionales:
 | `Codigo_tipo_identificacion` | Si              | `PE01` = DNI, `PE02` = CE, `PE03` = pasaporte en el mapeo local.                                                                                     |
 | `Numero_identificacion`      | Si              | Texto no vacio; conservar ceros iniciales. No se impone aqui longitud universal de DNI a todos los tipos de documento.                               |
 | `Genero`                     | Si              | `M` o `F`.                                                                                                                                           |
-| `Fecha_nacimiento`           | Si              | DTO Q10 exige texto no vacio. En UI usar fecha calendario real `YYYY-MM-DD`, sin hora ni conversion a ISO timestamp. Ver diferencia local mas abajo. |
+| `Fecha_nacimiento`           | Si              | Usar fecha real `YYYY-MM-DD`. El DTO tambien admite `YYYY-MM-DDT00:00:00.000Z` para el portal y envia la fecha de calendario a Q10. |
 | `Telefono`                   | Si              | Texto no vacio; no asumir que Celular lo reemplaza.                                                                                                  |
 | `Celular`                    | Si              | Texto no vacio.                                                                                                                                      |
 | `Codigo_programa`            | Si              | Texto no vacio y valor remoto valido acordado.                                                                                                       |

@@ -345,6 +345,7 @@ test('SWAGGER Q10 campos opcionales y nulos coinciden con HTTP', async () => {
       escuelaId: null,
     },
     { codigo: '0012345678', imgDoc: 'https://example.com/documento.pdf' },
+    { Fecha_nacimiento: '2000-01-01T00:00:00.000Z' },
   ]) {
     const route = source.routes.find(
       (item) => item.operationId === 'Q10Controller_register',

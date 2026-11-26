@@ -5,7 +5,7 @@ export interface SyncEstudianteQ10Input {
   nombres: string;
   apellidos: string;
   genero: string;
-  fechaNacimiento: Date;
+  fechaNacimiento: string | Date;
   tipoDocumento: string;
   numeroDocumento: string;
   celular: string;

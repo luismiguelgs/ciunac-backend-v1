@@ -1203,7 +1203,10 @@ test('INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar 
       return { ok: true, json: async () => [{ Consecutivo_inscripcion: 20 }] };
     if (url.includes('/matriculasProgramas'))
       return { ok: true, json: async () => ({ matricula: 1 }) };
-    const { Numero_identificacion } = JSON.parse(options.body);
+    const { Numero_identificacion, Fecha_nacimiento } = JSON.parse(
+      options.body,
+    );
+    expect(Fecha_nacimiento).toBe('2000-01-01');
     if (!remoteStudents.has(Numero_identificacion)) {
       remoteStudents.set(
         Numero_identificacion,
@@ -1239,6 +1242,8 @@ test('INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar 
       const result = await q10.crearEstudianteEnQ10({
         ...payload,
         Numero_identificacion,
+        Fecha_nacimiento:
+          index === 0 ? '2000-01-01T00:00:00.000Z' : payload.Fecha_nacimiento,
         tipoEstudiante,
         codigo,
         imgDoc,
@@ -1248,6 +1253,7 @@ test('INT estudiante nuevo persiste tipo documento y valida escuelas sin enviar 
       const student = await estudiantes.findOne(result.estudiante.id);
       expect(student).toMatchObject({
         tipoEstudiante,
+        fechaNacimiento: '2000-01-01',
         codigo,
         imgDoc,
         escuelaId,

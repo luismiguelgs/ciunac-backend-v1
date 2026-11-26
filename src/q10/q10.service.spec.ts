@@ -134,9 +134,32 @@ describe('Q10Service', () => {
       expect.objectContaining({
         idQ10: q10Response.Codigo_estudiante,
         numeroDocumento: request.Numero_identificacion,
+        fechaNacimiento: '2000-01-01',
       }),
     );
   });
+
+  it.each(['2000-02-29', '2000-02-29T00:00:00.000Z'])(
+    'sends and saves the same calendar day for %s when Q10 omits the date',
+    async (Fecha_nacimiento) => {
+      mockPeriod();
+      fetchMock
+        .mockResolvedValueOnce(response({ Codigo_estudiante: 'Q10-001' }))
+        .mockResolvedValueOnce(response([{ Consecutivo_inscripcion: 20 }]))
+        .mockResolvedValueOnce(response({ completed: true }));
+      estudiantesService.syncFromQ10.mockResolvedValue(localStudent);
+
+      await service.crearEstudianteEnQ10({ ...request, Fecha_nacimiento });
+
+      const [, createOptions] = fetchMock.mock.calls[1];
+      expect(JSON.parse(createOptions?.body as string)).toMatchObject({
+        Fecha_nacimiento: '2000-02-29',
+      });
+      expect(estudiantesService.syncFromQ10).toHaveBeenCalledWith(
+        expect.objectContaining({ fechaNacimiento: '2000-02-29' }),
+      );
+    },
+  );
 
   it.each([
     { facultadId: 3, escuelaId: 8 },

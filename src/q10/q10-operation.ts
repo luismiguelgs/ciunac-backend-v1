@@ -73,6 +73,8 @@ const rules = new Set([
   'isNumber',
   'isUrl',
   'isLength',
+  'isDateString',
+  'matches',
   'whitelistValidation',
   'FACULTY_NOT_FOUND',
   'SCHOOL_NOT_FOUND',

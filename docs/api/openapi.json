@@ -3357,6 +3357,9 @@
             "type": "string"
           },
           "Fecha_nacimiento": {
+            "description": "Fecha real YYYY-MM-DD o YYYY-MM-DDT00:00:00.000Z. Q10 recibe YYYY-MM-DD sin conversion horaria.",
+            "example": "2000-01-01",
+            "pattern": "^(?!0000)\\d{4}-\\d{2}-\\d{2}(?:T00:00:00\\.000Z)?$",
             "type": "string"
           },
           "Genero": {
@@ -3437,6 +3440,7 @@
           }
         },
         "required": [
+          "Fecha_nacimiento",
           "Primer_nombre",
           "Primer_apellido",
           "Segundo_apellido",
@@ -3444,7 +3448,6 @@
           "Codigo_tipo_identificacion",
           "Numero_identificacion",
           "Genero",
-          "Fecha_nacimiento",
           "Telefono",
           "Celular",
           "Codigo_programa"
@@ -5122,7 +5125,7 @@
     "contact": {},
     "description": "Contrato OpenAPI del backend CIUNAC. Incluye dominios academicos, administrativos, autenticacion, seguimiento docente, Q10, cargas y correo.",
     "title": "CIUNAC Backend API",
-    "version": "1.4.7"
+    "version": "1.4.9"
   },
   "openapi": "3.0.0",
   "paths": {

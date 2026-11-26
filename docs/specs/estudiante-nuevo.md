@@ -43,7 +43,7 @@ Todos los endpoints anteriores mantienen `x-api-key`. El registro sigue siendo J
 - `tipoEstudiante` permite `PRE`/`POS`/`PG` o `null` en los schemas de Q10, POST local y PATCH local. `null` conserva la clasificacion existente, no la borra.
 - En Q10, `Direccion`, `Lugar_nacimiento`, `Lugar_residencia`, `Consecutivo_sedejornada` y `Consecutivo_periodo` son opcionales; el backend establece los valores remotos actuales. No pedirlos como campos obligatorios en frontend.
 - `POST /estudiantes` es una alternativa SOLO local, sin Q10; requiere `fechaNacimiento` como fecha real `YYYY-MM-DD`. `PATCH /estudiantes/:id` permite omitir `fechaNacimiento`, pero no acepta `null`, fechas imposibles ni timestamps. Se conserva el dia sin conversion a `Date` en esos endpoints.
-- El alta Q10 sigue usando el campo `Fecha_nacimiento` y su contrato existente; no confundir los nombres de ambos DTOs.
+- El alta Q10 usa `Fecha_nacimiento`. Acepta `YYYY-MM-DD` y `YYYY-MM-DDT00:00:00.000Z` para una fecha real. El backend envia `YYYY-MM-DD` a Q10 y, si Q10 omite la fecha, conserva ese dia en PostgreSQL.
 - La respuesta Q10 `201` conserva UUID local, `idQ10` y `numeroDocumento`; tipo, documento e IDs academicos se consultan con `GET /estudiantes/:id`. No se agregan campos de respuesta ficticios.
 - El schema `502` incluye `Q10_PERIOD_LOOKUP_FAILED`, `Q10_UNAVAILABLE` y los tres codigos `Q10_CREATED_*`, todos con `retryAllowed=false`. Los errores incluyen `message`, operacion y etapa. Ver [contrato de errores y logs](../frontend/q10-registration-errors.md). Un fallo de comunicacion puede ser ambiguo: nunca repetir automaticamente un alta sin revisar el estado remoto.
 

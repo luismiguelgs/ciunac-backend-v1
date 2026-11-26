@@ -4,6 +4,7 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
+import { isISO8601 } from 'class-validator';
 import { EstudiantesService } from 'src/modules/principales/estudiantes/estudiantes.service';
 import { Estudiante } from 'src/modules/principales/estudiantes/entities/estudiante.entity';
 import { DocentesService } from 'src/modules/principales/docentes/docentes.service';
@@ -139,8 +140,10 @@ export class Q10Service {
     });
     q10Stage('PERIOD_LOOKUP');
     const periodo = await this.getPeriodoActivo();
+    const fechaNacimiento = body.Fecha_nacimiento.slice(0, 10);
     const payload = {
       ...datosQ10,
+      Fecha_nacimiento: fechaNacimiento,
       Direccion: 'Lima',
       Lugar_nacimiento: '12158',
       Lugar_residencia: '12158',
@@ -190,7 +193,11 @@ export class Q10Service {
     q10Stage('LOCAL_SYNC');
     q10Effect('localStudent', 'unknown');
     try {
-      estudiante = await this.crearEstudianteLocal(q10Student, body);
+      estudiante = await this.crearEstudianteLocal(
+        q10Student,
+        body,
+        fechaNacimiento,
+      );
       q10Effect('localStudent', 'confirmed');
     } catch (error: unknown) {
       if (error instanceof ConflictException) {
@@ -282,6 +289,7 @@ export class Q10Service {
   private async crearEstudianteLocal(
     data: Q10EstudianteResponse,
     originalBody: Q10EstudianteDto,
+    fechaNacimiento: string,
   ): Promise<Estudiante> {
     let tipoDocumento: string;
     switch (
@@ -299,6 +307,14 @@ export class Q10Service {
         break;
     }
 
+    const remoteDate = data.Fecha_nacimiento ?? fechaNacimiento;
+    // Keep the calendar day in ISO responses and retain legacy parsing for other responses.
+    const localDate =
+      /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(remoteDate) &&
+      isISO8601(remoteDate, { strict: true })
+        ? remoteDate.slice(0, 10)
+        : new Date(remoteDate);
+
     return this.estudiantesService.syncFromQ10({
       idQ10: data.Codigo_estudiante,
       nombres: [
@@ -314,9 +330,7 @@ export class Q10Service {
         .filter(Boolean)
         .join(' '),
       genero: data.Genero ?? originalBody.Genero,
-      fechaNacimiento: new Date(
-        data.Fecha_nacimiento ?? originalBody.Fecha_nacimiento,
-      ),
+      fechaNacimiento: localDate,
       tipoDocumento,
       numeroDocumento:
         data.Numero_identificacion ?? originalBody.Numero_identificacion,

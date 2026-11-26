@@ -82,3 +82,11 @@ verificaron VPS, estado real de Q10 ni relaciones residuales de la BD del VPS.
 Su causa concreta sigue pendiente. El correlationId historico no se envio al
 backend: no permite correlacionarlo retrospectivamente. No hay evidencia que
 atribuya el fallo al navegador o al documento reutilizado.
+
+Los rechazos de `REMOTE_CREATE` del 26/11/2026 a las `16:51:54.827Z` y
+`17:00:09.671Z` siguen pendientes de una causa confirmada. Para investigarlos,
+cruzar el `correlationId` de cada evento con el BFF y consultar a Q10 por la
+regla aplicada en esas horas UTC. El formato `YYYY-MM-DD` del ejemplo oficial
+orienta la normalizacion de `Fecha_nacimiento`. El `400` generico del proveedor
+no identifica la regla de los rechazos historicos. Verificar el ajuste primero
+con Q10 simulado y correlacionar cualquier nuevo rechazo sin repetir altas.
